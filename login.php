@@ -2,6 +2,8 @@
 // ===============================
 // PROCESO DEL LOGIN
 // ===============================
+include("../includes/conexion.php");
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $usuario = $_POST["usuario"];
