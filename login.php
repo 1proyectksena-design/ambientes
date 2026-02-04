@@ -1,20 +1,13 @@
 <?php
-// ===============================
-// PROCESO DEL LOGIN
-// ===============================
-include("../includes/conexion.php");
+session_start();
+
+$error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    $usuario = $_POST["usuario"];
-    $password = $_POST["password"];
+    $usuario = $_POST["usuario"] ?? "";
+    $password = $_POST["password"] ?? "";
 
-    /*
-    =====================================
-    AQUÍ DEFINES LAS CONTRASEÑAS
-    Puedes cambiarlas cuando quieras
-    =====================================
-    */
     $usuarios = [
         "Administrador" => "admin123",
         "Subdirección"  => "sub123",
@@ -22,15 +15,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         "Celador"       => "cel123"
     ];
 
-    // Verificamos si el usuario existe y la contraseña coincide
     if (isset($usuarios[$usuario]) && $usuarios[$usuario] === $password) {
-        echo "Bienvenido, has iniciado sesión como: " . $usuario;
+        $_SESSION["usuario"] = $usuario;
+
+        // Redirigir después del login
+        header("Location: dashboard.php");
+        exit;
     } else {
-        echo "Usuario o contraseña incorrectos";
+        $error = "Usuario o contraseña incorrectos";
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -39,32 +34,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
 
-    <h2>Iniciar sesión</h2>
+<h2>Iniciar sesión</h2>
 
-    <form method="POST" action="login.php">
+<?php if ($error): ?>
+    <p style="color:red;"><?php echo $error; ?></p>
+<?php endif; ?>
 
-        <!-- LISTA DESPLEGABLE DE USUARIOS -->
-        <label>Usuario:</label><br>
-        <select name="usuario" required>
-            <option value="">Seleccione un usuario</option>
-            <option value="Administrador">Administrador</option>
-            <option value="Subdirección">Subdirección</option>
-            <option value="Instructor">Instructor</option>
-            <option value="Celador">Celador</option>
-        </select>
+<form method="POST">
 
-        <br><br>
+    <label>Usuario:</label><br>
+    <select name="usuario" required>
+        <option value="">Seleccione un usuario</option>
+        <option value="Administrador">Administrador</option>
+        <option value="Subdirección">Subdirección</option>
+        <option value="Instructor">Instructor</option>
+        <option value="Celador">Celador</option>
+    </select>
 
-        <!-- CONTRASEÑA -->
-        <label>Contraseña:</label><br>
-        <input type="password" name="password" required>
+    <br><br>
 
-        <br><br>
+    <label>Contraseña:</label><br>
+    <input type="password" name="password" required>
 
-        <!-- BOTÓN -->
-        <button type="submit">Ingresar</button>
+    <br><br>
 
-    </form>
+    <button type="submit">Ingresar</button>
+
+</form>
 
 </body>
 </html>
