@@ -1,4 +1,10 @@
 <?php
+session_start();
+if ($_SESSION['rol'] != 'administracion') {
+    header("Location: ../login.php");
+    exit;
+}
+
 include("../includes/conexion.php");
 
 $ambientes = mysqli_query($conexion, "SELECT * FROM ambientes");
@@ -22,7 +28,7 @@ if(isset($_POST['autorizar'])){
 }
 ?>
 
-<h2>Autorizar Ambiente (Administración)</h2>
+<h2>Autorizar Ambiente</h2>
 
 <form method="POST">
     <label>Ambiente</label><br>
@@ -57,3 +63,6 @@ if(isset($_POST['autorizar'])){
 
     <button type="submit" name="autorizar">Autorizar</button>
 </form>
+
+<br>
+<a href="index.php">⬅ Volver</a>

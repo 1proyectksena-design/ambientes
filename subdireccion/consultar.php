@@ -1,5 +1,11 @@
 <?php
 include("../includes/conexion.php");
+session_start();
+if ($_SESSION['rol'] != 'subdireccion') {
+    header("Location: ../login.php");
+    exit;
+}
+
 
 $sql = "SELECT 
             a.nombre_ambiente,
@@ -30,6 +36,8 @@ $resultado = mysqli_query($conexion, $sql);
     <th>Autorizado por</th>
 </tr>
 
+
+
 <?php while($row = mysqli_fetch_assoc($resultado)){ ?>
 <tr>
     <td><?= $row['nombre_ambiente'] ?></td>
@@ -42,3 +50,4 @@ $resultado = mysqli_query($conexion, $sql);
 </tr>
 <?php } ?>
 </table>
+<a href="index.php">⬅ Volver</a>

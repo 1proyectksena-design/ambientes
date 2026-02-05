@@ -1,5 +1,10 @@
 <?php
 include("../includes/conexion.php");
+session_start();
+if ($_SESSION['rol'] != 'subdireccion') {
+    header("Location: ../login.php");
+    exit;
+}
 
 $ambientes = mysqli_query($conexion, "SELECT * FROM ambientes");
 $instructores = mysqli_query($conexion, "SELECT * FROM instructores");
@@ -62,3 +67,4 @@ if(isset($_POST['autorizar'])){
 
     <button type="submit" name="autorizar">Autorizar</button>
 </form>
+<a href="index.php">⬅ Volver</a>

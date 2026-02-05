@@ -1,4 +1,10 @@
 <?php
+session_start();
+if ($_SESSION['rol'] != 'administracion') {
+    header("Location: ../login.php");
+    exit;
+}
+
 include("../includes/conexion.php");
 
 $sql = "SELECT 
@@ -41,3 +47,6 @@ $resultado = mysqli_query($conexion, $sql);
 </tr>
 <?php } ?>
 </table>
+
+<br>
+<a href="index.php">⬅ Volver</a>

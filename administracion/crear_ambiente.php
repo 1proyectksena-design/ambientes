@@ -1,4 +1,10 @@
 <?php
+session_start();
+if ($_SESSION['rol'] != 'administracion') {
+    header("Location: ../login.php");
+    exit;
+}
+
 include("../includes/conexion.php");
 
 if(isset($_POST['guardar'])){
@@ -18,3 +24,6 @@ if(isset($_POST['guardar'])){
 
     <button type="submit" name="guardar">Crear</button>
 </form>
+
+<br>
+<a href="index.php">⬅ Volver</a>

@@ -1,19 +1,26 @@
 <?php
 session_start();
 include("includes/conexion.php");
+
 $error = "";
 
-// Verificar conexión
+/* =========================
+   VERIFICAR CONEXIÓN
+   ========================= */
 if (!$conexion) {
     die("Error de conexión");
 }
 
 /* =========================
-   TRAER USUARIOS PARA SELECT
+   TRAER USUARIOS PARA EL SELECT
    ========================= */
 $usuarios = [];
 $consultaUsuarios = $conexion->query(
-    "SELECT usuario FROM usuarios WHERE usuario IS NOT NULL AND usuario != '' ORDER BY usuario ASC"
+    "SELECT usuario 
+     FROM usuarios 
+     WHERE usuario IS NOT NULL 
+     AND usuario != '' 
+     ORDER BY usuario ASC"
 );
 
 if ($consultaUsuarios) {
@@ -27,9 +34,11 @@ if ($consultaUsuarios) {
    ========================= */
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
+    // Limpiamos datos del formulario
     $usuario  = trim($_POST["usuario"]);
     $password = $_POST["password"];
 
+    // Preparamos consulta segura
     $stmt = $conexion->prepare(
         "SELECT id_usuario, usuario, password, rol 
          FROM usuarios 
@@ -39,25 +48,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->execute();
     $resultado = $stmt->get_result();
 
+    // Verificamos si el usuario existe
     if ($resultado->num_rows === 1) {
+
         $fila = $resultado->fetch_assoc();
 
+        // Verificamos la contraseña encriptada
         if (password_verify($password, $fila["password"])) {
+
+            /* =========================
+               GUARDAR DATOS EN SESIÓN
+               ========================= */
             $_SESSION["id_usuario"] = $fila["id_usuario"];
             $_SESSION["usuario"]    = $fila["usuario"];
             $_SESSION["rol"]        = $fila["rol"];
 
-            // Redirección general (luego la separamos por rol si quieres)
-            header("Location: dashboard.php");
+            /* =========================
+               REDIRECCIÓN SEGÚN EL ROL
+               ========================= */
+            if ($fila["rol"] === "administracion") {
+                // Si es admin → panel de administración
+                header("Location: administracion/index.php");
+            } elseif ($fila["rol"] === "subdireccion") {
+             header("Location: subdireccion/index.php");
+
+            } 
+            else {
+                // Si es usuario normal → panel usuario
+                header("Location: usuario/index.php");
+            }
             exit;
+
         } else {
             $error = "Contraseña incorrecta";
         }
+
     } else {
         $error = "Usuario no existe";
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>

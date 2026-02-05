@@ -1,5 +1,10 @@
 <?php
 include("../includes/conexion.php");
+session_start();
+if ($_SESSION['rol'] != 'subdireccion') {
+    header("Location: ../login.php");
+    exit;
+}
 
 if(isset($_POST['guardar'])){
     $nombre = $_POST['nombre_completo'];
@@ -30,3 +35,4 @@ if(isset($_POST['guardar'])){
 
     <button type="submit" name="guardar">Registrar</button>
 </form>
+<a href="index.php">⬅ Volver</a>
