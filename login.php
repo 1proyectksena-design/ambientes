@@ -63,37 +63,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Iniciar sesión</title>
+  <link rel="stylesheet" href="css/login.css">  
+
 </head>
 <body>
 
-<h2>Iniciar sesión</h2>
+<div class="login-container">
 
-<?php if ($error): ?>
-    <p style="color:red;"><?php echo $error; ?></p>
-<?php endif; ?>
 
-<form method="POST">
+    <div class="login-header">
+    <div class="logo-large">
+        <img src="css/img/logo.png" alt="Logo">
+    </div>
+    <h2>Iniciar sesión</h2>
+    <p class="subtitle">Ingresa tus credenciales para continuar</p>
+</div>
 
-    <label>Usuario:</label><br>
-    <select name="usuario" required>
-        <option value="">Seleccione un usuario</option>
-        <?php foreach ($usuarios as $u): ?>
-            <option value="<?php echo $u; ?>">
-                <?php echo ucfirst($u); ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
 
-    <br><br>
 
-    <label>Contraseña:</label><br>
-    <input type="password" name="password" required>
+    <?php if ($error): ?>
+        <div class="error"><?php echo $error; ?></div>
+    <?php endif; ?>
 
-    <br><br>
+    <form method="POST">
 
-    <button type="submit">Ingresar</button>
+            <label for="usuario">Usuario</label>
+            <select name="usuario" id="usuario" required>
+                <option value="">Seleccione un usuario</option>
+                <?php foreach ($usuarios as $u): ?>
+                    <option value="<?php echo $u; ?>">
+                        <?php echo ucfirst($u); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        <label for="password">Contraseña</label>
+        <input type="password" name="password" id="password" required>
 
-</form>
+
+        <button type="submit">Ingresar</button>
+
+    </form>
+
+</div>
 
 </body>
+
 </html>
