@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 if (!isset($_SESSION["usuario"])) {
     header("Location: login.php");
     exit;
@@ -8,4 +7,5 @@ if (!isset($_SESSION["usuario"])) {
 ?>
 
 <h1>Bienvenido <?php echo $_SESSION["usuario"]; ?></h1>
+<p>Rol: <?php echo $_SESSION["rol"]; ?></p>
 <a href="logout.php">Cerrar sesión</a>
