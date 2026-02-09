@@ -42,17 +42,14 @@ if(isset($_POST['autorizar'])){
 
     <label>Instructor</label><br>
     <select name="instructor" required>
-        <?php while($i = mysqli_fetch_assoc($instructores)){ ?>
-            <option value="<?= $i['id_instructor'] ?>">
-                <?= $i['nombre_completo'] ?
-                
-                
-                
-                
-                >
-            </option>
-        <?php } ?>
-    </select><br><br>
+    <?php while ($i = mysqli_fetch_assoc($instructores)) { ?>
+        <option value="<?= $i['id_instructor'] ?>">
+            <?= $i['nombre_completo'] ?>
+        </option>
+    <?php } ?>
+    </select>
+    <br><br>
+
 
     <label>Fecha</label><br>
     <input type="date" name="fecha" required><br><br>
