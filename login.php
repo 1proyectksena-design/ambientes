@@ -110,6 +110,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <p class="subtitle">Ingresa tus credenciales para continuar</p>
 </div>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
     <?php if ($error): ?>

@@ -32,7 +32,6 @@ $resultado = mysqli_query($conexion, $sql);
     <th>Hora inicio</th>
     <th>Hora fin</th>
     <th>Autorizado por</th>
-    <th>Estado</th>
 </tr>
 
 <?php while($row = mysqli_fetch_assoc($resultado)){ ?>
@@ -43,10 +42,54 @@ $resultado = mysqli_query($conexion, $sql);
     <td><?= $row['hora_inicio'] ?></td>
     <td><?= $row['hora_fin'] ?></td>
     <td><?= $row['rol_autorizado'] ?></td>
-    <td><?= $row['estado'] ?></td>
 </tr>
 <?php } ?>
 </table>
+
+
+
+<?php
+$ambienteBuscado = $_GET['ambiente'] ?? null;
+$ambienteInfo = null;
+
+if ($ambienteBuscado) {
+    $sql = "SELECT * FROM ambientes WHERE nombre_ambiente = '$ambienteBuscado'";
+    $res = mysqli_query($conexion, $sql);
+    $ambienteInfo = mysqli_fetch_assoc($res);
+}
+?>
+
+<h2>CONSULTAR AMBIENTE</h2>
+
+<form method="GET">
+    <input type="text" name="ambiente" placeholder="Ej: 308" required>
+    <button type="submit">Buscar</button>
+</form>
+
+
+<?php if ($ambienteInfo) { ?>
+    <table border="1">
+        <tr>
+            <th>Ambiente</th>
+            <th>Horario fijo</th>
+            <th>Disponible</th>
+            <th>Acción</th>
+        </tr>
+        <tr>
+            <td><?= $ambienteInfo['nombre_ambiente'] ?></td>
+            <td><?= $ambienteInfo['horario_fijo'] ?></td>
+            <td><?= $ambienteInfo['horario_disponible'] ?></td>
+            <td>
+                
+                <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id_ambiente'] ?>">
+                    Sacar permiso
+                </a>
+            </td>
+        </tr>
+    </table>
+<?php } ?>
+<br>
+
 
 <br>
 <a href="index.php">⬅ Volver</a>
