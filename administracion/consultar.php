@@ -22,7 +22,7 @@ $sql = "SELECT
 $resultado = mysqli_query($conexion, $sql);
 ?>
 
-<h2>Historial de Autorizaciones</h2>
+<h2>TABLA DE REGISTROS</h2>
 
 <table border="1">
 <tr>

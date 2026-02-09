@@ -28,7 +28,7 @@ if(isset($_POST['autorizar'])){
 }
 ?>
 
-<h2>Autorizar Ambiente</h2>
+<h2>AUTORIZAR PERMISOS</h2>
 
 <form method="POST">
     <label>Ambiente</label><br>
@@ -44,7 +44,12 @@ if(isset($_POST['autorizar'])){
     <select name="instructor" required>
         <?php while($i = mysqli_fetch_assoc($instructores)){ ?>
             <option value="<?= $i['id_instructor'] ?>">
-                <?= $i['nombre_completo'] ?>
+                <?= $i['nombre_completo'] ?
+                
+                
+                
+                
+                >
             </option>
         <?php } ?>
     </select><br><br>

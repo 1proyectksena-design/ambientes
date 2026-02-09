@@ -3,7 +3,7 @@ $usuarios = [
     ["usuario" => "admin",        "password" => "admin123", "rol" => "Administrador"],
     ["usuario" => "subdireccion", "password" => "sub123",   "rol" => "Subdirección"],
     ["usuario" => "instructor",   "password" => "inst123",  "rol" => "Instructor"],
-    ["usuario" => "celador",      "password" => "cel123",   "rol" => "Celador"]
+    ["usuario" => "Guarda de Seguridad",      "password" => "cel123",   "rol" => "Guarda de Seguridad"]
 ];
 
 foreach ($usuarios as $u) {

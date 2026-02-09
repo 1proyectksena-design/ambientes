@@ -20,7 +20,6 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'administracion') {
 
 <div class="menu-admin">
     <a href="consultar.php">📄Consultar historial</a><br><br>
-    <a href="crear_ambiente.php"> Crear ambiente</a><br><br>
     <a href="permisos.php"> Autorizar ambiente</a><br><br>
     <a href="../logout.php"> Cerrar sesión</a>
 </div>
