@@ -135,7 +135,7 @@ body::before {
 .stat-icon {
     width: 50px;
     height: 50px;
-    background: linear-gradient(135deg, rgba(57, 169, 0, 0.1), rgba(57, 169, 0, 0.2));
+    background: linear-gradient(135deg, color, rgba(0, 0, 0, 0.2));
     border-radius: 12px;
     display: flex;
     align-items: center;

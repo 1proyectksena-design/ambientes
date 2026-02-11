@@ -94,8 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Iniciar sesión</title>
-  <link rel="stylesheet" href="css/login.css">  
-
+   <link rel="stylesheet" href="/AMBIENTES/css/login.css">
 </head>
 <body>
 
@@ -104,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <div class="login-header">
     <div class="logo-large">
-        <img src="css/img/logo.png" alt="Logo">
+        <img src="css/img/senab.png" alt="Logo">
     </div>
     <h2>Iniciar sesión</h2>
     <p class="subtitle">Ingresa tus credenciales para continuar</p>
@@ -133,6 +132,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
         <button type="submit">Ingresar</button>
+        <body class="login-bg">
+
+
+</body>
 
     </form>
 

@@ -63,7 +63,7 @@
             </a>
             
             <a href="../logout.php" class="menu-card logout">
-                <div class="menu-card-icon">🚪</div>
+                <div class="menu-card-icon">🔐</div>
                 <div class="menu-card-title">Cerrar sesión</div>
                 <div class="menu-card-description">
                     Sal de forma segura del sistema
