@@ -27,7 +27,11 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
         <!-- LOGO INSTITUCIÓN -->
         <img src="../css/img/logo.png" alt="Logo Institución">
 
-        <div class="header-title">
+        <div class="header-titl
+        
+        
+        
+        e">
             <h1>Panel de Subdirección</h1>
             <span>Gestión y control de ambientes</span>
         </div>
