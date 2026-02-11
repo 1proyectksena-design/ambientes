@@ -17,7 +17,30 @@ if(isset($_POST['autorizar'])){
     $hora_fin = $_POST['hora_fin'];
     $obs = $_POST['observacion'];
 
-    // Insertar autorización
+    /* =========================
+       VALIDAR CHOQUE DE HORARIO
+       ========================= */
+    $sqlChoque = "SELECT * FROM autorizaciones_ambientes
+                  WHERE id_ambiente = '$ambiente'
+                  AND fecha = '$fecha'
+                  AND (
+                        hora_inicio < '$hora_fin'
+                        AND hora_fin > '$hora_inicio'
+                      )";
+
+    $resChoque = mysqli_query($conexion, $sqlChoque);
+
+    if (mysqli_num_rows($resChoque) > 0) {
+        echo "<script>
+                alert('❌ El ambiente ya está ocupado en ese horario');
+                window.history.back();
+              </script>";
+        exit;
+    }
+
+    /* =========================
+       INSERTAR AUTORIZACIÓN
+       ========================= */
     $sql = "INSERT INTO autorizaciones_ambientes 
             (id_ambiente, id_instructor, rol_autorizado, fecha, hora_inicio, hora_fin, observacion)
             VALUES 
@@ -25,10 +48,18 @@ if(isset($_POST['autorizar'])){
 
     mysqli_query($conexion, $sql);
 
-    // Cambiar estado del ambiente
-    mysqli_query($conexion, 
+    /* =========================
+       ACTUALIZAR ESTADO
+       ========================= */
+    mysqli_query(
+        $conexion,
         "UPDATE ambientes SET estado='ocupado' WHERE id_ambiente='$ambiente'"
     );
+
+    echo "<script>
+            alert('✅ Ambiente autorizado correctamente');
+            window.location.href='consultar.php';
+          </script>";
 }
 ?>
 
@@ -67,4 +98,5 @@ if(isset($_POST['autorizar'])){
 
     <button type="submit" name="autorizar">Autorizar</button>
 </form>
+
 <a href="index.php">⬅ Volver</a>

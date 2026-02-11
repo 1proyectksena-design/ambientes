@@ -1,0 +1,183 @@
+/* =========================
+   RESET + BASE
+   ========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #4446ca, #b95f76);
+    min-height: 100vh;
+    padding: 20px;
+    color: #263238;
+}
+
+/* =========================
+   HEADER
+   ========================= */
+.header {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    margin-bottom: 25px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-left img {
+    height: 50px;
+    width: auto;
+}
+
+.header-title h1 {
+    font-size: 22px;
+    color: #1b5e20;
+}
+
+.header-title span {
+    font-size: 13px;
+    color: #607d8b;
+}
+
+.header-user {
+    background: #719c74;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* =========================
+   MENÚ HORIZONTAL
+   ========================= */
+.menu-horizontal {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+/* =========================
+   BOTONES DEL MENÚ
+   ========================= */
+.menu-btn {
+    text-decoration: none;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    border-left: 6px solid #1b5e20;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+}
+
+.menu-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+.menu-btn .icon {
+    font-size: 28px;
+    background: #e8f5e9;
+    color: #1b5e20;
+    padding: 12px;
+    border-radius: 12px;
+}
+
+.menu-btn .text h3 {
+    font-size: 16px;
+    color: #263238;
+    margin-bottom: 4px;
+}
+
+.menu-btn .text p {
+    font-size: 13px;
+    color: #607d8b;
+}
+
+/* BOTÓN ROJO (CERRAR SESIÓN) */
+.menu-btn.danger {
+    border-left-color: #c62828;
+    background: #ffebee;
+}
+
+.menu-btn.danger .icon {
+    background: #ffcdd2;
+    color: #c62828;
+}
+
+/* =========================
+   CONTENEDORES GENERALES
+   ========================= */
+.container {
+    background: white;
+    margin-top: 25px;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+/* =========================
+   TABLAS
+   ========================= */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    background: #1b5e20;
+    color: white;
+    padding: 10px;
+    font-size: 14px;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 768px) {
+
+    body {
+        padding: 10px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .menu-horizontal {
+        grid-template-columns: 1fr;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
