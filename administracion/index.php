@@ -18,7 +18,7 @@
 
         :root {
             --primary: #667eea;
-            --primary-dark: #764ba2;
+            --primary-dark: #001d47;
             --success: #43a047;
             --warning: #fb8c00;
             --danger: #e53935;
@@ -41,7 +41,7 @@
         HEADER PRINCIPAL
         ======================================== */
         .admin-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #001d47 100%);
             padding: 20px 30px;
             display: flex;
             justify-content: space-between;
@@ -213,7 +213,7 @@
             color: var(--gray-700);
             font-size: clamp(28px, 6vw, 36px);
             font-weight: 800;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #001d47 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -316,7 +316,7 @@
         .menu-card-icon {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #001d47 100%);
             border-radius: 12px;
             display: flex;
             align-items: center;
