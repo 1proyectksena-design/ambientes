@@ -1,5 +1,6 @@
 <?php
 session_start();
+include("../includes/conexion.php");
 
 /* =========================
    PROTEGER VISTA SUBDIRECCIÓN
@@ -8,30 +9,70 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
     header("Location: ../login.php");
     exit;
 }
+
+/* =========================
+   ESTADÍSTICAS DASHBOARD
+   ========================= */
+$hoy = date('Y-m-d');
+$hora_actual = date('H:i:s');
+$mes = date('m');
+$anio = date('Y');
+
+/* Total ambientes ACTIVOS (excluyendo los en mantenimiento) */
+$resTotal = mysqli_query($conexion, "
+    SELECT COUNT(*) 
+    FROM ambientes 
+    WHERE estado IN ('disponible', 'ocupado')
+");
+$total_ambientes = mysqli_fetch_row($resTotal)[0];
+
+/* DEBUG TEMPORAL: Ver qué ambientes se están contando */
+$debug = mysqli_query($conexion, "SELECT id_ambiente, nombre_ambiente, estado FROM ambientes");
+echo "<!-- Ambientes encontrados: ";
+while($row = mysqli_fetch_assoc($debug)) {
+    echo $row['id_ambiente']." - ".$row['nombre_ambiente']." (".$row['estado']."), ";
+}
+echo " -->";
+
+/* Ambientes ocupados AHORA */
+$resOcupados = mysqli_query($conexion, "
+    SELECT COUNT(DISTINCT id_ambiente)
+    FROM autorizaciones_ambientes
+    WHERE fecha='$hoy'
+    AND hora_inicio <= '$hora_actual'
+    AND hora_fin >= '$hora_actual'
+");
+$ocupados_ahora = mysqli_fetch_row($resOcupados)[0];
+
+/* Disponibles ahora */
+$disponibles_ahora = $total_ambientes - $ocupados_ahora;
+
+/* Autorizaciones este mes */
+$resMes = mysqli_query($conexion, "
+    SELECT COUNT(*)
+    FROM autorizaciones_ambientes
+    WHERE MONTH(fecha)='$mes'
+    AND YEAR(fecha)='$anio'
+");
+$autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Subdirección</title>
     <link rel="stylesheet" href="../css/subdire.css">
 </head>
 <body>
 
-<!-- =========================
-     HEADER
-     ========================= -->
+<!-- ========================= HEADER ========================= -->
 <div class="header">
     <div class="header-left">
-        <!-- LOGO INSTITUCIÓN -->
         <img src="../css/img/logo.png" alt="Logo Institución">
 
-        <div class="header-titl
-        
-        
-        
-        e">
+        <div class="header-title">
             <h1>Panel de Subdirección</h1>
             <span>Gestión y control de ambientes</span>
         </div>
@@ -42,15 +83,38 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
     </div>
 </div>
 
-<!-- =========================
-     MENÚ HORIZONTAL
-     ========================= -->
+<!-- ========================= DASHBOARD STATS ========================= -->
+<div class="dashboard">
+
+    <div class="card">
+        <h3>Total Ambientes</h3>
+        <p><?= $total_ambientes ?></p>
+    </div>
+
+    <div class="card success">
+        <h3>Disponibles Ahora</h3>
+        <p><?= $disponibles_ahora ?></p>
+    </div>
+
+    <div class="card warning">
+        <h3>Ocupados Ahora</h3>
+        <p><?= $ocupados_ahora ?></p>
+    </div>
+
+    <div class="card info">
+        <h3>Autorizaciones del Mes</h3>
+        <p><?= $autorizaciones_mes ?></p>
+    </div>
+
+</div>
+
+<!-- ========================= MENÚ HORIZONTAL ========================= -->
 <div class="menu-horizontal">
 
     <a href="consultar.php" class="menu-btn">
         <div class="text">
             <h3>Consultar</h3>
-            <p>Historial y disponibilidad de ambientes</p>
+            <p>Historial y disponibilidad</p>
         </div>
     </a>
 
@@ -69,7 +133,6 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
     </a>
 
     <a href="../logout.php" class="menu-btn danger">
-        <div class="icon">🚪</div>
         <div class="text">
             <h3>Cerrar sesión</h3>
             <p>Salir de forma segura</p>
