@@ -24,7 +24,7 @@ body {
 
 /* ================= HEADER ================= */
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #203283 0%, #001d47 100%);
     padding: 15px 20px;
     display: flex;
     justify-content: space-between;
@@ -180,7 +180,7 @@ body {
     font-size: clamp(32px, 8vw, 42px);
     font-weight: 800;
     margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #667eea 0%, #001d47 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
