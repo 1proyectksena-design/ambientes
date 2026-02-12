@@ -12,15 +12,11 @@
 /* ===== BODY CON IMAGEN DE FONDO ===== */
 body {
     min-height: 100vh;
-
-    /* 🔥 RUTA CORRECTA (CSS dentro de /css) */
-    background-image: url('../img/logo.png');
-
+    background-image: url('img/fondo.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
-
     display: flex;
     align-items: center;
     justify-content: center;
@@ -83,10 +79,10 @@ body {
     width: 110px;
     height: 110px;
     margin: 0 auto 20px;
-    background: linear-gradient(135deg, rgba(57,169,0,.15), rgba(45,90,63,.2));
+    background: linear-gradient(135deg, rgba(59,130,246,.15), rgba(30,58,138,.2));
     border-radius: 24px;
     padding: 20px;
-    border: 1px solid rgba(57,169,0,.2);
+    border: 1px solid rgba(59,130,246,.2);
 }
 
 .logo-large img {
@@ -125,7 +121,7 @@ body {
     padding: 16px;
     border-radius: 16px;
     border: none;
-    background: linear-gradient(135deg, #39a900, #2d8700);
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
     color: #fff;
     font-weight: 600;
     cursor: pointer;
@@ -137,8 +133,87 @@ body {
         background-attachment: scroll;
     }
 }
+/* ====================================
+   LABELS - USUARIO Y CONTRASEÑA
+   ==================================== */
+label {
+    color: #e1e4e0; /* ← CAMBIA ESTE COLOR */
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.3px;
+}
+/* ====================================
+   SELECT PERSONALIZADO
+   ==================================== */
+select {
+    width: 100%;
+    padding: 16px 18px;
+    border: 1.5px solid rgba(74, 124, 232, 0.2);
+    border-radius: 12px;
+    font-size: 15px;
+    color: #ffffff;
+    background-color: #2a3748;
+    transition: all 0.3s ease;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23cbd5e0' d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 48px;
+    font-weight: 500;  
+}
 
-/* OPCIÓN 1: Si tu imagen está en css/img/fondo.jpg */
- {
-background-image: url('AMBIENTES/css/img/descarga2.jpg');
+select:hover {
+    border-color: rgba(74, 124, 232, 0.4);
+    background-color: #2f3e54;
+}
+
+select:focus {
+    border-color: #4a7ce8;
+    background-color: #2f3e54;
+    box-shadow: 0 0 0 4px rgba(74, 124, 232, 0.15);
+}
+
+/* Opciones del dropdown */
+select option {
+    background-color: #1e2936;
+    color: #ffffff;
+    padding: 14px 18px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* Primera opción (placeholder) */
+select option:first-child {
+    color: #a0aec0;
+    background-color: #1a2332;
+}
+
+/* Hover en opciones */
+select option:hover {
+    background-color: #4a7ce8 !important;
+    color: white !important;
+}
+
+/* Opción seleccionada */
+select option:checked {
+    background: linear-gradient(135deg, #4a7ce8, #3d6dd4);
+    color: white;
+    font-weight: 600;
+}
+
+/* ====================================
+   LABELS - USUARIO Y CONTRASEÑA
+   ==================================== */
+label {
+    color: #cbd5e0;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+    letter-spacing: 0.3px;
 }
