@@ -61,16 +61,17 @@ body {
     min-width: 0;
 }
 
-.header-left img {
-    width: 50px;
-    height: 50px;
+/* LOGO SENA */
+.logo-sena {
+    width: 55px;
+    height: 55px;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
     transition: transform 0.3s ease;
     flex-shrink: 0;
 }
 
-.header-left img:hover {
+.logo-sena:hover {
     transform: scale(1.1) rotate(5deg);
 }
 
@@ -92,17 +93,26 @@ body {
     margin: 5px 0 0 0;
 }
 
-.user-badge {
+/* ================= BADGE DE USUARIO ================= */
+.header-user {
     background: rgba(255,255,255,0.2);
     padding: 10px 20px;
     border-radius: 25px;
-    color: white;
+    color: white;  /* ← DEBE SER WHITE */
     font-weight: 600;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.3);
     animation: fadeIn 0.8s ease-out 0.3s both;
     font-size: clamp(12px, 2.5vw, 14px);
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-icon {
+    font-size: 1.1rem;
+    color: white;  /* ← DEBE SER WHITE */
 }
 
 /* ================= ESTADÍSTICAS ================= */
@@ -291,7 +301,7 @@ body {
     border-color: var(--primary);
 }
 
-/* ÍCONOS GRANDES */
+/* ÍCONOS GRANDES CON FONT AWESOME */
 .menu-card-icon {
     width: 90px;
     height: 90px;
@@ -300,11 +310,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
+    font-size: 2.8rem;
     color: white;
     margin-bottom: 25px;
     box-shadow: 0 6px 20px rgba(44, 62, 143, 0.35);
     transition: transform 0.3s ease;
+}
+
+.menu-card-icon i {
+    font-size: 3rem;
 }
 
 .menu-card:hover .menu-card-icon {
@@ -373,24 +387,19 @@ body {
 @media (max-width: 768px) {
     .admin-header {
         padding: 15px 20px;
-        flex-direction: column;
-        text-align: center;
     }
     
     .header-left {
-        flex-direction: column;
-        gap: 12px;
-        width: 100%;
+        gap: 15px;
     }
     
-    .header-left img {
-        width: 45px;
-        height: 45px;
+    .logo-sena {
+        width: 48px;
+        height: 48px;
     }
     
     .user-badge {
-        width: 100%;
-        justify-content: center;
+        margin-left: auto;
     }
     
     .stats-grid {
@@ -420,7 +429,10 @@ body {
     .menu-card-icon {
         width: 80px;
         height: 80px;
-        font-size: 2.2rem;
+    }
+
+    .menu-card-icon i {
+        font-size: 2.5rem;
     }
 }
 
@@ -430,9 +442,13 @@ body {
         padding: 12px 15px;
     }
     
-    .header-left img {
-        width: 40px;
-        height: 40px;
+    .header-left {
+        gap: 12px;
+    }
+    
+    .logo-sena {
+        width: 42px;
+        height: 42px;
     }
     
     .stats-grid {
@@ -458,8 +474,11 @@ body {
     .menu-card-icon {
         width: 70px;
         height: 70px;
-        font-size: 2rem;
         margin-bottom: 20px;
+    }
+
+    .menu-card-icon i {
+        font-size: 2rem;
     }
 
     .menu-card-title {
@@ -475,6 +494,11 @@ body {
 @media (max-width: 360px) {
     .admin-header {
         padding: 10px 12px;
+    }
+    
+    .logo-sena {
+        width: 38px;
+        height: 38px;
     }
     
     .stats-grid {

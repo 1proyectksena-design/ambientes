@@ -45,21 +45,20 @@ if ($ambienteBuscado) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autorizaciones - Administración</title>
-    <link rel="stylesheet" href="../css/consultar.css">
+    <link rel="stylesheet" href="../css/consultar.css?v=<?php echo time(); ?>"></head>
 </head>
 <body>
 
 <!-- ========================= HEADER ========================= -->
 <div class="header">
     <div class="header-left">
-        <img src="../css/img/logo.png" alt="Logo Institución">
+        <img src="../css/img/senab.png" alt="Logo Institución">
         <div class="header-title">
             <h1>Consultar Autorizaciones</h1>
-            <span>Panel de Administración</span>
         </div>
     </div>
     <div class="header-user">
-        👤 Administración
+        <i class="fa-solid fa-user user-icon"></i> Administracion
     </div>
 </div>
 

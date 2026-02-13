@@ -56,10 +56,12 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel <?= ucfirst($rol) ?></title>
-<link rel="stylesheet" href="../css/admin.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel <?= ucfirst($rol) ?></title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <!-- Font Awesome para íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
@@ -69,11 +71,14 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
     <!-- HEADER -->
     <div class="admin-header">
         <div class="header-left">
-            <h1>Panel de <?= ucfirst($rol) ?></h1>
-            <p>Gestión y control de ambientes</p>
+            <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
+            <div class="header-title">
+                <h1>Panel de <?= ucfirst($rol) ?></h1>
+                <p>Gestión y control de ambientes</p>
+            </div>
         </div>
-        <div class="user-badge">
-            👤 <?= ucfirst($rol) ?>
+       <div class="header-user">
+         <i class="fa-solid fa-user user-icon"></i> Administracion
         </div>
     </div>
 
@@ -98,34 +103,42 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
     </div>
 
     <!-- ACCIONES -->
-<div class="actions-container">
-    <h2 class="actions-title">Acciones disponibles</h2>
+    <div class="actions-container">
+        <h2 class="actions-title">Acciones disponibles</h2>
 
-    <div class="menu-grid">
-        <a href="consultar.php" class="menu-card">
-            <div class="menu-card-icon">📄</div>
-            <div class="menu-card-title">Consultar historial</div>
-            <div class="menu-card-description">
-                Revisa el historial completo de permisos y uso de ambientes
-            </div>
-        </a>
+        <div class="menu-grid">
+            <a href="consultar.php" class="menu-card">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
+                <div class="menu-card-title">Consultar historial</div>
+                <div class="menu-card-description">
+                    Revisa el historial completo de permisos y uso de ambientes
+                </div>
+            </a>
 
-        <a href="permisos.php" class="menu-card">
-            <div class="menu-card-icon">✅</div>
-            <div class="menu-card-title">Autorizar ambiente</div>
-            <div class="menu-card-description">
-                Gestiona y autoriza solicitudes de acceso a ambientes
-            </div>
-        </a>
+            <a href="permisos.php" class="menu-card">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div class="menu-card-title">Autorizar ambiente</div>
+                <div class="menu-card-description">
+                    Gestiona y autoriza solicitudes de acceso a ambientes
+                </div>
+            </a>
 
-        <a href="../logout.php" class="menu-card logout">
-            <div class="menu-card-icon">🔐</div>
-            <div class="menu-card-title">Cerrar sesión</div>
-            <div class="menu-card-description">
-                Sal de forma segura del sistema
-            </div>
-        </a>
+            <a href="../logout.php" class="menu-card logout">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </div>
+                <div class="menu-card-title">Cerrar sesión</div>
+                <div class="menu-card-description">
+                    Sal de forma segura del sistema
+                </div>
+            </a>
+        </div>
     </div>
+
 </div>
 
 </body>

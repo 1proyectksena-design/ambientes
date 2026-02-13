@@ -26,14 +26,6 @@ $resTotal = mysqli_query($conexion, "
 ");
 $total_ambientes = mysqli_fetch_row($resTotal)[0];
 
-/* DEBUG TEMPORAL: Ver qué ambientes se están contando */
-$debug = mysqli_query($conexion, "SELECT id_ambiente, nombre_ambiente, estado FROM ambientes");
-echo "<!-- Ambientes encontrados: ";
-while($row = mysqli_fetch_assoc($debug)) {
-    echo $row['id_ambiente']." - ".$row['nombre_ambiente']." (".$row['estado']."), ";
-}
-echo " -->";
-
 /* Ambientes ocupados AHORA */
 $resOcupados = mysqli_query($conexion, "
     SELECT COUNT(DISTINCT id_ambiente)
@@ -64,13 +56,15 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Subdirección</title>
     <link rel="stylesheet" href="../css/subdire.css">
+    <!-- Font Awesome para íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
 <!-- ========================= HEADER ========================= -->
 <div class="header">
     <div class="header-left">
-        <img src="../css/img/logo.png" alt="Logo Institución">
+        <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
 
         <div class="header-title">
             <h1>Panel de Subdirección</h1>
@@ -79,7 +73,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
     </div>
 
     <div class="header-user">
-        Subdirección
+        <i class="fa-solid fa-user user-icon"></i> Subdirección
     </div>
 </div>
 
@@ -96,10 +90,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
         <p><?= $disponibles_ahora ?></p>
     </div>
 
-    <div class="card warning">
-        <h3>Ocupados Ahora</h3>
-        <p><?= $ocupados_ahora ?></p>
-    </div>
+   
 
     <div class="card info">
         <h3>Autorizaciones del Mes</h3>
@@ -112,6 +103,9 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 <div class="menu-horizontal">
 
     <a href="consultar.php" class="menu-btn">
+        <div class="menu-btn-icon">
+            <i class="fa-solid fa-clipboard-list"></i>
+        </div>
         <div class="text">
             <h3>Consultar</h3>
             <p>Historial y disponibilidad</p>
@@ -119,20 +113,21 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
     </a>
 
     <a href="permisos.php" class="menu-btn">
+        <div class="menu-btn-icon">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
         <div class="text">
             <h3>Autorizar</h3>
             <p>Autorizar uso de ambientes</p>
         </div>
     </a>
 
-    <a href="registro.php" class="menu-btn">
-        <div class="text">
-            <h3>Registros</h3>
-            <p>Ver registros del sistema</p>
-        </div>
-    </a>
+  
 
     <a href="../logout.php" class="menu-btn danger">
+        <div class="menu-btn-icon">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </div>
         <div class="text">
             <h3>Cerrar sesión</h3>
             <p>Salir de forma segura</p>

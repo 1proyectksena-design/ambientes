@@ -24,7 +24,7 @@ body {
 
 /* ================= HEADER ================= */
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
     padding: 20px 30px;
     display: flex;
     justify-content: space-between;
@@ -164,7 +164,7 @@ body {
 
 .search-form button {
     padding: 14px 32px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
     color: white;
     border: none;
     border-radius: 10px;
@@ -200,7 +200,7 @@ body {
     background: #f8f9ff;
     padding: 15px;
     border-radius: 10px;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid #145a06;
 }
 
 .info-item label {
@@ -247,7 +247,7 @@ table {
 }
 
 th {
-    background: #667eea;
+    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
     color: white;
     padding: 16px;
     text-align: left;
@@ -301,7 +301,7 @@ tbody tr:hover {
 .btn-permiso {
     display: inline-block;
     padding: 10px 24px;
-    background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
     color: white;
     text-decoration: none;
     border-radius: 8px;
@@ -321,7 +321,7 @@ tbody tr:hover {
     gap: 8px;
     padding: 12px 28px;
     background: white;
-    color: #667eea;
+    color: #02050f;
     text-decoration: none;
     border-radius: 10px;
     font-weight: 600;
@@ -331,7 +331,7 @@ tbody tr:hover {
 }
 
 .btn-volver:hover {
-    background: #667eea;
+    background: #416792;
     color: white;
     transform: translateX(-4px);
 }
@@ -440,8 +440,23 @@ tbody tr:hover {
     }
 
     .header-user {
-        width: 100%;
-        justify-content: center;
+        background: rgba(255,255,255,0.2);
+        padding: 10px 20px;
+        border-radius: 25px;
+        color: white;  /* ← DEBE SER WHITE */
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.3);
+        animation: fadeIn 0.8s ease-out 0.3s both;
+        font-size: clamp(12px, 2.5vw, 14px);
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .user-icon {
+        font-size: 1.1rem;
+        color: white;  /* ← DEBE SER WHITE */
     }
 
     .consultar-container {
