@@ -98,33 +98,34 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
     </div>
 
     <!-- ACCIONES -->
-    <div class="actions-container">
-        <h2 class="actions-title">Acciones disponibles</h2>
+<div class="actions-container">
+    <h2 class="actions-title">Acciones disponibles</h2>
 
-        <div class="menu-grid">
-            <a href="consultar.php" class="menu-card">
-                <div class="menu-card-title">Consultar historial</div>
-                <div class="menu-card-description">
-                    Ver historial y disponibilidad de ambientes
-                </div>
-            </a>
+    <div class="menu-grid">
+        <a href="consultar.php" class="menu-card">
+            <div class="menu-card-icon">📄</div>
+            <div class="menu-card-title">Consultar historial</div>
+            <div class="menu-card-description">
+                Revisa el historial completo de permisos y uso de ambientes
+            </div>
+        </a>
 
-            <a href="permisos.php" class="menu-card">
-                <div class="menu-card-title">Autorizar ambiente</div>
-                <div class="menu-card-description">
-                    Registrar nueva autorización
-                </div>
-            </a>
+        <a href="permisos.php" class="menu-card">
+            <div class="menu-card-icon">✅</div>
+            <div class="menu-card-title">Autorizar ambiente</div>
+            <div class="menu-card-description">
+                Gestiona y autoriza solicitudes de acceso a ambientes
+            </div>
+        </a>
 
-            <a href="../logout.php" class="menu-card logout">
-                <div class="menu-card-title">Cerrar sesión</div>
-                <div class="menu-card-description">
-                    Salir del sistema
-                </div>
-            </a>
-        </div>
+        <a href="../logout.php" class="menu-card logout">
+            <div class="menu-card-icon">🔐</div>
+            <div class="menu-card-title">Cerrar sesión</div>
+            <div class="menu-card-description">
+                Sal de forma segura del sistema
+            </div>
+        </a>
     </div>
-
 </div>
 
 </body>
