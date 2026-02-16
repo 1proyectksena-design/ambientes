@@ -66,7 +66,7 @@ if ($ambienteBuscado) {
 
     <!-- ========================= BUSCAR AMBIENTE ========================= -->
     <div class="search-section">
-        <h3>🔍 Buscar Ambiente Específico</h3>
+        <h3> Buscar Ambiente Específico</h3>
         <form method="GET" class="search-form">
             <input type="text" name="ambiente" placeholder="Ej: 308, Laboratorio de Química, Sala 101..." value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>" required>
             <button type="submit">Buscar</button>
@@ -112,7 +112,7 @@ if ($ambienteBuscado) {
     <!-- ========================= HISTORIAL DE AUTORIZACIONES ========================= -->
     <div class="table-container">
         <div class="table-header">
-            <h3>📋 Historial de Autorizaciones</h3>
+            <h3>Historial de Autorizaciones</h3>
         </div>
         
         <?php if (mysqli_num_rows($resultado) > 0) { ?>
