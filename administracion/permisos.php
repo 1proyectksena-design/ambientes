@@ -66,10 +66,12 @@ if(isset($_POST['autorizar'])){
     mysqli_query($conexion,
         "UPDATE ambientes SET estado='ocupado' WHERE id_ambiente='$ambiente'");
 
+    /* REDIRECCIONAR A INDEX.PHP */
     echo "<script>
             alert('✅ Ambiente autorizado correctamente');
-            window.location.href='autorizacion.php';
+            window.location.href='index.php';
           </script>";
+    exit;
 }
 ?>
 
@@ -86,14 +88,14 @@ if(isset($_POST['autorizar'])){
 <!-- ========================= HEADER ========================= -->
 <div class="header">
     <div class="header-left">
-        <img src="../css/img/logo.png" alt="Logo Institución">
+        <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
         <div class="header-title">
             <h1>Autorizar Ambiente</h1>
             <span>Panel de Administración</span>
         </div>
     </div>
     <div class="header-user">
-        👤 Administración
+         Administración
     </div>
 </div>
 
@@ -101,7 +103,7 @@ if(isset($_POST['autorizar'])){
 
     <div class="form-card">
         <div class="form-header">
-            <h2>📝 Nueva Autorización</h2>
+            <h2> Nueva Autorización</h2>
             <p>Complete el formulario para autorizar el uso de un ambiente</p>
         </div>
 

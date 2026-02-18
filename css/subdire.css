@@ -2,7 +2,6 @@
 :root {
     --primary: #1e88e5;
     --success: #43a047;
-    --warning: #fb8c00;
     --info: #00acc1;
     --danger: #e53935;
     --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
@@ -24,8 +23,8 @@ body {
 
 /* ================= HEADER ================= */
 .header {
-    background: linear-gradient(135deg, #203283 0%, #001d47 100%);
-    padding: 15px 20px;
+    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
+    padding: 20px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -49,21 +48,21 @@ body {
 .header-left {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
     flex: 1;
     min-width: 0;
 }
 
-.header-left img {
-    width: 45px;
-    height: 45px;
+.logo-sena {
+    width: 55px;
+    height: 55px;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
     transition: transform 0.3s ease;
     flex-shrink: 0;
 }
 
-.header-left img:hover {
+.logo-sena:hover {
     transform: scale(1.1) rotate(5deg);
 }
 
@@ -73,18 +72,15 @@ body {
 
 .header-title h1 {
     color: white;
-    font-size: clamp(18px, 4vw, 24px);
+    font-size: clamp(20px, 4vw, 24px);
     margin: 0;
     font-weight: 700;
     letter-spacing: -0.5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .header-title span {
     color: rgba(255,255,255,0.9);
-    font-size: clamp(11px, 2.5vw, 13px);
+    font-size: clamp(12px, 2.5vw, 13px);
     font-weight: 400;
     display: block;
     margin-top: 2px;
@@ -92,7 +88,7 @@ body {
 
 .header-user {
     background: rgba(255,255,255,0.2);
-    padding: 8px 16px;
+    padding: 10px 20px;
     border-radius: 25px;
     color: white;
     font-weight: 600;
@@ -108,7 +104,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
     gap: 20px;
-    padding: 20px;
+    padding: 30px 20px;
     max-width: 1400px;
     margin: 0 auto;
     animation: fadeInUp 0.8s ease-out 0.2s both;
@@ -208,12 +204,7 @@ body {
     background-clip: text;
 }
 
-.card.warning p {
-    background: linear-gradient(135deg, #fb8c00 0%, #ffa726 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
+
 
 .card.info p {
     background: linear-gradient(135deg, #00acc1 0%, #26c6da 100%);
@@ -222,19 +213,19 @@ body {
     background-clip: text;
 }
 
-/* ================= MENÚ HORIZONTAL ================= */
+/* ================= MENÚ HORIZONTAL CON ÍCONOS ================= */
 .menu-horizontal {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
-    gap: 15px;
-    padding: 15px 20px 30px;
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+    gap: 20px;
+    padding: 20px 20px 40px;
     max-width: 1400px;
     margin: 0 auto;
 }
 
 .menu-btn {
     background: white;
-    padding: 20px;
+    padding: 25px;
     border-radius: 12px;
     text-decoration: none;
     box-shadow: var(--shadow-sm);
@@ -243,7 +234,10 @@ body {
     position: relative;
     overflow: hidden;
     animation: fadeInUp 0.6s ease-out backwards;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 
 .menu-btn:nth-child(1) { animation-delay: 0.1s; }
@@ -274,10 +268,41 @@ body {
 
 .menu-btn.danger:hover {
     border-color: var(--danger);
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
 }
 
+/* ÍCONOS DE LOS BOTONES */
+.menu-btn-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #2c3e8f 0%, #1a2654 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(44, 62, 143, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.menu-btn-icon i {
+    font-size: 2.2rem;
+}
+
+.menu-btn:hover .menu-btn-icon {
+    transform: scale(1.1) translateY(-3px);
+}
+
+.menu-btn.danger .menu-btn-icon {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+/* TEXTO DE LOS BOTONES */
 .menu-btn .text h3 {
-    margin: 0 0 6px 0;
+    margin: 0 0 8px 0;
     font-size: clamp(16px, 3.5vw, 18px);
     color: #333;
     font-weight: 700;
@@ -305,69 +330,92 @@ body {
 
 /* ================= RESPONSIVE BREAKPOINTS ================= */
 
+/* Tablets */
+@media (max-width: 1024px) {
+    .dashboard {
+        padding: 25px 20px;
+    }
+    
+    .menu-horizontal {
+        padding: 15px 20px 30px;
+    }
+}
+
 /* Tablets pequeñas */
 @media (max-width: 768px) {
     .header {
-        padding: 12px 15px;
+        padding: 15px 20px;
     }
     
     .header-left {
-        gap: 12px;
+        gap: 15px;
     }
     
-    .header-left img {
-        width: 38px;
-        height: 38px;
+    .logo-sena {
+        width: 48px;
+        height: 48px;
     }
     
     .dashboard {
-        padding: 15px;
+        padding: 20px 15px;
+        grid-template-columns: repeat(2, 1fr);
         gap: 15px;
-        grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
     }
     
     .card {
-        padding: 18px 15px;
+        padding: 20px 15px;
         min-height: 100px;
     }
     
     .menu-horizontal {
-        padding: 12px 15px 25px;
-        gap: 12px;
-        grid-template-columns: 1fr;
+        padding: 15px 15px 25px;
+        gap: 15px;
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .menu-btn {
+        padding: 20px;
+    }
+    
+    .menu-btn-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .menu-btn-icon i {
+        font-size: 1.8rem;
     }
 }
 
 /* Móviles */
 @media (max-width: 480px) {
     .header {
-        padding: 10px 12px;
+        padding: 12px 15px;
         gap: 10px;
     }
     
     .header-left {
-        flex-direction: row;
-        gap: 10px;
+        gap: 12px;
     }
     
-    .header-left img {
-        width: 35px;
-        height: 35px;
+    .logo-sena {
+        width: 42px;
+        height: 42px;
     }
     
     .header-user {
-        padding: 6px 12px;
+        padding: 8px 14px;
         font-size: 12px;
     }
     
     .dashboard {
-        padding: 12px;
+        padding: 15px 12px;
         gap: 12px;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
     }
     
     .card {
-        padding: 15px 12px;
+        padding: 18px 15px;
         min-height: 90px;
     }
     
@@ -381,22 +429,68 @@ body {
     }
     
     .menu-horizontal {
-        padding: 10px 12px 20px;
-        gap: 10px;
+        padding: 12px 12px 20px;
+        gap: 12px;
+        grid-template-columns: 1fr;
     }
     
     .menu-btn {
-        padding: 16px;
+        padding: 18px;
+    }
+    
+    .menu-btn-icon {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .menu-btn-icon i {
+        font-size: 1.6rem;
     }
 }
 
 /* Móviles muy pequeños */
 @media (max-width: 360px) {
+    .header {
+        padding: 10px 12px;
+    }
+    
+    .logo-sena {
+        width: 38px;
+        height: 38px;
+    }
+    
     .dashboard {
-        grid-template-columns: 1fr;
+        padding: 12px 10px;
+    }
+    
+    .card {
+        padding: 15px 12px;
     }
     
     .card p {
         font-size: 24px;
     }
+    
+    .menu-horizontal {
+        padding: 10px 10px 15px;
+    }
+    
+    .menu-btn {
+        padding: 15px;
+    }
+    
+    .menu-btn-icon {
+        width: 50px;
+        height: 50px;
+    }
+}
+/* ================= ÍCONO DE USUARIO ================= */
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-icon {
+    font-size: 1.1rem;
 }
