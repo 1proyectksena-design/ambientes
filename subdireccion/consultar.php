@@ -79,7 +79,7 @@ if ($ambienteBuscado) {
             <h3 style="margin: 0 0 20px 0; color: #333;">📍 Información del Ambiente</h3>
             <div class="info-grid">
                 <div class="info-item">
-                    <label>Nombre</label>
+                    <label>Ambiente</label>
                     <span><?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?></span>
                 </div>
                 <div class="info-item">
@@ -98,7 +98,7 @@ if ($ambienteBuscado) {
                 </div>
             </div>
             <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id_ambiente'] ?>" class="btn-permiso">
-                ✓ Solicitar Permiso
+                 Solicitar Permiso
             </a>
         </div>
     <?php } elseif ($ambienteBuscado && !$ambienteInfo) { ?>

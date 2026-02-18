@@ -247,7 +247,7 @@ table {
 }
 
 th {
-    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
+    background: #172f63;
     color: white;
     padding: 16px;
     text-align: left;
@@ -549,4 +549,48 @@ tbody tr:hover {
     .ambiente-result {
         padding: 15px;
     }
+}
+/* Agregar al final de consultar.css */
+
+.estado-badge.estado-pendiente {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.estado-badge.estado-aprobado {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.estado-badge.estado-rechazado {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.estado-badge.estado-habilitado {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.estado-badge.estado-deshabilitado {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.descripcion-ambiente {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.descripcion-ambiente strong {
+    color: #333;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.descripcion-ambiente p {
+    color: #666;
+    margin: 0;
 }

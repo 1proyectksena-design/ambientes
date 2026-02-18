@@ -8,34 +8,35 @@ if ($_SESSION['rol'] != 'administracion') {
 include("../includes/conexion.php");
 
 /* =========================
-   HISTORIAL DE AUTORIZACIONES
-   ========================= */
-$sql = "SELECT 
-            am.nombre_ambiente,
-            i.nombre_completo,
-            au.fecha,
-            au.hora_inicio,
-            au.hora_fin,
-            au.rol_autorizado,
-            am.estado
-        FROM autorizaciones_ambientes au
-        JOIN ambientes am ON au.id_ambiente = am.id_ambiente
-        JOIN instructores i ON au.id_instructor = i.id_instructor
-        ORDER BY au.fecha DESC, au.hora_inicio DESC";
-
-$resultado = mysqli_query($conexion, $sql);
-
-/* =========================
    BUSCAR AMBIENTE
    ========================= */
 $ambienteBuscado = $_GET['ambiente'] ?? null;
 $ambienteInfo = null;
+$historialAmbiente = null;
 
 if ($ambienteBuscado) {
     $ambienteBuscado = mysqli_real_escape_string($conexion, $ambienteBuscado);
-    $sql = "SELECT * FROM ambientes WHERE nombre_ambiente = '$ambienteBuscado'";
-    $res = mysqli_query($conexion, $sql);
-    $ambienteInfo = mysqli_fetch_assoc($res);
+    
+    /* Buscar info del ambiente */
+    $sqlAmb = "SELECT * FROM ambientes WHERE nombre_ambiente LIKE '%$ambienteBuscado%'";
+    $resAmb = mysqli_query($conexion, $sqlAmb);
+    $ambienteInfo = mysqli_fetch_assoc($resAmb);
+    
+    /* Si se encontró, traer su historial */
+    if($ambienteInfo){
+        $id_ambiente = $ambienteInfo['id'];
+        $sqlHist = "SELECT 
+                        au.*,
+                        i.nombre AS nombre_instructor,
+                        a.nombre_ambiente
+                    FROM autorizaciones_ambientes au
+                    JOIN instructores i ON au.id_instructor = i.id
+                    JOIN ambientes a ON au.id_ambiente = a.id
+                    WHERE au.id_ambiente = '$id_ambiente'
+                    ORDER BY au.fecha_inicio DESC, au.hora_inicio DESC
+                    LIMIT 50";
+        $historialAmbiente = mysqli_query($conexion, $sqlHist);
+    }
 }
 ?>
 
@@ -44,21 +45,23 @@ if ($ambienteBuscado) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autorizaciones - Administración</title>
-    <link rel="stylesheet" href="../css/consultar.css?v=<?php echo time(); ?>"></head>
+    <title>Consultar Ambiente - Administración</title>
+    <link rel="stylesheet" href="../css/consultar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
 <!-- ========================= HEADER ========================= -->
 <div class="header">
     <div class="header-left">
-        <img src="../css/img/senab.png" alt="Logo Institución">
+        <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
         <div class="header-title">
-            <h1>Consultar Autorizaciones</h1>
+            <h1>Consultar Ambiente</h1>
+            <span>Buscar y gestionar permisos</span>
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Administracion
+        <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
 
@@ -66,21 +69,38 @@ if ($ambienteBuscado) {
 
     <!-- ========================= BUSCAR AMBIENTE ========================= -->
     <div class="search-section">
-        <h3> Buscar Ambiente Específico</h3>
+        <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Ambiente</h3>
         <form method="GET" class="search-form">
-            <input type="text" name="ambiente" placeholder="Ej: 308, Laboratorio de Química, Sala 101..." value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>" required>
-            <button type="submit">Buscar</button>
+            <input 
+                type="text" 
+                name="ambiente" 
+                placeholder="Ej: 308, Laboratorio de Química, Sala 101..." 
+                value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>" 
+                required
+            >
+            <button type="submit">
+                <i class="fa-solid fa-search"></i> Buscar
+            </button>
         </form>
     </div>
 
     <!-- ========================= RESULTADO DE BÚSQUEDA ========================= -->
-    <?php if ($ambienteBuscado && $ambienteInfo) { ?>
+    <?php if ($ambienteBuscado && $ambienteInfo): ?>
         <div class="ambiente-result">
-            <h3 style="margin: 0 0 20px 0; color: #333;">📍 Información del Ambiente</h3>
+            <h3 style="margin: 0 0 20px 0; color: #333;">
+                <i class="fa-solid fa-door-open" style="color:#355d91;"></i> 
+                Información del Ambiente
+            </h3>
             <div class="info-grid">
                 <div class="info-item">
                     <label>Nombre</label>
                     <span><?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?></span>
+                </div>
+                <div class="info-item">
+                    <label>Estado</label>
+                    <span class="estado-badge estado-<?= strtolower($ambienteInfo['estado']) ?>">
+                        <?= htmlspecialchars($ambienteInfo['estado']) ?>
+                    </span>
                 </div>
                 <div class="info-item">
                     <label>Horario Fijo</label>
@@ -90,66 +110,87 @@ if ($ambienteBuscado) {
                     <label>Horario Disponible</label>
                     <span><?= htmlspecialchars($ambienteInfo['horario_disponible'] ?: 'No definido') ?></span>
                 </div>
-                <div class="info-item">
-                    <label>Estado</label>
-                    <span class="estado-badge estado-<?= $ambienteInfo['estado'] ?>">
-                        <?= htmlspecialchars($ambienteInfo['estado']) ?>
-                    </span>
-                </div>
             </div>
-            <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id_ambiente'] ?>" class="btn-permiso">
-                ✓ Solicitar Permiso
+            
+            <?php if($ambienteInfo['descripcion_general']): ?>
+            <div class="descripcion-ambiente">
+                <strong>Descripción:</strong>
+                <p><?= htmlspecialchars($ambienteInfo['descripcion_general']) ?></p>
+            </div>
+            <?php endif; ?>
+
+            <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
+                <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
             </a>
         </div>
-    <?php } elseif ($ambienteBuscado && !$ambienteInfo) { ?>
-        <div class="ambiente-result">
-            <div class="no-results">
-                ❌ No se encontró el ambiente "<?= htmlspecialchars($ambienteBuscado) ?>"
-            </div>
-        </div>
-    <?php } ?>
 
-    <!-- ========================= HISTORIAL DE AUTORIZACIONES ========================= -->
-    <div class="table-container">
-        <div class="table-header">
-            <h3>Historial de Autorizaciones</h3>
-        </div>
-        
-        <?php if (mysqli_num_rows($resultado) > 0) { ?>
+        <!-- ========================= HISTORIAL DEL AMBIENTE ========================= -->
+        <?php if($historialAmbiente && mysqli_num_rows($historialAmbiente) > 0): ?>
+        <div class="table-container">
+            <div class="table-header">
+                <h3>
+                    <i class="fa-solid fa-clock-rotate-left"></i> 
+                    Historial de "<?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?>"
+                </h3>
+            </div>
+            
             <table>
                 <thead>
                     <tr>
-                        <th>Ambiente</th>
                         <th>Instructor</th>
-                        <th>Fecha</th>
-                        <th>Hora Inicio</th>
-                        <th>Hora Fin</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Horario</th>
+                        <th>Estado</th>
                         <th>Autorizado Por</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while($row = mysqli_fetch_assoc($resultado)){ ?>
+                    <?php while($row = mysqli_fetch_assoc($historialAmbiente)): ?>
                     <tr>
-                        <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
-                        <td><?= htmlspecialchars($row['nombre_completo']) ?></td>
-                        <td><?= date('d/m/Y', strtotime($row['fecha'])) ?></td>
-                        <td><?= date('h:i A', strtotime($row['hora_inicio'])) ?></td>
-                        <td><?= date('h:i A', strtotime($row['hora_fin'])) ?></td>
+                        <td>
+                            <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
+                            <?= htmlspecialchars($row['nombre_instructor']) ?>
+                        </td>
+                        <td><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
+                        <td><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
+                        <td>
+                            <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
+                            <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                        </td>
+                        <td>
+                            <span class="estado-badge estado-<?= strtolower($row['estado']) ?>">
+                                <?= htmlspecialchars($row['estado']) ?>
+                            </span>
+                        </td>
                         <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
                     </tr>
-                    <?php } ?>
+                    <?php endwhile; ?>
                 </tbody>
             </table>
-        <?php } else { ?>
+        </div>
+        <?php else: ?>
+        <div class="table-container">
             <div class="no-results">
-                 No hay autorizaciones registradas
+                <i class="fa-solid fa-inbox"></i>
+                <p>Este ambiente no tiene historial de autorizaciones</p>
             </div>
-        <?php } ?>
-    </div>
+        </div>
+        <?php endif; ?>
+
+    <?php elseif ($ambienteBuscado && !$ambienteInfo): ?>
+        <div class="ambiente-result">
+            <div class="no-results">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <p>No se encontró el ambiente "<?= htmlspecialchars($ambienteBuscado) ?>"</p>
+                <small>Intenta con otro nombre o revisa la escritura</small>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- ========================= BOTÓN VOLVER ========================= -->
     <a href="index.php" class="btn-volver">
-        ← Volver al Panel
+        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
     </a>
 
 </div>

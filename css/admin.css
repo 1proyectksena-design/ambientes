@@ -93,12 +93,12 @@ body {
     margin: 5px 0 0 0;
 }
 
-/* ================= BADGE DE USUARIO ================= */
-.header-user {
+/* ================= BADGE DE USUARIO CON LOGOUT ================= */
+.user-badge {
     background: rgba(255,255,255,0.2);
     padding: 10px 20px;
     border-radius: 25px;
-    color: white;  /* ← DEBE SER WHITE */
+    color: white;
     font-weight: 600;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.3);
@@ -107,18 +107,37 @@ body {
     white-space: nowrap;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .user-icon {
     font-size: 1.1rem;
-    color: white;  /* ← DEBE SER WHITE */
+    color: white;
 }
 
-/* ================= ESTADÍSTICAS ================= */
+.btn-logout-header {
+    background: rgba(220, 38, 38, 0.8);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-logout-header:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+/* ================= ESTADÍSTICAS CLICKEABLES ================= */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     gap: 20px;
     padding: 30px 20px;
     animation: fadeInUp 0.8s ease-out 0.2s both;
@@ -140,6 +159,18 @@ body {
     to { opacity: 1; }
 }
 
+/* Tarjeta estadística CON ENLACE */
+.stat-card.stat-link {
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+}
+
+.stat-card.stat-link:hover {
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
+
 .stat-card {
     background: #ffffff;
     padding: 25px 20px;
@@ -150,7 +181,7 @@ body {
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 1px solid rgba(0,0,0,0.05);
-    min-height: 120px;
+    min-height: 150px;
 }
 
 .stat-card::before {
@@ -170,9 +201,11 @@ body {
     transform: scaleX(1);
 }
 
-.stat-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: var(--shadow-lg);
+/* ÍCONO DE LA ESTADÍSTICA */
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    opacity: 0.8;
 }
 
 .stat-label {
@@ -182,32 +215,57 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    opacity: 0;
-    animation: fadeIn 0.6s ease-out 0.4s forwards;
 }
 
 .stat-value {
-    font-size: clamp(32px, 8vw, 42px);
+    font-size: clamp(36px, 8vw, 48px);
     font-weight: 800;
-    margin: 0;
+    margin: 10px 0;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    position: relative;
-    opacity: 0;
-    animation: slideUp 0.6s ease-out 0.5s forwards;
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+/* Detalles adicionales debajo del número */
+.stat-details {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    font-size: 11px;
+}
+
+.stat-details small {
+    color: #888;
+    font-weight: 500;
+}
+
+/* Badges dentro de las estadísticas */
+.badge-habilitado,
+.badge-deshabilitado,
+.badge-mantenimiento {
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-habilitado {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.badge-deshabilitado {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.badge-mantenimiento {
+    background: #fff3e0;
+    color: #f57c00;
 }
 
 /* Variaciones de color */
@@ -325,10 +383,10 @@ body {
     transform: scale(1.08) translateY(-3px);
 }
 
-/* Ícono especial para cerrar sesión */
-.menu-card.logout .menu-card-icon {
-    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35);
+/* Ícono especial para CREAR */
+.menu-card.crear .menu-card-icon {
+    background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+    box-shadow: 0 6px 20px rgba(67, 160, 71, 0.35);
 }
 
 /* TEXTO */
@@ -344,6 +402,10 @@ body {
     color: var(--primary);
 }
 
+.menu-card.crear:hover .menu-card-title {
+    color: var(--success);
+}
+
 .menu-card-description {
     font-size: clamp(0.9rem, 2.5vw, 0.95rem);
     color: #6b7280;
@@ -355,19 +417,15 @@ body {
     color: #4b5563;
 }
 
-/* ESTILO ESPECIAL PARA CERRAR SESIÓN */
-.menu-card.logout {
-    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-    border-color: #fca5a5;
+/* ESTILO ESPECIAL PARA CREAR */
+.menu-card.crear {
+    background: linear-gradient(135deg, #f1f8f4 0%, #e8f5e9 100%);
+    border-color: #a5d6a7;
 }
 
-.menu-card.logout:hover {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    border-color: #ef4444;
-}
-
-.menu-card.logout:hover .menu-card-title {
-    color: #dc2626;
+.menu-card.crear:hover {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-color: #66bb6a;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -404,7 +462,7 @@ body {
     
     .stats-grid {
         padding: 20px 15px;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
         gap: 15px;
     }
     
@@ -450,15 +508,30 @@ body {
         width: 42px;
         height: 42px;
     }
+
+    .user-badge {
+        padding: 8px 14px;
+        gap: 8px;
+    }
+
+    .btn-logout-header {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
     
     .stats-grid {
         padding: 15px 12px;
-        grid-template-columns: 1fr;
         gap: 12px;
     }
     
     .stat-card {
         padding: 18px 15px;
+        min-height: 130px;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
     }
     
     .actions-container {
@@ -512,9 +585,5 @@ body {
     .actions-container {
         padding: 18px 12px;
         margin: 0 8px 12px 8px;
-    }
-    
-    .stat-value {
-        font-size: 24px;
     }
 }

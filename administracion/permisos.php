@@ -13,10 +13,10 @@ include("../includes/conexion.php");
 $id_ambiente_seleccionado = $_GET['id_ambiente'] ?? null;
 
 /* =========================
-   CONSULTAS BASE
+   CONSULTAS BASE (ADAPTADAS A NUEVA BD)
    ========================= */
 $ambientes = mysqli_query($conexion, "SELECT * FROM ambientes ORDER BY nombre_ambiente");
-$instructores = mysqli_query($conexion, "SELECT * FROM instructores ORDER BY nombre_completo");
+$instructores = mysqli_query($conexion, "SELECT * FROM instructores ORDER BY nombre");
 
 /* =========================
    AUTORIZAR
@@ -24,10 +24,21 @@ $instructores = mysqli_query($conexion, "SELECT * FROM instructores ORDER BY nom
 if(isset($_POST['autorizar'])){
     $ambiente = mysqli_real_escape_string($conexion, $_POST['ambiente']);
     $instructor = mysqli_real_escape_string($conexion, $_POST['instructor']);
-    $fecha = mysqli_real_escape_string($conexion, $_POST['fecha']);
+    $fecha_inicio = mysqli_real_escape_string($conexion, $_POST['fecha_inicio']);
+    $fecha_fin = mysqli_real_escape_string($conexion, $_POST['fecha_fin']);
     $hora_inicio = mysqli_real_escape_string($conexion, $_POST['hora_inicio']);
     $hora_fin = mysqli_real_escape_string($conexion, $_POST['hora_fin']);
-    $obs = mysqli_real_escape_string($conexion, $_POST['observacion']);
+    $obs = mysqli_real_escape_string($conexion, $_POST['observaciones']);
+    $novedades = mysqli_real_escape_string($conexion, $_POST['novedades']);
+
+    /* VALIDAR FECHAS */
+    if($fecha_inicio > $fecha_fin){
+        echo "<script>
+                alert('⚠️ La fecha fin debe ser igual o mayor que la fecha inicio');
+                window.history.back();
+              </script>";
+        exit;
+    }
 
     /* VALIDAR QUE HORA FIN SEA MAYOR */
     if($hora_inicio >= $hora_fin){
@@ -38,40 +49,46 @@ if(isset($_POST['autorizar'])){
         exit;
     }
 
-    /* VALIDAR CHOQUE DE HORARIO */
+    /* VALIDAR CHOQUE DE HORARIO (ahora con rango de fechas) */
     $sqlChoque = "SELECT * FROM autorizaciones_ambientes
                   WHERE id_ambiente = '$ambiente'
-                  AND fecha = '$fecha'
+                  AND estado = 'Aprobado'
                   AND (
-                        hora_inicio < '$hora_fin'
-                        AND hora_fin > '$hora_inicio'
+                        (fecha_inicio <= '$fecha_fin' AND fecha_fin >= '$fecha_inicio')
+                        AND (hora_inicio < '$hora_fin' AND hora_final > '$hora_inicio')
                       )";
     
     $resChoque = mysqli_query($conexion, $sqlChoque);
 
     if (mysqli_num_rows($resChoque) > 0) {
         echo "<script>
-                alert('⚠️ El ambiente ya está ocupado en ese horario');
+                alert('⚠️ El ambiente ya tiene una autorización aprobada en ese período y horario');
                 window.history.back();
               </script>";
         exit;
     }
 
-    /* INSERTAR AUTORIZACIÓN */
-    mysqli_query($conexion, "INSERT INTO autorizaciones_ambientes
-        (id_ambiente, id_instructor, rol_autorizado, fecha, hora_inicio, hora_fin, observacion)
+    /* INSERTAR AUTORIZACIÓN (con nuevos campos) */
+    $sqlInsert = "INSERT INTO autorizaciones_ambientes
+        (id_ambiente, id_instructor, rol_autorizado, fecha_inicio, fecha_fin, 
+         hora_inicio, hora_final, estado, observaciones, novedades)
         VALUES
-        ('$ambiente','$instructor','administracion','$fecha','$hora_inicio','$hora_fin','$obs')");
-
-    mysqli_query($conexion,
-        "UPDATE ambientes SET estado='ocupado' WHERE id_ambiente='$ambiente'");
-
-    /* REDIRECCIONAR A INDEX.PHP */
-    echo "<script>
-            alert('✅ Ambiente autorizado correctamente');
-            window.location.href='index.php';
-          </script>";
-    exit;
+        ('$ambiente', '$instructor', 'administracion', '$fecha_inicio', '$fecha_fin',
+         '$hora_inicio', '$hora_fin', 'Aprobado', '$obs', '$novedades')";
+    
+    if(mysqli_query($conexion, $sqlInsert)){
+        echo "<script>
+                alert('✅ Ambiente autorizado correctamente');
+                window.location.href='index.php';
+              </script>";
+        exit;
+    } else {
+        echo "<script>
+                alert('❌ Error al crear la autorización: ".mysqli_error($conexion)."');
+                window.history.back();
+              </script>";
+        exit;
+    }
 }
 ?>
 
@@ -82,6 +99,7 @@ if(isset($_POST['autorizar'])){
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autorizar Ambiente - Administración</title>
     <link rel="stylesheet" href="../css/permisos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
@@ -95,7 +113,7 @@ if(isset($_POST['autorizar'])){
         </div>
     </div>
     <div class="header-user">
-         Administración
+        <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
 
@@ -103,7 +121,7 @@ if(isset($_POST['autorizar'])){
 
     <div class="form-card">
         <div class="form-header">
-            <h2> Nueva Autorización</h2>
+            <h2><i class="fa-solid fa-pen-to-square"></i> Nueva Autorización</h2>
             <p>Complete el formulario para autorizar el uso de un ambiente</p>
         </div>
 
@@ -118,22 +136,23 @@ if(isset($_POST['autorizar'])){
 
             <!-- AMBIENTE -->
             <div class="form-group">
-                <label>Ambiente</label>
+                <label><i class="fa-solid fa-building"></i> Ambiente *</label>
 
                 <?php if($id_ambiente_seleccionado){ ?>
                     <?php
                     $ambiente_unico = mysqli_fetch_assoc(
-                        mysqli_query($conexion, "SELECT * FROM ambientes WHERE id_ambiente='$id_ambiente_seleccionado'")
+                        mysqli_query($conexion, "SELECT * FROM ambientes WHERE id='$id_ambiente_seleccionado'")
                     );
                     ?>
-                    <input type="hidden" name="ambiente" value="<?= $ambiente_unico['id_ambiente'] ?>">
+                    <input type="hidden" name="ambiente" value="<?= $ambiente_unico['id'] ?>">
                     <input type="text" class="ambiente-readonly" value="<?= htmlspecialchars($ambiente_unico['nombre_ambiente']) ?>" readonly>
                 <?php } else { ?>
                     <select name="ambiente" required>
                         <option value="">-- Seleccione un ambiente --</option>
                         <?php while($a = mysqli_fetch_assoc($ambientes)){ ?>
-                            <option value="<?= $a['id_ambiente'] ?>">
-                                <?= htmlspecialchars($a['nombre_ambiente']) ?> (<?= htmlspecialchars($a['estado']) ?>)
+                            <option value="<?= $a['id'] ?>">
+                                <?= htmlspecialchars($a['nombre_ambiente']) ?> 
+                                (<?= htmlspecialchars($a['estado']) ?>)
                             </option>
                         <?php } ?>
                     </select>
@@ -142,52 +161,66 @@ if(isset($_POST['autorizar'])){
 
             <!-- INSTRUCTOR -->
             <div class="form-group">
-                <label>Instructor</label>
+                <label><i class="fa-solid fa-user"></i> Instructor *</label>
                 <select name="instructor" required>
                     <option value="">-- Seleccione un instructor --</option>
                     <?php while($i = mysqli_fetch_assoc($instructores)){ ?>
-                        <option value="<?= $i['id_instructor'] ?>">
-                            <?= htmlspecialchars($i['nombre_completo']) ?>
+                        <option value="<?= $i['id'] ?>">
+                            <?= htmlspecialchars($i['nombre']) ?>
+                            (<?= htmlspecialchars($i['identificacion']) ?>)
                         </option>
                     <?php } ?>
                 </select>
             </div>
 
-            <!-- FECHA -->
-            <div class="form-group">
-                <label>Fecha</label>
-                <input type="date" name="fecha" min="<?= date('Y-m-d') ?>" required>
+            <!-- RANGO DE FECHAS -->
+            <div class="time-grid">
+                <div class="form-group">
+                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Inicio *</label>
+                    <input type="date" name="fecha_inicio" min="<?= date('Y-m-d') ?>" required>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Fin *</label>
+                    <input type="date" name="fecha_fin" min="<?= date('Y-m-d') ?>" required>
+                </div>
             </div>
 
             <!-- HORARIOS -->
             <div class="time-grid">
                 <div class="form-group">
-                    <label>Hora Inicio</label>
+                    <label><i class="fa-regular fa-clock"></i> Hora Inicio *</label>
                     <input type="time" name="hora_inicio" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Hora Fin</label>
+                    <label><i class="fa-regular fa-clock"></i> Hora Fin *</label>
                     <input type="time" name="hora_fin" required>
                 </div>
             </div>
 
-            <!-- OBSERVACIÓN -->
+            <!-- OBSERVACIONES -->
             <div class="form-group">
-                <label>Observación</label>
-                <textarea name="observacion" placeholder="Ingrese cualquier observación o comentario adicional..."></textarea>
+                <label><i class="fa-solid fa-comment"></i> Observaciones</label>
+                <textarea name="observaciones" rows="3" placeholder="Observaciones generales sobre la autorización..."></textarea>
+            </div>
+
+            <!-- NOVEDADES -->
+            <div class="form-group">
+                <label><i class="fa-solid fa-circle-exclamation"></i> Novedades</label>
+                <textarea name="novedades" rows="3" placeholder="Alguna novedad especial o restricción..."></textarea>
             </div>
 
             <!-- BOTÓN SUBMIT -->
             <button type="submit" name="autorizar" class="btn-submit">
-                ✓ Autorizar Ambiente
+                <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
             </button>
         </form>
     </div>
 
     <!-- BOTÓN VOLVER -->
     <a href="index.php" class="btn-volver">
-        ← Volver al Panel
+        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
     </a>
 
 </div>
