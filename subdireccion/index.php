@@ -1,52 +1,66 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 include("../includes/conexion.php");
 
 /* =========================
-   PROTEGER VISTA SUBDIRECCIÓN
-   ========================= */
+   VALIDAR SESIÓN
+========================= */
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
     header("Location: ../login.php");
     exit;
 }
 
+$rol = $_SESSION['rol'];
+
 /* =========================
-   ESTADÍSTICAS DASHBOARD
-   ========================= */
+   ESTADÍSTICAS DINÁMICAS
+========================= */
 $hoy = date('Y-m-d');
 $hora_actual = date('H:i:s');
 $mes = date('m');
 $anio = date('Y');
 
-/* Total ambientes ACTIVOS (excluyendo los en mantenimiento) */
-$resTotal = mysqli_query($conexion, "
-    SELECT COUNT(*) 
-    FROM ambientes 
-    WHERE estado IN ('disponible', 'ocupado')
+/* TOTAL AMBIENTES POR ESTADO */
+$resHabilitados = mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Habilitado'");
+$ambientes_habilitados = mysqli_fetch_row($resHabilitados)[0];
+
+$resDeshabilitados = mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Deshabilitado'");
+$ambientes_deshabilitados = mysqli_fetch_row($resDeshabilitados)[0];
+
+$resMantenimiento = mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Mantenimiento'");
+$ambientes_mantenimiento = mysqli_fetch_row($resMantenimiento)[0];
+
+$total_ambientes = $ambientes_habilitados + $ambientes_deshabilitados + $ambientes_mantenimiento;
+
+/* AMBIENTES DISPONIBLES (Habilitados y sin autorizaciones activas AHORA) */
+$resDisponibles = mysqli_query($conexion, "
+    SELECT COUNT(DISTINCT a.id)
+    FROM ambientes a
+    WHERE a.estado = 'Habilitado'
+    AND a.id NOT IN (
+        SELECT id_ambiente 
+        FROM autorizaciones_ambientes
+        WHERE fecha_inicio <= '$hoy'
+        AND fecha_fin >= '$hoy'
+        AND hora_inicio <= '$hora_actual'
+        AND hora_final >= '$hora_actual'
+        AND estado = 'Aprobado'
+    )
 ");
-$total_ambientes = mysqli_fetch_row($resTotal)[0];
+$disponibles_ahora = mysqli_fetch_row($resDisponibles)[0];
 
-/* Ambientes ocupados AHORA */
-$resOcupados = mysqli_query($conexion, "
-    SELECT COUNT(DISTINCT id_ambiente)
-    FROM autorizaciones_ambientes
-    WHERE fecha='$hoy'
-    AND hora_inicio <= '$hora_actual'
-    AND hora_fin >= '$hora_actual'
-");
-$ocupados_ahora = mysqli_fetch_row($resOcupados)[0];
-
-/* Disponibles ahora */
-$disponibles_ahora = $total_ambientes - $ocupados_ahora;
-
-/* Autorizaciones este mes */
+/* AUTORIZACIONES DEL MES */
 $resMes = mysqli_query($conexion, "
     SELECT COUNT(*)
     FROM autorizaciones_ambientes
-    WHERE MONTH(fecha)='$mes'
-    AND YEAR(fecha)='$anio'
+    WHERE MONTH(fecha_inicio) = '$mes'
+    AND YEAR(fecha_inicio) = '$anio'
 ");
 $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
+
 ?>
 
 <!DOCTYPE html>
@@ -54,85 +68,113 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Subdirección</title>
+    <title>Panel <?= ucfirst($rol) ?></title>
     <link rel="stylesheet" href="../css/subdire.css">
     <!-- Font Awesome para íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
+
 <body>
 
-<!-- ========================= HEADER ========================= -->
+<!-- HEADER -->
 <div class="header">
     <div class="header-left">
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
-
         <div class="header-title">
             <h1>Panel de Subdirección</h1>
             <span>Gestión y control de ambientes</span>
         </div>
     </div>
-
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Subdirección
-    </div>
-</div>
-
-<!-- ========================= DASHBOARD STATS ========================= -->
-<div class="dashboard">
-
-    <div class="card">
-        <h3>Total Ambientes</h3>
-        <p><?= $total_ambientes ?></p>
-    </div>
-
-    <div class="card success">
-        <h3>Disponibles Ahora</h3>
-        <p><?= $disponibles_ahora ?></p>
-    </div>
-
-   
-
-    <div class="card info">
-        <h3>Autorizaciones del Mes</h3>
-        <p><?= $autorizaciones_mes ?></p>
-    </div>
-
-</div>
-
-<!-- ========================= MENÚ HORIZONTAL ========================= -->
-<div class="menu-horizontal">
-
-    <a href="consultar.php" class="menu-btn">
-        <div class="menu-btn-icon">
-            <i class="fa-solid fa-clipboard-list"></i>
-        </div>
-        <div class="text">
-            <h3>Consultar</h3>
-            <p>Historial y disponibilidad</p>
-        </div>
-    </a>
-
-    <a href="permisos.php" class="menu-btn">
-        <div class="menu-btn-icon">
-            <i class="fa-solid fa-circle-check"></i>
-        </div>
-        <div class="text">
-            <h3>Autorizar</h3>
-            <p>Autorizar uso de ambientes</p>
-        </div>
-    </a>
-
-  
-
-    <a href="../logout.php" class="menu-btn danger">
-        <div class="menu-btn-icon">
+        <i class="fa-solid fa-user user-icon"></i> 
+        Subdirección
+        <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
             <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+    </div>
+</div>
+
+<!-- CONTENEDOR -->
+<div class="dashboard-container">
+
+    <!-- TARJETAS ESTADÍSTICAS (CLICKEABLES) -->
+    <div class="stats-grid">
+
+        <!-- TOTAL AMBIENTES -->
+        <a href="total_ambientes.php" class="stat-card stat-link">
+            <div class="stat-icon">🏢</div>
+            <div class="stat-label">TOTAL AMBIENTES</div>
+            <div class="stat-value"><?= $total_ambientes ?></div>
+            <div class="stat-details">
+                <span class="badge-habilitado"><?= $ambientes_habilitados ?> Habilitados</span>
+                <span class="badge-deshabilitado"><?= $ambientes_deshabilitados ?> Deshabilitados</span>
+                <span class="badge-mantenimiento"><?= $ambientes_mantenimiento ?> Mantenimiento</span>
+            </div>
+        </a>
+
+        <!-- DISPONIBLES AHORA -->
+        <a href="disponibles.php" class="stat-card stat-link success">
+            <div class="stat-icon">✅</div>
+            <div class="stat-label">DISPONIBLES AHORA</div>
+            <div class="stat-value"><?= $disponibles_ahora ?></div>
+            <div class="stat-details">
+                <small>Ambientes libres en este momento</small>
+            </div>
+        </a>
+
+        <!-- AUTORIZACIONES DEL MES -->
+        <a href="autorizacion_mes.php" class="stat-card stat-link info">
+            <div class="stat-icon">📅</div>
+            <div class="stat-label">AUTORIZACIONES DEL MES</div>
+            <div class="stat-value"><?= $autorizaciones_mes ?></div>
+            <div class="stat-details">
+                <small><?= date('F Y') ?></small>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- ACCIONES PRINCIPALES -->
+    <div class="actions-container">
+        <h2 class="actions-title">Acciones disponibles</h2>
+
+        <div class="menu-grid">
+            
+            <!-- CONSULTAR AMBIENTE -->
+            <a href="consultar.php" class="menu-card">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div class="menu-card-title">Consultar Ambiente</div>
+                <div class="menu-card-description">
+                    Buscar ambiente, ver historial y gestionar permisos
+                </div>
+            </a>
+
+            <!-- HISTORIAL DE AUTORIZACIONES -->
+            <a href="historial.php" class="menu-card">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
+                <div class="menu-card-title">Historial Autorizaciones</div>
+                <div class="menu-card-description">
+                    Ver todas las autorizaciones del sistema
+                </div>
+            </a>
+
+            <!-- REGISTRO -->
+            <a href="crear.php" class="menu-card registro">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-book"></i>
+                </div>
+                <div class="menu-card-title">Crear Registro</div>
+                <div class="menu-card-description">
+                    Registrar nuevo ambiente o información de instructor
+                </div>
+            </a>
+
         </div>
-        <div class="text">
-            <h3>Cerrar sesión</h3>
-            <p>Salir de forma segura</p>
-        </div>
-    </a>
+    </div>
 
 </div>
 
