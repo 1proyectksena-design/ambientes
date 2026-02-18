@@ -113,8 +113,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
     <?php if ($error): ?>
-        <div class="error"><?php echo $error; ?></div>
-    <?php endif; ?>
+    <div class="error-message">
+        <span class="error-icon"></span>
+        <span class="error1"><?php echo $error; ?></span>
+    </div>
+<?php endif; ?>
 
     <form method="POST">
 
