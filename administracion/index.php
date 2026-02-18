@@ -122,8 +122,8 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
         </a>
 
         <!-- AUTORIZACIONES DEL MES (clickeable) -->
-        <a href="autorizaciones_mes.php" class="stat-card stat-link info">
-            <i class="fi fi-sr-calendar-check"></i>
+        <a href="autorizacion_mes.php" class="stat-card stat-link info">
+           <i class="fi fi-sr-calendar-check"></i>
             <div class="stat-label">AUTORIZACIONES DEL MES</div>
             <div class="stat-value"><?= $autorizaciones_mes ?></div>
             <div class="stat-details">
