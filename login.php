@@ -73,11 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
              header("Location: subdireccion/index.php");
 
             } 
-            else {
-                // Si es usuario normal → panel usuario
-                header("Location: usuario/index.php");
-            }
-            exit;
+           
 
         } else {
             $error = "Contraseña incorrecta";

@@ -13,10 +13,19 @@ include("../includes/conexion.php");
 $id_ambiente_seleccionado = $_GET['id_ambiente'] ?? null;
 
 /* =========================
-   CONSULTAS BASE (ADAPTADAS A NUEVA BD)
+   CONSULTAS BASE CON FILTROS
    ========================= */
-$ambientes = mysqli_query($conexion, "SELECT * FROM ambientes ORDER BY nombre_ambiente");
-$instructores = mysqli_query($conexion, "SELECT * FROM instructores ORDER BY nombre");
+// Solo ambientes HABILITADOS
+$ambientes = mysqli_query($conexion, "SELECT * FROM ambientes WHERE estado = 'Habilitado' ORDER BY nombre_ambiente");
+
+// Solo instructores ACTIVOS (sin fecha_fin o con fecha_fin >= hoy)
+$hoy = date('Y-m-d');
+$instructores = mysqli_query($conexion, "
+    SELECT * FROM instructores 
+    WHERE (fecha_fin IS NULL OR fecha_fin >= '$hoy')
+    AND fecha_inicio <= '$hoy'
+    ORDER BY nombre
+");
 
 /* =========================
    AUTORIZAR
@@ -30,6 +39,34 @@ if(isset($_POST['autorizar'])){
     $hora_fin = mysqli_real_escape_string($conexion, $_POST['hora_fin']);
     $obs = mysqli_real_escape_string($conexion, $_POST['observaciones']);
     $novedades = mysqli_real_escape_string($conexion, $_POST['novedades']);
+
+    /* VALIDAR QUE EL AMBIENTE ESTÉ HABILITADO */
+    $checkAmbiente = mysqli_query($conexion, "SELECT estado FROM ambientes WHERE id='$ambiente'");
+    $ambienteData = mysqli_fetch_assoc($checkAmbiente);
+    
+    if(!$ambienteData || $ambienteData['estado'] != 'Habilitado'){
+        echo "<script>
+                alert('⚠️ No se puede autorizar: El ambiente no está habilitado');
+                window.history.back();
+              </script>";
+        exit;
+    }
+
+    /* VALIDAR QUE EL INSTRUCTOR ESTÉ ACTIVO */
+    $checkInstructor = mysqli_query($conexion, "
+        SELECT * FROM instructores 
+        WHERE id='$instructor' 
+        AND (fecha_fin IS NULL OR fecha_fin >= '$fecha_inicio')
+        AND fecha_inicio <= '$fecha_fin'
+    ");
+    
+    if(mysqli_num_rows($checkInstructor) == 0){
+        echo "<script>
+                alert('⚠️ No se puede autorizar: El instructor no está activo en el período seleccionado');
+                window.history.back();
+              </script>";
+        exit;
+    }
 
     /* VALIDAR FECHAS */
     if($fecha_inicio > $fecha_fin){
@@ -49,7 +86,7 @@ if(isset($_POST['autorizar'])){
         exit;
     }
 
-    /* VALIDAR CHOQUE DE HORARIO (ahora con rango de fechas) */
+    /* VALIDAR CHOQUE DE HORARIO */
     $sqlChoque = "SELECT * FROM autorizaciones_ambientes
                   WHERE id_ambiente = '$ambiente'
                   AND estado = 'Aprobado'
@@ -68,7 +105,7 @@ if(isset($_POST['autorizar'])){
         exit;
     }
 
-    /* INSERTAR AUTORIZACIÓN (con nuevos campos) */
+    /* INSERTAR AUTORIZACIÓN */
     $sqlInsert = "INSERT INTO autorizaciones_ambientes
         (id_ambiente, id_instructor, rol_autorizado, fecha_inicio, fecha_fin, 
          hora_inicio, hora_final, estado, observaciones, novedades)
@@ -90,6 +127,14 @@ if(isset($_POST['autorizar'])){
         exit;
     }
 }
+
+/* Verificar si hay ambientes disponibles */
+$totalAmbientes = mysqli_num_rows($ambientes);
+$totalInstructores = mysqli_num_rows($instructores);
+
+// Reiniciar punteros
+mysqli_data_seek($ambientes, 0);
+mysqli_data_seek($instructores, 0);
 ?>
 
 <!DOCTYPE html>
@@ -119,6 +164,26 @@ if(isset($_POST['autorizar'])){
 
 <div class="permisos-container">
 
+    <?php if($totalAmbientes == 0): ?>
+        <div class="alert-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <strong>No hay ambientes disponibles</strong>
+            <p>Todos los ambientes están deshabilitados o en mantenimiento. No es posible crear autorizaciones en este momento.</p>
+            <a href="index.php" class="btn-volver" style="margin-top:15px;">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+            </a>
+        </div>
+    <?php elseif($totalInstructores == 0): ?>
+        <div class="alert-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <strong>No hay instructores activos</strong>
+            <p>No hay instructores disponibles para crear autorizaciones en este momento.</p>
+            <a href="index.php" class="btn-volver" style="margin-top:15px;">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+            </a>
+        </div>
+    <?php else: ?>
+
     <div class="form-card">
         <div class="form-header">
             <h2><i class="fa-solid fa-pen-to-square"></i> Nueva Autorización</h2>
@@ -136,23 +201,26 @@ if(isset($_POST['autorizar'])){
 
             <!-- AMBIENTE -->
             <div class="form-group">
-                <label><i class="fa-solid fa-building"></i> Ambiente *</label>
+                <label><i class="fa-solid fa-building"></i> Ambiente * <small>(Solo habilitados)</small></label>
 
                 <?php if($id_ambiente_seleccionado){ ?>
                     <?php
                     $ambiente_unico = mysqli_fetch_assoc(
-                        mysqli_query($conexion, "SELECT * FROM ambientes WHERE id='$id_ambiente_seleccionado'")
+                        mysqli_query($conexion, "SELECT * FROM ambientes WHERE id='$id_ambiente_seleccionado' AND estado='Habilitado'")
                     );
+                    if($ambiente_unico):
                     ?>
                     <input type="hidden" name="ambiente" value="<?= $ambiente_unico['id'] ?>">
                     <input type="text" class="ambiente-readonly" value="<?= htmlspecialchars($ambiente_unico['nombre_ambiente']) ?>" readonly>
+                    <?php else: ?>
+                    <div class="alert-warning">Este ambiente no está habilitado</div>
+                    <?php endif; ?>
                 <?php } else { ?>
                     <select name="ambiente" required>
                         <option value="">-- Seleccione un ambiente --</option>
                         <?php while($a = mysqli_fetch_assoc($ambientes)){ ?>
                             <option value="<?= $a['id'] ?>">
-                                <?= htmlspecialchars($a['nombre_ambiente']) ?> 
-                                (<?= htmlspecialchars($a['estado']) ?>)
+                                <?= htmlspecialchars($a['nombre_ambiente']) ?>
                             </option>
                         <?php } ?>
                     </select>
@@ -161,7 +229,7 @@ if(isset($_POST['autorizar'])){
 
             <!-- INSTRUCTOR -->
             <div class="form-group">
-                <label><i class="fa-solid fa-user"></i> Instructor *</label>
+                <label><i class="fa-solid fa-user"></i> Instructor * <small>(Solo activos)</small></label>
                 <select name="instructor" required>
                     <option value="">-- Seleccione un instructor --</option>
                     <?php while($i = mysqli_fetch_assoc($instructores)){ ?>
@@ -218,12 +286,15 @@ if(isset($_POST['autorizar'])){
         </form>
     </div>
 
+    <?php endif; ?>
+
     <!-- BOTÓN VOLVER -->
     <a href="index.php" class="btn-volver">
         <i class="fa-solid fa-arrow-left"></i> Volver al Panel
     </a>
 
 </div>
+
 
 </body>
 </html>

@@ -119,9 +119,26 @@ if ($ambienteBuscado) {
             </div>
             <?php endif; ?>
 
-            <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
-                <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
-            </a>
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="action-buttons">
+                <!-- BOTÓN DE AUTORIZAR: Solo si está Habilitado -->
+                <?php if($ambienteInfo['estado'] == 'Habilitado'): ?>
+                    <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
+                        <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
+                    </a>
+                <?php else: ?>
+                    <div class="alert-disabled">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <strong>No se puede autorizar</strong>
+                        <p>Este ambiente está <strong><?= htmlspecialchars($ambienteInfo['estado']) ?></strong>. Solo se pueden autorizar ambientes Habilitados.</p>
+                    </div>
+                <?php endif; ?>
+
+                <!-- BOTÓN DE EDITAR ESTADO (siempre visible) -->
+                <a href="editar_ambiente.php?id=<?= $ambienteInfo['id'] ?>" class="btn-editar">
+                    <i class="fa-solid fa-pen-to-square"></i> Editar Estado
+                </a>
+            </div>
         </div>
 
         <!-- ========================= HISTORIAL DEL AMBIENTE ========================= -->
@@ -194,6 +211,8 @@ if ($ambienteBuscado) {
     </a>
 
 </div>
+
+
 
 </body>
 </html>
