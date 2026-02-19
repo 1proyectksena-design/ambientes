@@ -67,17 +67,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                REDIRECCIÓN SEGÚN EL ROL
                ========================= */
             if ($fila["rol"] === "administracion") {
-                // Si es admin → panel de administración
-                header("Location: administracion/index.php");
-            } elseif ($fila["rol"] === "subdireccion") {
-             header("Location: subdireccion/index.php");
+             header("Location: administracion/index.php");
 
-            } 
-            else {
-                // Si es usuario normal → panel usuario
-                header("Location: usuario/index.php");
+            } elseif ($fila["rol"] === "subdireccion") {
+            header("Location: subdireccion/index.php");
+
+            } elseif ($fila["rol"] === "instructor") {
+            header("Location: instructor/index.php");
+
+            } else {
+            header("Location: usuario/index.php");
             }
-            exit;
+
+          
+            
 
         } else {
             $error = "Contraseña incorrecta";
@@ -113,9 +116,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
     <?php if ($error): ?>
-    <div class="error1">
-        <span class="error-icon">⚠️</span>
-        <?php echo $error; ?>
+    <div class="error-message">
+        <div class="error-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        </div>
+        <div class="error-text">
+            <strong>Acceso denegado</strong>
+            <span><?php echo $error; ?></span>
+        </div>
     </div>
 <?php endif; ?>
 
