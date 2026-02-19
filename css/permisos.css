@@ -507,3 +507,36 @@ body {
         font-size: 13px;
     }
 }
+.alert-warning {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border: 2px solid #fb8c00;
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.alert-warning i {
+    font-size: 3rem;
+    color: #f57c00;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.alert-warning strong {
+    display: block;
+    font-size: 1.3rem;
+    color: #e65100;
+    margin-bottom: 10px;
+}
+
+.alert-warning p {
+    color: #666;
+    margin: 0;
+}
+
+label small {
+    color: #999;
+    font-weight: 400;
+    font-size: 0.85em;
+}

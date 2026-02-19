@@ -101,7 +101,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 
         <!-- TOTAL AMBIENTES (clickeable) -->
         <a href="total_ambientes.php" class="stat-card stat-link">
-            <div class="stat-icon">🏢</div>
             <div class="stat-label">TOTAL AMBIENTES</div>
             <div class="stat-value"><?= $total_ambientes ?></div>
             <div class="stat-details">
@@ -113,7 +112,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 
         <!-- DISPONIBLES AHORA (clickeable) -->
         <a href="disponibles.php" class="stat-card stat-link success">
-            <div class="stat-icon">✅</div>
             <div class="stat-label">DISPONIBLES AHORA</div>
             <div class="stat-value"><?= $disponibles_ahora ?></div>
             <div class="stat-details">
@@ -123,7 +121,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 
         <!-- AUTORIZACIONES DEL MES (clickeable) -->
         <a href="autorizacion_mes.php" class="stat-card stat-link info">
-           <i class="fi fi-sr-calendar-check"></i>
             <div class="stat-label">AUTORIZACIONES DEL MES</div>
             <div class="stat-value"><?= $autorizaciones_mes ?></div>
             <div class="stat-details">
@@ -162,7 +159,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             </a>
 
             <!-- CREAR AMBIENTE E INSTRUCTOR -->
-            <a href="crear.php" class="menu-card crear">
+            <a href="registro.php" class="menu-card crear">
                 <div class="menu-card-icon">
                     <i class="fa-solid fa-circle-plus"></i>
                 </div>

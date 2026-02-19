@@ -86,8 +86,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> 
-        Subdirección
+        Cerrar Sesion
         <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
             <i class="fa-solid fa-right-from-bracket"></i>
         </a>
@@ -102,7 +101,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 
         <!-- TOTAL AMBIENTES -->
         <a href="total_ambientes.php" class="stat-card stat-link">
-            <div class="stat-icon">🏢</div>
             <div class="stat-label">TOTAL AMBIENTES</div>
             <div class="stat-value"><?= $total_ambientes ?></div>
             <div class="stat-details">
@@ -114,7 +112,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 
         <!-- DISPONIBLES AHORA -->
         <a href="disponibles.php" class="stat-card stat-link success">
-            <div class="stat-icon">✅</div>
             <div class="stat-label">DISPONIBLES AHORA</div>
             <div class="stat-value"><?= $disponibles_ahora ?></div>
             <div class="stat-details">
@@ -124,7 +121,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 
         <!-- AUTORIZACIONES DEL MES -->
         <a href="autorizacion_mes.php" class="stat-card stat-link info">
-            <div class="stat-icon">📅</div>
             <div class="stat-label">AUTORIZACIONES DEL MES</div>
             <div class="stat-value"><?= $autorizaciones_mes ?></div>
             <div class="stat-details">
@@ -163,13 +159,13 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             </a>
 
             <!-- REGISTRO -->
-            <a href="crear.php" class="menu-card registro">
+            <a href="registro.php" class="menu-card registro">
                 <div class="menu-card-icon">
                     <i class="fa-solid fa-book"></i>
                 </div>
-                <div class="menu-card-title">Crear Registro</div>
+                <div class="menu-card-title">Registros</div>
                 <div class="menu-card-description">
-                    Registrar nuevo ambiente o información de instructor
+                    Ver registros del sistema
                 </div>
             </a>
 
