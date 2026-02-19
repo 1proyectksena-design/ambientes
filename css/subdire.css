@@ -2,6 +2,7 @@
 :root {
     --primary: #1e88e5;
     --success: #43a047;
+    --warning: #fb8c00;
     --info: #00acc1;
     --danger: #e53935;
     --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
@@ -86,6 +87,7 @@ body {
     margin-top: 2px;
 }
 
+/* ================= BADGE DE USUARIO CON LOGOUT ================= */
 .header-user {
     background: rgba(255,255,255,0.2);
     padding: 10px 20px;
@@ -97,16 +99,48 @@ body {
     animation: fadeIn 0.8s ease-out 0.3s both;
     font-size: clamp(12px, 2.5vw, 14px);
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-/* ================= DASHBOARD ================= */
-.dashboard {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
-    gap: 20px;
-    padding: 30px 20px;
+.user-icon {
+    font-size: 1.1rem;
+    color: white;
+}
+
+.btn-logout-header {
+    background: rgba(220, 38, 38, 0.8);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-logout-header:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+/* ================= CONTENEDOR PRINCIPAL ================= */
+.dashboard-container {
     max-width: 1400px;
     margin: 0 auto;
+    padding: 30px 20px;
+}
+
+/* ================= ESTADÍSTICAS CLICKEABLES ================= */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
     animation: fadeInUp 0.8s ease-out 0.2s both;
 }
 
@@ -126,7 +160,18 @@ body {
     to { opacity: 1; }
 }
 
-.card {
+.stat-card.stat-link {
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+}
+
+.stat-card.stat-link:hover {
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
+
+.stat-card {
     background: #ffffff;
     padding: 25px 20px;
     border-radius: 16px;
@@ -136,10 +181,10 @@ body {
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 1px solid rgba(0,0,0,0.05);
-    min-height: 120px;
+    min-height: 150px;
 }
 
-.card::before {
+.stat-card::before {
     content: '';
     position: absolute;
     top: 0;
@@ -152,196 +197,247 @@ body {
     transition: transform 0.4s ease;
 }
 
-.card:hover::before {
+.stat-card:hover::before {
     transform: scaleX(1);
 }
 
-.card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: var(--shadow-lg);
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    opacity: 0.8;
 }
 
-.card h3 {
+.stat-label {
     font-size: clamp(12px, 2.5vw, 14px);
     color: #666;
     margin-bottom: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    opacity: 0;
-    animation: fadeIn 0.6s ease-out 0.4s forwards;
 }
 
-.card p {
-    font-size: clamp(32px, 8vw, 42px);
+.stat-value {
+    font-size: clamp(36px, 8vw, 48px);
     font-weight: 800;
-    margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #001d47 100%);
+    margin: 10px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    position: relative;
-    opacity: 0;
-    animation: slideUp 0.6s ease-out 0.5s forwards;
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+.stat-details {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    font-size: 11px;
 }
 
-/* Variaciones de color con degradados */
-.card.success p {
+.stat-details small {
+    color: #888;
+    font-weight: 500;
+}
+
+/* Badges dentro de las estadísticas */
+.badge-habilitado,
+.badge-deshabilitado,
+.badge-mantenimiento {
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-habilitado {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.badge-deshabilitado {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.badge-mantenimiento {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+/* Variaciones de color */
+.stat-card.success .stat-value {
     background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
+.stat-card.warning .stat-value {
+    background: linear-gradient(135deg, #fb8c00 0%, #ffa726 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
 
-
-.card.info p {
+.stat-card.info .stat-value {
     background: linear-gradient(135deg, #00acc1 0%, #26c6da 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-/* ================= MENÚ HORIZONTAL CON ÍCONOS ================= */
-.menu-horizontal {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
-    gap: 20px;
-    padding: 20px 20px 40px;
-    max-width: 1400px;
-    margin: 0 auto;
+/* ================= CONTENEDOR DE ACCIONES ================= */
+.actions-container {
+    background: white;
+    padding: 35px 30px;
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    animation: fadeInUp 0.8s ease-out 0.3s both;
 }
 
-.menu-btn {
+.actions-title {
+    color: #374151;
+    font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+    font-weight: 700;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+/* ================= MENÚ DE TARJETAS CON ÍCONOS GRANDES ================= */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    gap: 25px;
+}
+
+.menu-card {
     background: white;
-    padding: 25px;
-    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 35px 30px;
     text-decoration: none;
-    box-shadow: var(--shadow-sm);
-    border: 2px solid transparent;
+    color: #374151;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    animation: fadeInUp 0.6s ease-out backwards;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
+    animation: fadeInUp 0.6s ease-out backwards;
 }
 
-.menu-btn:nth-child(1) { animation-delay: 0.1s; }
-.menu-btn:nth-child(2) { animation-delay: 0.2s; }
-.menu-btn:nth-child(3) { animation-delay: 0.3s; }
-.menu-btn:nth-child(4) { animation-delay: 0.4s; }
+.menu-card:nth-child(1) { animation-delay: 0.1s; }
+.menu-card:nth-child(2) { animation-delay: 0.2s; }
+.menu-card:nth-child(3) { animation-delay: 0.3s; }
 
-.menu-btn::before {
+.menu-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
     transition: left 0.5s ease;
 }
 
-.menu-btn:hover::before {
+.menu-card:hover::before {
     left: 100%;
 }
 
-.menu-btn:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
+.menu-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
     border-color: var(--primary);
 }
 
-.menu-btn.danger:hover {
-    border-color: var(--danger);
-    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-}
-
-/* ÍCONOS DE LOS BOTONES */
-.menu-btn-icon {
-    width: 70px;
-    height: 70px;
+/* ÍCONOS GRANDES CON FONT AWESOME */
+.menu-card-icon {
+    width: 90px;
+    height: 90px;
     background: linear-gradient(135deg, #2c3e8f 0%, #1a2654 100%);
-    border-radius: 16px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: 2.8rem;
     color: white;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(44, 62, 143, 0.3);
+    margin-bottom: 25px;
+    box-shadow: 0 6px 20px rgba(44, 62, 143, 0.35);
     transition: transform 0.3s ease;
 }
 
-.menu-btn-icon i {
-    font-size: 2.2rem;
+.menu-card-icon i {
+    font-size: 3rem;
 }
 
-.menu-btn:hover .menu-btn-icon {
-    transform: scale(1.1) translateY(-3px);
+.menu-card:hover .menu-card-icon {
+    transform: scale(1.08) translateY(-3px);
 }
 
-.menu-btn.danger .menu-btn-icon {
-    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+/* Ícono especial para REGISTRO */
+.menu-card.registro .menu-card-icon {
+    background: linear-gradient(135deg, #00acc1 0%, #00838f 100%);
+    box-shadow: 0 6px 20px rgba(0, 172, 193, 0.35);
 }
 
-/* TEXTO DE LOS BOTONES */
-.menu-btn .text h3 {
-    margin: 0 0 8px 0;
-    font-size: clamp(16px, 3.5vw, 18px);
-    color: #333;
+/* TEXTO */
+.menu-card-title {
+    font-size: clamp(1.15rem, 3vw, 1.3rem);
     font-weight: 700;
+    margin-bottom: 12px;
+    color: #1f2937;
     transition: color 0.3s ease;
 }
 
-.menu-btn:hover .text h3 {
+.menu-card:hover .menu-card-title {
     color: var(--primary);
 }
 
-.menu-btn.danger:hover .text h3 {
-    color: var(--danger);
+.menu-card.registro:hover .menu-card-title {
+    color: var(--info);
 }
 
-.menu-btn .text p {
-    margin: 0;
-    font-size: clamp(12px, 2.5vw, 13px);
-    color: #777;
+.menu-card-description {
+    font-size: clamp(0.9rem, 2.5vw, 0.95rem);
+    color: #6b7280;
+    line-height: 1.6;
     transition: color 0.3s ease;
 }
 
-.menu-btn:hover .text p {
-    color: #555;
+.menu-card:hover .menu-card-description {
+    color: #4b5563;
 }
 
-/* ================= RESPONSIVE BREAKPOINTS ================= */
+/* ESTILO ESPECIAL PARA REGISTRO */
+.menu-card.registro {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    border-color: #80deea;
+}
+
+.menu-card.registro:hover {
+    background: linear-gradient(135deg, #b2ebf2 0%, #80deea 100%);
+    border-color: #00acc1;
+}
+
+/* ================= RESPONSIVE ================= */
 
 /* Tablets */
 @media (max-width: 1024px) {
-    .dashboard {
+    .dashboard-container {
         padding: 25px 20px;
     }
     
-    .menu-horizontal {
-        padding: 15px 20px 30px;
+    .actions-container {
+        padding: 30px 25px;
     }
 }
 
-/* Tablets pequeñas */
 @media (max-width: 768px) {
     .header {
         padding: 15px 20px;
@@ -356,34 +452,43 @@ body {
         height: 48px;
     }
     
-    .dashboard {
+    .header-user {
+        margin-left: auto;
+    }
+    
+    .dashboard-container {
         padding: 20px 15px;
-        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
         gap: 15px;
     }
     
-    .card {
+    .stat-card {
         padding: 20px 15px;
-        min-height: 100px;
     }
     
-    .menu-horizontal {
-        padding: 15px 15px 25px;
-        gap: 15px;
-        grid-template-columns: 1fr 1fr;
+    .actions-container {
+        padding: 25px 20px;
     }
     
-    .menu-btn {
-        padding: 20px;
+    .menu-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
     }
-    
-    .menu-btn-icon {
-        width: 60px;
-        height: 60px;
+
+    .menu-card {
+        padding: 30px 25px;
     }
-    
-    .menu-btn-icon i {
-        font-size: 1.8rem;
+
+    .menu-card-icon {
+        width: 80px;
+        height: 80px;
+    }
+
+    .menu-card-icon i {
+        font-size: 2.5rem;
     }
 }
 
@@ -391,7 +496,6 @@ body {
 @media (max-width: 480px) {
     .header {
         padding: 12px 15px;
-        gap: 10px;
     }
     
     .header-left {
@@ -402,49 +506,60 @@ body {
         width: 42px;
         height: 42px;
     }
-    
+
     .header-user {
         padding: 8px 14px;
-        font-size: 12px;
+        gap: 8px;
+    }
+
+    .btn-logout-header {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
     }
     
-    .dashboard {
+    .dashboard-container {
         padding: 15px 12px;
-        gap: 12px;
-        grid-template-columns: 1fr;
     }
     
-    .card {
+    .stats-grid {
+        gap: 12px;
+    }
+    
+    .stat-card {
         padding: 18px 15px;
-        min-height: 90px;
+        min-height: 130px;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
     }
     
-    .card h3 {
-        font-size: 11px;
-        margin-bottom: 8px;
+    .actions-container {
+        padding: 20px 15px;
+        border-radius: 15px;
     }
     
-    .card p {
-        font-size: 28px;
+    .menu-card {
+        padding: 25px 20px;
     }
-    
-    .menu-horizontal {
-        padding: 12px 12px 20px;
-        gap: 12px;
-        grid-template-columns: 1fr;
+
+    .menu-card-icon {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 20px;
     }
-    
-    .menu-btn {
-        padding: 18px;
+
+    .menu-card-icon i {
+        font-size: 2rem;
     }
-    
-    .menu-btn-icon {
-        width: 55px;
-        height: 55px;
+
+    .menu-card-title {
+        font-size: 1.1rem;
     }
-    
-    .menu-btn-icon i {
-        font-size: 1.6rem;
+
+    .menu-card-description {
+        font-size: 0.85rem;
     }
 }
 
@@ -459,38 +574,15 @@ body {
         height: 38px;
     }
     
-    .dashboard {
+    .dashboard-container {
         padding: 12px 10px;
     }
     
-    .card {
+    .stat-card {
         padding: 15px 12px;
     }
     
-    .card p {
-        font-size: 24px;
+    .actions-container {
+        padding: 18px 12px;
     }
-    
-    .menu-horizontal {
-        padding: 10px 10px 15px;
-    }
-    
-    .menu-btn {
-        padding: 15px;
-    }
-    
-    .menu-btn-icon {
-        width: 50px;
-        height: 50px;
-    }
-}
-/* ================= ÍCONO DE USUARIO ================= */
-.user-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.user-icon {
-    font-size: 1.1rem;
 }
