@@ -119,9 +119,17 @@ if ($ambienteBuscado) {
             </div>
             <?php endif; ?>
 
-            <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
-                <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
-            </a>
+            <!-- BOTÓN DE AUTORIZAR: Solo si está Habilitado -->
+            <?php if($ambienteInfo['estado'] == 'Habilitado'): ?>
+                <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
+                    <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
+                </a>
+            <?php else: ?>
+                <div class="alert-disabled">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <p>Este ambiente está <strong><?= htmlspecialchars($ambienteInfo['estado']) ?></strong></p>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- ========================= HISTORIAL DEL AMBIENTE ========================= -->
@@ -143,6 +151,7 @@ if ($ambienteBuscado) {
                         <th>Horario</th>
                         <th>Estado</th>
                         <th>Autorizado Por</th>
+                        <th>Novedades</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -164,6 +173,22 @@ if ($ambienteBuscado) {
                             </span>
                         </td>
                         <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
+                        <td style="position: relative;">
+                            <?php if($row['novedades']): ?>
+                                <button onclick="verNovedades(this)" class="btn-ver-novedades-mini">
+                                    <i class="fa-solid fa-eye"></i> Ver
+                                </button>
+                                <div class="novedades-popup" style="display:none;">
+                                    <div class="popup-header">
+                                        <strong>Reportado por:</strong>
+                                        <span><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                    </div>
+                                    <pre><?= htmlspecialchars($row['novedades']) ?></pre>
+                                </div>
+                            <?php else: ?>
+                                <span style="color:#999;">—</span>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -194,6 +219,37 @@ if ($ambienteBuscado) {
     </a>
 
 </div>
+
+<script>
+function verNovedades(btn) {
+    const popup = btn.nextElementSibling;
+    const allPopups = document.querySelectorAll('.novedades-popup');
+    
+    // Cerrar todos los demás
+    allPopups.forEach(p => {
+        if(p !== popup) p.style.display = 'none';
+    });
+    
+    // Toggle del actual
+    if(popup.style.display === 'none') {
+        popup.style.display = 'block';
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
+    } else {
+        popup.style.display = 'none';
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    }
+}
+
+// Cerrar al hacer click fuera
+document.addEventListener('click', function(e) {
+    if(!e.target.closest('td')) {
+        document.querySelectorAll('.novedades-popup').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.btn-ver-novedades-mini').forEach(b => {
+            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+        });
+    }
+});
+</script>
 
 </body>
 </html>

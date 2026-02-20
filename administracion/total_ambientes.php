@@ -94,6 +94,7 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
                     <th>Horario Fijo</th>
                     <th>Horario Disponible</th>
                     <th>Descripción</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -109,6 +110,11 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
                     <td><?= htmlspecialchars($row['horario_fijo'] ?: '—') ?></td>
                     <td><?= htmlspecialchars($row['horario_disponible'] ?: '—') ?></td>
                     <td><?= htmlspecialchars(substr($row['descripcion_general'], 0, 50)) ?><?= strlen($row['descripcion_general']) > 50 ? '...' : '' ?></td>
+                    <td>
+                        <a href="editar_ambiente.php?id=<?= $row['id'] ?>" class="btn-action-edit" title="Editar ambiente">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </a>
+                    </td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
@@ -137,6 +143,27 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
 .stat-mini.mantenimiento .num { color: #fb8c00; }
 .search-form select { padding: 14px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; transition: all 0.3s ease; background: white; }
 .search-form select:focus { outline: none; border-color: #667eea; }
+
+/* BOTÓN DE EDITAR */
+.btn-action-edit {
+    background: #fff3e0;
+    color: #f57c00;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(251, 140, 0, 0.3);
+}
+
+
+.btn-action-edit i {
+    font-size: 14px;
+}
 </style>
 
 </body>

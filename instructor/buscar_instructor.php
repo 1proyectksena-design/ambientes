@@ -11,12 +11,12 @@ $resultado = null;
 
 if (isset($_POST['buscar'])) {
 
-    $id = $_POST['id'];
+    $id = $_POST['identificacion'];
 
     $stmt = $conexion->prepare("
         SELECT * 
         FROM instructores 
-        WHERE id = ?
+        WHERE identificacion = ?
     ");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -24,10 +24,10 @@ if (isset($_POST['buscar'])) {
 }
 ?>
 
-<h2>Buscar Instructor por ID</h2>
+<h2>Buscar Instructor por Identificación</h2>
 
 <form method="POST">
-    <input type="number" name="id" placeholder="Ingrese ID Instructor" required>
+    <input type="number" name="identificacion" placeholder="Ingrese Identificación" required>
     <button type="submit" name="buscar">Buscar</button>
 </form>
 

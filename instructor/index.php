@@ -2,19 +2,88 @@
 session_start();
 
 if ($_SESSION['rol'] != 'instructor') {
-    header("Location: ../index.php");
+    header("Location: ../login.php");
     exit;
 }
+
+$usuario = $_SESSION['usuario'] ?? 'Instructor';
 ?>
 
-<h2>Bienvenido Instructor <?php echo $_SESSION['usuario']; ?></h2>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Instructor</title>
+    <link rel="stylesheet" href="../css/instructor.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
 
-<hr>
+<!-- HEADER -->
+<div class="header">
+    <div class="header-left">
+        <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
+        <div class="header-title">
+            <h1>Panel de Instructor</h1>
+            <span>Gestión de ambientes asignados</span>
+        </div>
+    </div>
+    <div class="header-user">
+        <i class="fa-solid fa-chalkboard-user user-icon"></i> 
+        <?= htmlspecialchars($usuario) ?>
+        <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+    </div>
+</div>
 
-<a href="buscar_instructor.php">🔍 Buscar Instructor</a>
-<br><br>
-<a href="historial_ambiente.php">🏫 Historial de Ambiente</a>
-<br><br>
-<a href="solicitar_autorizacion.php">📝 Solicitar Autorización</a>
-<br><br>
-<a href="logout.php">🚪 Cerrar Sesión</a>
+<!-- CONTENEDOR -->
+<div class="dashboard-container">
+
+    <!-- ACCIONES PRINCIPALES -->
+    <div class="actions-container">
+        <h2 class="actions-title">Acciones disponibles</h2>
+
+        <div class="menu-grid">
+            
+            <!-- MIS AMBIENTES HOY -->
+            <a href="mis_ambientes.php" class="menu-card primary">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-calendar-day"></i>
+                </div>
+                <div class="menu-card-title">Mis Ambientes Hoy</div>
+                <div class="menu-card-description">
+                    Ver ambientes asignados y reportar novedades
+                </div>
+            </a>
+
+            <!-- HISTORIAL DE AMBIENTES -->
+            <a href="historial_ambiente.php" class="menu-card secondary">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div class="menu-card-title">Historial de Ambientes</div>
+                <div class="menu-card-description">
+                    Consultar historial de uso por ambiente
+                </div>
+            </a>
+
+            <!-- MI PERFIL -->
+            <a href="mi_perfil.php" class="menu-card info">
+                <div class="menu-card-icon">
+                    <i class="fa-solid fa-id-card"></i>
+                </div>
+                <div class="menu-card-title">Mi Perfil</div>
+                <div class="menu-card-description">
+                    Ver información personal y contratos
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

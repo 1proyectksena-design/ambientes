@@ -161,7 +161,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             <!-- REGISTRO -->
             <a href="registro.php" class="menu-card registro">
                 <div class="menu-card-icon">
-                    <i class="fa-solid fa-book"></i>
+                    <i class="fa-solid fa-circle-plus"></i>
                 </div>
                 <div class="menu-card-title">Registros</div>
                 <div class="menu-card-description">

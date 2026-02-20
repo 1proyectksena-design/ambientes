@@ -71,7 +71,6 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
  WHERE estado='Rechazado' AND $whereSQLStat"))[0];
 ?>
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -166,6 +165,7 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
                     <th>Horario</th>
                     <th>Estado</th>
                     <th>Autorizado Por</th>
+                    <th>Novedades</th>
                 </tr>
             </thead>
             <tbody>
@@ -188,6 +188,26 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
                         </span>
                     </td>
                     <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
+                    <td>
+                        <?php if($row['novedades']): ?>
+                            <div class="novedades-cell">
+                                <button onclick="verNovedades(this)" class="btn-ver-novedades">
+                                    <i class="fa-solid fa-eye"></i> Ver Novedades
+                                </button>
+                                <div class="novedades-modal" style="display:none;">
+                                    <div class="modal-header">
+                                        <strong>Novedades reportadas por:</strong>
+                                        <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                    </div>
+                                    <div class="modal-content">
+                                        <pre><?= htmlspecialchars($row['novedades']) ?></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <span style="color:#999;">Sin novedades</span>
+                        <?php endif; ?>
+                    </td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
@@ -247,7 +267,112 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
     outline: none;
     border-color: #667eea;
 }
+
+/* NOVEDADES */
+.novedades-cell {
+    position: relative;
+}
+
+.btn-ver-novedades {
+    background: linear-gradient(135deg, #fb8c00 0%, #f57c00 100%);
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn-ver-novedades:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+    transform: translateY(-2px);
+}
+
+.novedades-modal {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background: white;
+    border: 2px solid #fb8c00;
+    border-radius: 12px;
+    padding: 0;
+    min-width: 350px;
+    max-width: 450px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    z-index: 100;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    padding: 12px 15px;
+    border-bottom: 2px solid #fb8c00;
+    border-radius: 10px 10px 0 0;
+}
+
+.modal-header strong {
+    display: block;
+    color: #e65100;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.instructor-name {
+    color: #333;
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.modal-content {
+    padding: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.modal-content pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #333;
+    line-height: 1.6;
+}
 </style>
+
+<script>
+function verNovedades(btn) {
+    const modal = btn.nextElementSibling;
+    const allModals = document.querySelectorAll('.novedades-modal');
+    
+    // Cerrar todos los demás modales
+    allModals.forEach(m => {
+        if(m !== modal) m.style.display = 'none';
+    });
+    
+    // Toggle del modal actual
+    if(modal.style.display === 'none'){
+        modal.style.display = 'block';
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
+    } else {
+        modal.style.display = 'none';
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver Novedades';
+    }
+}
+
+// Cerrar modal al hacer click fuera
+document.addEventListener('click', function(e) {
+    if(!e.target.closest('.novedades-cell')){
+        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
+        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
+            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver Novedades';
+        });
+    }
+});
+</script>
 
 </body>
 </html>

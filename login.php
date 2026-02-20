@@ -75,7 +75,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } elseif ($fila["rol"] === "instructor") {
             header("Location: instructor/index.php");
 
-            } else {
+            }
+            elseif ($fila["rol"] === "Guarda de Seguridad") {
+            header("Location: guarda/verificar.php");
+
+            }
+            
+            else {
             header("Location: usuario/index.php");
             }
 

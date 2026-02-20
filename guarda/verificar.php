@@ -12,17 +12,21 @@ $fecha_actual = date("Y-m-d");
 $hora_actual = date("H:i:s");
 
 /* TRAER NOMBRE DEL AMBIENTE */
-$resAmbiente = mysqli_query($conexion, "SELECT nombre_ambiente FROM ambientes WHERE id_ambiente = '$id_ambiente'");
+$resAmbiente = mysqli_query($conexion, "SELECT nombre_ambiente FROM ambientes WHERE id = '$id_ambiente'");
 $dataAmbiente = mysqli_fetch_assoc($resAmbiente);
 $nombre_ambiente = $dataAmbiente['nombre_ambiente'] ?? "Ambiente $id_ambiente";
 
-$sql = "SELECT a.*, i.nombre_completo AS nombre_instructor
-        FROM autorizaciones_ambientes a
-        INNER JOIN instructores i 
-            ON a.id_instructor = i.id_instructor
-        WHERE a.id_ambiente = '$id_ambiente'
-        AND a.fecha = '$fecha_actual'
-        ORDER BY a.hora_inicio ASC";
+/* CONSULTA ACTUALIZADA CON NUEVA BD */
+$sql = "SELECT 
+            au.*,
+            i.nombre AS nombre_instructor
+        FROM autorizaciones_ambientes au
+        INNER JOIN instructores i ON au.id_instructor = i.id
+        WHERE au.id_ambiente = '$id_ambiente'
+        AND au.fecha_inicio <= '$fecha_actual'
+        AND au.fecha_fin >= '$fecha_actual'
+        AND au.estado = 'Aprobado'
+        ORDER BY au.hora_inicio ASC";
 
 $resultado = mysqli_query($conexion, $sql);
 $total = mysqli_num_rows($resultado);
@@ -33,13 +37,14 @@ $total = mysqli_num_rows($resultado);
 if(isset($_GET['ajax'])){
     $filas = [];
     while($f = mysqli_fetch_assoc($resultado)){
-        $activa = ($hora_actual >= $f['hora_inicio'] && $hora_actual <= $f['hora_fin']);
+        $activa = ($hora_actual >= $f['hora_inicio'] && $hora_actual <= $f['hora_final']);
         $filas[] = [
             'instructor'    => htmlspecialchars($f['nombre_instructor']),
             'hora_inicio'   => date('h:i A', strtotime($f['hora_inicio'])),
-            'hora_fin'      => date('h:i A', strtotime($f['hora_fin'])),
+            'hora_fin'      => date('h:i A', strtotime($f['hora_final'])),
             'rol'           => htmlspecialchars($f['rol_autorizado']),
-            'observacion'   => htmlspecialchars($f['observacion'] ?: '—'),
+            'observacion'   => htmlspecialchars($f['observaciones'] ?: '—'),
+            'novedades'     => htmlspecialchars($f['novedades'] ?: ''),
             'activa'        => $activa,
         ];
     }
@@ -126,7 +131,7 @@ if(isset($_GET['ajax'])){
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ===== CONTENEDOR ===== */
-        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
 
         /* ===== AMBIENTE CARD ===== */
         .ambiente-card {
@@ -210,6 +215,21 @@ if(isset($_GET['ajax'])){
         }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
+        /* BOTÓN VER NOVEDADES */
+        .btn-ver-nov {
+            background: #fb8c00;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .btn-ver-nov:hover {
+            background: #f57c00;
+        }
+
         /* ===== SIN RESULTADOS ===== */
         .no-results { text-align: center; padding: 60px 20px; color: #999; }
         .no-results i { font-size: 4rem; margin-bottom: 15px; color: #ddd; display: block; }
@@ -221,7 +241,7 @@ if(isset($_GET['ajax'])){
             .container { padding: 0 15px; margin: 20px auto; }
             .ambiente-card { flex-direction: column; align-items: flex-start; }
             .table-container { overflow-x: auto; }
-            table { min-width: 550px; }
+            table { min-width: 700px; }
             th, td { padding: 12px 10px; font-size: 12px; }
         }
         @media (max-width: 480px) {
@@ -279,7 +299,7 @@ if(isset($_GET['ajax'])){
 
     <!-- HORA ACTUAL -->
     <div class="hora-actual">
-        <span> Hora actual (Bogotá)</span>
+        <span>🕐 Hora actual (Bogotá)</span>
         <strong id="reloj"><?= date('h:i:s A') ?></strong>
     </div>
 
@@ -304,13 +324,14 @@ if(isset($_GET['ajax'])){
                         <th>Hora Fin</th>
                         <th>Autorizado Por</th>
                         <th>Observación</th>
+                        <th>Novedades</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php
                     mysqli_data_seek($resultado, 0);
                     while($fila = mysqli_fetch_assoc($resultado)):
-                        $activa = ($hora_actual >= $fila['hora_inicio'] && $hora_actual <= $fila['hora_fin']);
+                        $activa = ($hora_actual >= $fila['hora_inicio'] && $hora_actual <= $fila['hora_final']);
                     ?>
                     <tr class="<?= $activa ? 'activa-ahora' : '' ?>">
                         <td>
@@ -326,14 +347,23 @@ if(isset($_GET['ajax'])){
                         </td>
                         <td>
                             <i class="fa-regular fa-clock" style="margin-right:4px; color:#666;"></i>
-                            <?= date('h:i A', strtotime($fila['hora_fin'])) ?>
+                            <?= date('h:i A', strtotime($fila['hora_final'])) ?>
                         </td>
                         <td>
                             <span class="badge-rol badge-<?= $fila['rol_autorizado'] ?>">
                                 <?= htmlspecialchars($fila['rol_autorizado']) ?>
                             </span>
                         </td>
-                        <td><?= htmlspecialchars($fila['observacion'] ?: '—') ?></td>
+                        <td><?= htmlspecialchars($fila['observaciones'] ?: '—') ?></td>
+                        <td>
+                            <?php if($fila['novedades']): ?>
+                                <button onclick="alert('<?= htmlspecialchars(str_replace(["\r", "\n"], ' ', $fila['novedades'])) ?>')" class="btn-ver-nov">
+                                    <i class="fa-solid fa-eye"></i> Ver
+                                </button>
+                            <?php else: ?>
+                                <span style="color:#999;">—</span>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -351,9 +381,7 @@ if(isset($_GET['ajax'])){
 </div>
 
 <script>
-    /* ============================================================
-       RELOJ EN TIEMPO REAL
-       ============================================================ */
+    /* RELOJ EN TIEMPO REAL */
     function actualizarReloj() {
         const ahora = new Date();
         const h = ahora.getHours();
@@ -367,9 +395,7 @@ if(isset($_GET['ajax'])){
     setInterval(actualizarReloj, 1000);
     actualizarReloj();
 
-    /* ============================================================
-       COUNTDOWN + FETCH AUTOMÁTICO CADA 30 SEGUNDOS
-       ============================================================ */
+    /* COUNTDOWN + FETCH AUTOMÁTICO CADA 30 SEGUNDOS */
     let segundosRestantes = 30;
 
     function actualizarDatos() {
@@ -386,13 +412,10 @@ if(isset($_GET['ajax'])){
         fetch(url)
             .then(r => r.json())
             .then(data => {
-
-                /* Actualizar contador */
                 document.getElementById('total-autorizaciones').textContent = data.total;
                 document.getElementById('ultima-act').textContent =
                     'Última actualización: ' + data.hora;
 
-                /* Reconstruir tabla */
                 let html = '';
                 if(data.filas.length > 0){
                     html += `<table>
@@ -402,12 +425,17 @@ if(isset($_GET['ajax'])){
                             <th>Hora Fin</th>
                             <th>Autorizado Por</th>
                             <th>Observación</th>
+                            <th>Novedades</th>
                         </tr></thead><tbody>`;
 
                     data.filas.forEach(f => {
                         const claseActiva = f.activa ? 'activa-ahora' : '';
                         const badgeActivo = f.activa
                             ? '<span class="badge-activo">EN CURSO</span>' : '';
+
+                        const btnNov = f.novedades 
+                            ? `<button onclick="alert('${f.novedades.replace(/'/g, "\\'")}')" class="btn-ver-nov"><i class="fa-solid fa-eye"></i> Ver</button>`
+                            : '<span style="color:#999;">—</span>';
 
                         html += `<tr class="${claseActiva}">
                             <td>
@@ -428,6 +456,7 @@ if(isset($_GET['ajax'])){
                                 </span>
                             </td>
                             <td>${f.observacion}</td>
+                            <td>${btnNov}</td>
                         </tr>`;
                     });
                     html += '</tbody></table>';
@@ -453,7 +482,6 @@ if(isset($_GET['ajax'])){
             });
     }
 
-    /* Countdown visual */
     setInterval(() => {
         segundosRestantes--;
         document.getElementById('countdown').textContent = segundosRestantes;
