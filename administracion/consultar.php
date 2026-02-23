@@ -133,10 +133,7 @@ if ($ambienteBuscado) {
                     </div>
                 <?php endif; ?>
 
-                <!-- BOTÓN DE EDITAR ESTADO -->
-                <a href="editar_ambiente.php?id=<?= $ambienteInfo['id'] ?>" class="btn-editar">
-                    <i class="fa-solid fa-pen-to-square"></i> Editar Estado
-                </a>
+               
             </div>
         </div>
 
@@ -181,17 +178,20 @@ if ($ambienteBuscado) {
                             </span>
                         </td>
                         <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                        <td style="position: relative;">
+                       <td>
                             <?php if($row['novedades']): ?>
-                                <button onclick="verNovedades(this)" class="btn-ver-novedades-mini">
+                                <div class="novedades-cell">
+                                    <button onclick="verNovedades(this)"      class="btn-ver-novedades">
                                     <i class="fa-solid fa-eye"></i> Ver
-                                </button>
-                                <div class="novedades-popup" style="display:none;">
-                                    <div class="popup-header">
-                                        <strong>Reportado por:</strong>
-                                        <span><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                    </button>
+                                    <div class="novedades-content" style="display:none;">
+                                        <div class="popup-header">
+                                                <strong>Reportado por:</strong>
+                                                <span><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                            </div>
+                                            <pre><?= htmlspecialchars($row['novedades']) ?>
+                                        </pre>
                                     </div>
-                                    <pre><?= htmlspecialchars($row['novedades']) ?></pre>
                                 </div>
                             <?php else: ?>
                                 <span style="color:#999;">—</span>
@@ -230,33 +230,15 @@ if ($ambienteBuscado) {
 
 <script>
 function verNovedades(btn) {
-    const popup = btn.nextElementSibling;
-    const allPopups = document.querySelectorAll('.novedades-popup');
-    
-    // Cerrar todos los demás
-    allPopups.forEach(p => {
-        if(p !== popup) p.style.display = 'none';
-    });
-    
-    // Toggle del actual
-    if(popup.style.display === 'none') {
-        popup.style.display = 'block';
+    const content = btn.nextElementSibling;
+    if(content.style.display === 'none'){
+        content.style.display = 'block';
         btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
     } else {
-        popup.style.display = 'none';
+        content.style.display = 'none';
         btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
     }
 }
-
-// Cerrar al hacer click fuera
-document.addEventListener('click', function(e) {
-    if(!e.target.closest('td')) {
-        document.querySelectorAll('.novedades-popup').forEach(p => p.style.display = 'none');
-        document.querySelectorAll('.btn-ver-novedades-mini').forEach(b => {
-            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-        });
-    }
-});
 </script>
 
 </body>

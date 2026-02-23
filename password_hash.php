@@ -1,8 +1,8 @@
 <?php
 $usuarios = [
-    ["usuario" => "admin",        "password" => "admin123", "rol" => "Administrador"],
-    ["usuario" => "subdireccion", "password" => "sub123",   "rol" => "Subdirección"],
-    ["usuario" => "instructor",   "password" => "inst123",  "rol" => "Instructor"],
+    ["usuario" => "admin",        "password" => "ad", "rol" => "Administrador"],
+    ["usuario" => "subdireccion", "password" => "sub",   "rol" => "Subdirección"],
+    ["usuario" => "instructor",   "password" => "in",  "rol" => "Instructor"],
     ["usuario" => "Guarda de Seguridad",      "password" => "cel123",   "rol" => "Guarda de Seguridad"]
 ];
 

@@ -274,39 +274,39 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
 }
 
 .btn-ver-novedades {
-    background: linear-gradient(135deg, #fb8c00 0%, #f57c00 100%);
+    background: #667eea;
     color: white;
     border: none;
-    padding: 8px 14px;
-    border-radius: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     transition: all 0.3s ease;
-    font-weight: 600;
 }
 
 .btn-ver-novedades:hover {
-    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
-    transform: translateY(-2px);
+    background: #5568d3;
 }
 
-.novedades-modal {
-    position: absolute;
-    top: 40px;
-    right: 0;
-    background: white;
+.novedades-content {
+    background: #fff3e0;
     border: 2px solid #fb8c00;
-    border-radius: 12px;
-    padding: 0;
-    min-width: 350px;
-    max-width: 450px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    z-index: 100;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+    max-width: 400px;
 }
 
+.novedades-content pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #333;
+}
 .modal-header {
     background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
     padding: 12px 15px;
@@ -341,6 +341,7 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
     color: #333;
     line-height: 1.6;
 }
+
 </style>
 
 <script>
@@ -376,3 +377,4 @@ document.addEventListener('click', function(e) {
 
 </body>
 </html>
+ 
