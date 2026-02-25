@@ -1,5 +1,7 @@
 <?php
 session_start();
+date_default_timezone_set('America/Bogota');
+
 if ($_SESSION['rol'] != 'subdireccion') {
     header("Location: ../login.php");
     exit;
@@ -69,6 +71,10 @@ $statAprobado = mysqli_fetch_row(mysqli_query($conexion,
 $statRechazado = mysqli_fetch_row(mysqli_query($conexion, 
 "SELECT COUNT(*) FROM autorizaciones_ambientes 
  WHERE estado='Rechazado' AND $whereSQLStat"))[0];
+
+/* Fecha y hora actual para calcular estados */
+$fecha_actual = date('Y-m-d');
+$hora_actual = date('H:i:s');
 ?>
 
 <!DOCTYPE html>
@@ -163,13 +169,42 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
                     <th>Fecha Inicio</th>
                     <th>Fecha Fin</th>
                     <th>Horario</th>
-                    <th>Estado</th>
+                    <th>Estado Actual</th>
                     <th>Autorizado Por</th>
                     <th>Novedades</th>
                 </tr>
             </thead>
             <tbody>
-                <?php while($row = mysqli_fetch_assoc($resultado)): ?>
+                <?php while($row = mysqli_fetch_assoc($resultado)): 
+                    /* CALCULAR ESTADO ACTUAL */
+                    $estadoActual = 'desocupado';
+                    $textoEstado = 'Desocupado';
+                    $iconoEstado = '<i class="fa-solid fa-circle"></i>';
+                    
+                    if($row['estado'] == 'Aprobado') {
+                        // Verificar si está dentro del rango de fechas
+                        if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
+                            // Verificar si está dentro del horario
+                            if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
+                                $estadoActual = 'ocupado-ahora';
+                                $textoEstado = 'Ocupado Ahora';
+                                $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
+                            } else {
+                                $estadoActual = 'programado';
+                                $textoEstado = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                $iconoEstado = '<i class="fa-regular fa-clock"></i>';
+                            }
+                        }
+                    } elseif($row['estado'] == 'Pendiente') {
+                        $estadoActual = 'pendiente';
+                        $textoEstado = 'Pendiente';
+                        $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
+                    } elseif($row['estado'] == 'Rechazado') {
+                        $estadoActual = 'rechazado';
+                        $textoEstado = 'Rechazado';
+                        $iconoEstado = '<i class="fa-solid fa-ban"></i>';
+                    }
+                ?>
                 <tr>
                     <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
                     <td>
@@ -183,25 +218,23 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
                         <?= date('h:i A', strtotime($row['hora_final'])) ?>
                     </td>
                     <td>
-                        <span class="estado-badge estado-<?= strtolower($row['estado']) ?>">
-                            <?= htmlspecialchars($row['estado']) ?>
+                        <span class="estado-badge estado-<?= $estadoActual ?>">
+                            <?= $iconoEstado ?> <?= $textoEstado ?>
                         </span>
                     </td>
                     <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                    <td>
+                    <td style="position: relative;">
                         <?php if($row['novedades']): ?>
-                            <div class="novedades-cell">
-                                <button onclick="verNovedades(this)" class="btn-ver-novedades">
-                                    <i class="fa-solid fa-eye"></i> Ver Novedades
-                                </button>
-                                <div class="novedades-modal" style="display:none;">
-                                    <div class="modal-header">
-                                        <strong>Novedades reportadas por:</strong>
-                                        <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
-                                    </div>
-                                    <div class="modal-content">
-                                        <pre><?= htmlspecialchars($row['novedades']) ?></pre>
-                                    </div>
+                            <button onclick="verNovedades(this)" class="btn-ver-novedades">
+                                <i class="fa-solid fa-eye"></i> Ver
+                            </button>
+                            <div class="novedades-modal" style="display:none;">
+                                <div class="modal-header">
+                                    <strong>Novedades reportadas por:</strong>
+                                    <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                </div>
+                                <div class="modal-content">
+                                    <pre><?= htmlspecialchars($row['novedades']) ?></pre>
                                 </div>
                             </div>
                         <?php else: ?>
@@ -268,29 +301,76 @@ $statRechazado = mysqli_fetch_row(mysqli_query($conexion,
     border-color: #667eea;
 }
 
-/* NOVEDADES */
-.novedades-cell {
-    position: relative;
-}
-
-.btn-ver-novedades {
-    background: linear-gradient(135deg, #fb8c00 0%, #f57c00 100%);
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.85rem;
+/* ========== NUEVOS ESTADOS OCUPADO/DESOCUPADO ========== */
+.estado-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.3s ease;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.estado-badge i {
+    font-size: 10px;
+}
+
+/* OCUPADO AHORA - Verde brillante */
+.estado-badge.estado-ocupado-ahora {
+    background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3);
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0%, 100% { box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3); }
+    50% { box-shadow: 0 4px 16px rgba(67, 160, 71, 0.5); }
+}
+
+/* PROGRAMADO - Naranja */
+.estado-badge.estado-programado {
+    background: #fff3e0;
+    color: #e65100;
+    border: 2px solid #fb8c00;
+}
+
+/* DESOCUPADO - Gris */
+.estado-badge.estado-desocupado {
+    background: #f5f5f5;
+    color: #757575;
+    border: 2px solid #e0e0e0;
+}
+
+/* PENDIENTE - Amarillo */
+.estado-badge.estado-pendiente {
+    background: #fff3e0;
+    color: #f57c00;
+    border: 2px solid #ffa726;
+}
+
+/* RECHAZADO - Rojo */
+.estado-badge.estado-rechazado {
+    background: #ffebee;
+    color: #c62828;
+    border: 2px solid #e53935;
+}
+
+/* NOVEDADES */
+.btn-ver-novedades {
+    background: #fb8c00;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
     font-weight: 600;
 }
 
 .btn-ver-novedades:hover {
-    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
-    transform: translateY(-2px);
+    background: #f57c00;
 }
 
 .novedades-modal {
@@ -348,27 +428,27 @@ function verNovedades(btn) {
     const modal = btn.nextElementSibling;
     const allModals = document.querySelectorAll('.novedades-modal');
     
-    // Cerrar todos los demás modales
+    // Cerrar todos los demás
     allModals.forEach(m => {
         if(m !== modal) m.style.display = 'none';
     });
     
-    // Toggle del modal actual
-    if(modal.style.display === 'none'){
+    // Toggle
+    if(modal.style.display === 'none') {
         modal.style.display = 'block';
         btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
     } else {
         modal.style.display = 'none';
-        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver Novedades';
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
     }
 }
 
-// Cerrar modal al hacer click fuera
+// Cerrar al hacer click fuera
 document.addEventListener('click', function(e) {
-    if(!e.target.closest('.novedades-cell')){
+    if(!e.target.closest('td')) {
         document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
         document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver Novedades';
+            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
         });
     }
 });

@@ -190,12 +190,7 @@ mysqli_data_seek($instructores, 0);
             <p>Complete el formulario para autorizar el uso de un ambiente</p>
         </div>
 
-        <?php if($id_ambiente_seleccionado){ ?>
-            <div class="info-alert">
-                <strong>✓ Ambiente Pre-seleccionado</strong>
-                El ambiente ha sido seleccionado automáticamente desde la búsqueda
-            </div>
-        <?php } ?>
+        
 
         <form method="POST">
 

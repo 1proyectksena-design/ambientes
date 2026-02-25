@@ -1,11 +1,17 @@
 <?php
 session_start();
+date_default_timezone_set('America/Bogota');
+
 if ($_SESSION['rol'] != 'administracion') {
     header("Location: ../login.php");
     exit;
 }
 
 include("../includes/conexion.php");
+
+/* Fecha y hora actual (Colombia/Bogotá) */
+$fecha_actual = date('Y-m-d');
+$hora_actual = date('H:i:s');
 
 /* =========================
    BUSCAR AMBIENTE
@@ -133,7 +139,6 @@ if ($ambienteBuscado) {
                     </div>
                 <?php endif; ?>
 
-               
             </div>
         </div>
 
@@ -154,13 +159,40 @@ if ($ambienteBuscado) {
                         <th>Fecha Inicio</th>
                         <th>Fecha Fin</th>
                         <th>Horario</th>
-                        <th>Estado</th>
+                        <th>Estado Actual</th>
                         <th>Autorizado Por</th>
                         <th>Novedades</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while($row = mysqli_fetch_assoc($historialAmbiente)): ?>
+                    <?php while($row = mysqli_fetch_assoc($historialAmbiente)): 
+                        /* CALCULAR ESTADO ACTUAL */
+                        $estadoActual = 'desocupado';
+                        $textoEstado = 'Desocupado';
+                        $iconoEstado = '<i class="fa-solid fa-circle"></i>';
+                        
+                        if($row['estado'] == 'Aprobado') {
+                            if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
+                                if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
+                                    $estadoActual = 'ocupado-ahora';
+                                    $textoEstado = 'Ocupado Ahora';
+                                    $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
+                                } else {
+                                    $estadoActual = 'programado';
+                                    $textoEstado = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                    $iconoEstado = '<i class="fa-regular fa-clock"></i>';
+                                }
+                            }
+                        } elseif($row['estado'] == 'Pendiente') {
+                            $estadoActual = 'pendiente';
+                            $textoEstado = 'Pendiente';
+                            $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
+                        } elseif($row['estado'] == 'Rechazado') {
+                            $estadoActual = 'rechazado';
+                            $textoEstado = 'Rechazado';
+                            $iconoEstado = '<i class="fa-solid fa-ban"></i>';
+                        }
+                    ?>
                     <tr>
                         <td>
                             <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
@@ -173,24 +205,23 @@ if ($ambienteBuscado) {
                             <?= date('h:i A', strtotime($row['hora_final'])) ?>
                         </td>
                         <td>
-                            <span class="estado-badge estado-<?= strtolower($row['estado']) ?>">
-                                <?= htmlspecialchars($row['estado']) ?>
+                            <span class="estado-badge estado-<?= $estadoActual ?>">
+                                <?= $iconoEstado ?> <?= $textoEstado ?>
                             </span>
                         </td>
                         <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                       <td>
+                        <td style="position: relative;">
                             <?php if($row['novedades']): ?>
-                                <div class="novedades-cell">
-                                    <button onclick="verNovedades(this)"      class="btn-ver-novedades">
+                                <button onclick="verNovedades(this)" class="btn-ver-novedades">
                                     <i class="fa-solid fa-eye"></i> Ver
-                                    </button>
-                                    <div class="novedades-content" style="display:none;">
-                                        <div class="popup-header">
-                                                <strong>Reportado por:</strong>
-                                                <span><?= htmlspecialchars($row['nombre_instructor']) ?></span>
-                                            </div>
-                                            <pre><?= htmlspecialchars($row['novedades']) ?>
-                                        </pre>
+                                </button>
+                                <div class="novedades-modal" style="display:none;">
+                                    <div class="modal-header">
+                                        <strong>Novedades reportadas por:</strong>
+                                        <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                    </div>
+                                    <div class="modal-content">
+                                        <pre><?= htmlspecialchars($row['novedades']) ?></pre>
                                     </div>
                                 </div>
                             <?php else: ?>
@@ -228,17 +259,36 @@ if ($ambienteBuscado) {
 
 </div>
 
+
 <script>
 function verNovedades(btn) {
-    const content = btn.nextElementSibling;
-    if(content.style.display === 'none'){
-        content.style.display = 'block';
+    const modal = btn.nextElementSibling;
+    const allModals = document.querySelectorAll('.novedades-modal');
+    
+    // Cerrar todos
+    allModals.forEach(m => {
+        if(m !== modal) m.style.display = 'none';
+    });
+    
+    // Toggle
+    if(modal.style.display === 'none') {
+        modal.style.display = 'block';
         btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
     } else {
-        content.style.display = 'none';
+        modal.style.display = 'none';
         btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
     }
 }
+
+// Cerrar al hacer click fuera
+document.addEventListener('click', function(e) {
+    if(!e.target.closest('td')) {
+        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
+        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
+            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+        });
+    }
+});
 </script>
 
 </body>

@@ -1,4 +1,12 @@
 <?php
+session_start();
+
+// protege la página: solo guardas pueden acceder
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'guarda') {
+    header("Location: ../login.php");
+    exit;
+}
+
 include("../includes/conexion.php");
 
 date_default_timezone_set("America/Bogota");
@@ -101,24 +109,7 @@ if(isset($_GET['ajax'])){
         }
 
         /* ===== BARRA DE ACTUALIZACIÓN ===== */
-        .refresh-bar {
-            background: #1a3a6b;
-            color: rgba(255,255,255,0.85);
-            text-align: center;
-            padding: 8px 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .refresh-bar .countdown {
-            background: rgba(255,255,255,0.2);
-            padding: 2px 10px;
-            border-radius: 10px;
-            font-weight: 700;
-            color: white;
-        }
+        
         .spinner {
             width: 14px; height: 14px;
             border: 2px solid rgba(255,255,255,0.3);
@@ -265,14 +256,7 @@ if(isset($_GET['ajax'])){
     </div>
 </div>
 
-<!-- BARRA DE ACTUALIZACIÓN AUTOMÁTICA -->
-<div class="refresh-bar">
-    <div class="spinner" id="spinner"></div>
-    <i class="fa-solid fa-rotate"></i>
-    Actualización automática en: <span class="countdown" id="countdown">30</span>s
-    &nbsp;|&nbsp;
-    <span id="estado-refresh">✅ Datos actualizados</span>
-</div>
+
 
 <div class="container">
 
@@ -299,7 +283,7 @@ if(isset($_GET['ajax'])){
 
     <!-- HORA ACTUAL -->
     <div class="hora-actual">
-        <span>🕐 Hora actual (Bogotá)</span>
+        <span> Hora actual (Bogotá)</span>
         <strong id="reloj"><?= date('h:i:s A') ?></strong>
     </div>
 

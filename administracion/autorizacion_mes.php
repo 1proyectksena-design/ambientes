@@ -56,21 +56,7 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
 
 <div class="consultar-container">
 
-    <!-- STATS -->
-    <div class="stats-mini">
-        <div class="stat-mini pendiente">
-            <div class="num"><?= $pendiente ?></div>
-            <div class="lbl">Pendientes</div>
-        </div>
-        <div class="stat-mini aprobado">
-            <div class="num"><?= $aprobado ?></div>
-            <div class="lbl">Aprobados</div>
-        </div>
-        <div class="stat-mini rechazado">
-            <div class="num"><?= $rechazado ?></div>
-            <div class="lbl">Rechazados</div>
-        </div>
-    </div>
+    
 
     <!-- SELECTOR DE MES -->
     <div class="search-section">
@@ -151,13 +137,7 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
 </div>
 
 <style>
-.stats-mini { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
-.stat-mini { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.stat-mini .num { font-size: 32px; font-weight: 800; margin-bottom: 5px; }
-.stat-mini .lbl { font-size: 12px; color: #666; text-transform: uppercase; font-weight: 600; }
-.stat-mini.pendiente .num { color: #fb8c00; }
-.stat-mini.aprobado .num { color: #43a047; }
-.stat-mini.rechazado .num { color: #e53935; }
+
 .search-form select { padding: 14px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; transition: all 0.3s ease; background: white; }
 .search-form select:focus { outline: none; border-color: #667eea; }
 </style>

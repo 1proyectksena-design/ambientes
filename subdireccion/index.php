@@ -131,6 +131,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             <p>Desarrollado para</p>
             <p><strong>Centro de Gestión de Mercados,<br>Logística y TIC's</strong></p>
         </div>
+        
     </div>
 </footer>
 

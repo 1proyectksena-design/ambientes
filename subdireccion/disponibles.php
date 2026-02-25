@@ -57,12 +57,6 @@ $total = mysqli_num_rows($resultado);
 
 <div class="consultar-container">
 
-    <!-- HORA ACTUAL -->
-    <div class="hora-actual-banner">
-        <i class="fa-regular fa-clock"></i>
-        <strong id="reloj"><?= date('h:i:s A') ?></strong>
-        <span><?= date('l, d \d\e F \d\e Y') ?></span>
-    </div>
 
     <!-- TABLA -->
     <div class="table-container">
@@ -158,19 +152,7 @@ $total = mysqli_num_rows($resultado);
 .btn-accion:hover { background: #2e7d32; transform: translateY(-2px); }
 </style>
 
-<script>
-function actualizarReloj() {
-    const ahora = new Date();
-    const h = ahora.getHours();
-    const m = String(ahora.getMinutes()).padStart(2, '0');
-    const s = String(ahora.getSeconds()).padStart(2, '0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    document.getElementById('reloj').textContent = `${String(h12).padStart(2, '0')}:${m}:${s} ${ampm}`;
-}
-setInterval(actualizarReloj, 1000);
-actualizarReloj();
-</script>
+
 
 </body>
 </html>

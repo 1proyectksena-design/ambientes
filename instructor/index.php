@@ -50,11 +50,7 @@ $usuario = $_SESSION['usuario'] ?? 'Instructor';
                 <div class="menu-card-title">Historial de Ambientes</div>
                 <div class="menu-card-description">Consultar historial de uso por ambiente</div>
             </a>
-            <a href="mi_perfil.php" class="menu-card info">
-                <div class="menu-card-icon"><i class="fa-solid fa-id-card"></i></div>
-                <div class="menu-card-title">Mi Perfil</div>
-                <div class="menu-card-description">Ver información personal y contratos</div>
-            </a>
+            
         </div>
     </div>
 </div>

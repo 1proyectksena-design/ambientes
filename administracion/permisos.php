@@ -62,7 +62,7 @@ if(isset($_POST['autorizar'])){
     
     if(mysqli_num_rows($checkInstructor) == 0){
         echo "<script>
-                alert('⚠️ No se puede autorizar: El instructor no está activo en el período seleccionado');
+                alert(' No se puede autorizar: El instructor no está activo en el período seleccionado');
                 window.history.back();
               </script>";
         exit;
@@ -71,7 +71,7 @@ if(isset($_POST['autorizar'])){
     /* VALIDAR FECHAS */
     if($fecha_inicio > $fecha_fin){
         echo "<script>
-                alert('⚠️ La fecha fin debe ser igual o mayor que la fecha inicio');
+                alert(' La fecha fin debe ser igual o mayor que la fecha inicio');
                 window.history.back();
               </script>";
         exit;
@@ -80,7 +80,7 @@ if(isset($_POST['autorizar'])){
     /* VALIDAR QUE HORA FIN SEA MAYOR */
     if($hora_inicio >= $hora_fin){
         echo "<script>
-                alert('⚠️ La hora fin debe ser mayor que la hora inicio');
+                alert(' La hora fin debe ser mayor que la hora inicio');
                 window.history.back();
               </script>";
         exit;
@@ -99,7 +99,7 @@ if(isset($_POST['autorizar'])){
 
     if (mysqli_num_rows($resChoque) > 0) {
         echo "<script>
-                alert('⚠️ El ambiente ya tiene una autorización aprobada en ese período y horario');
+                alert(' El ambiente ya tiene una autorización aprobada en ese período y horario');
                 window.history.back();
               </script>";
         exit;
@@ -115,13 +115,13 @@ if(isset($_POST['autorizar'])){
     
     if(mysqli_query($conexion, $sqlInsert)){
         echo "<script>
-                alert('✅ Ambiente autorizado correctamente');
+                alert(' Ambiente autorizado correctamente');
                 window.location.href='index.php';
               </script>";
         exit;
     } else {
         echo "<script>
-                alert('❌ Error al crear la autorización: ".mysqli_error($conexion)."');
+                alert(' Error al crear la autorización: ".mysqli_error($conexion)."');
                 window.history.back();
               </script>";
         exit;
@@ -190,12 +190,7 @@ mysqli_data_seek($instructores, 0);
             <p>Complete el formulario para autorizar el uso de un ambiente</p>
         </div>
 
-        <?php if($id_ambiente_seleccionado){ ?>
-            <div class="info-alert">
-                <strong>✓ Ambiente Pre-seleccionado</strong>
-                El ambiente ha sido seleccionado automáticamente desde la búsqueda
-            </div>
-        <?php } ?>
+       
 
         <form method="POST">
 

@@ -88,8 +88,13 @@ body {
     border: 1px solid rgba(255,255,255,0.3);
     font-size: clamp(12px, 2.5vw, 14px);
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     animation: fadeIn 0.8s ease-out 0.3s both;
 }
+
+.user-icon { font-size: 1.1rem; color: white; }
 
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -209,7 +214,7 @@ body {
     background: white;
     border-radius: 16px;
     box-shadow: var(--shadow-md);
-    overflow: hidden;
+    overflow: visible; /* ← IMPORTANTE: permite que el modal flote fuera */
     margin-bottom: 30px;
     animation: fadeInUp 0.6s ease-out 0.2s both;
 }
@@ -218,6 +223,7 @@ body {
     background: linear-gradient(135deg, #f5f7fa 0%, #e8ebf0 100%);
     padding: 20px 30px;
     border-bottom: 2px solid #e0e0e0;
+    border-radius: 16px 16px 0 0;
 }
 
 .table-header h3 {
@@ -225,6 +231,11 @@ body {
     color: #333;
     font-size: 18px;
     font-weight: 600;
+}
+
+/* Wrapper con scroll horizontal pero sin cortar modales */
+.table-scroll-wrapper {
+    overflow-x: auto;
 }
 
 table {
@@ -248,7 +259,7 @@ td {
     border-bottom: 1px solid #f0f0f0;
     color: #555;
     font-size: 14px;
-    vertical-align: top;
+    vertical-align: middle;
 }
 
 tr { transition: background-color 0.2s ease; }
@@ -257,22 +268,58 @@ tbody tr:hover { background-color: #f8f9ff; }
 
 /* ================= BADGES DE ESTADO ================= */
 .estado-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    text-transform: capitalize;
 }
 
-.estado-disponible  { background: #e8f5e9; color: #2e7d32; }
-.estado-ocupado     { background: #fff3e0; color: #f57c00; }
+.estado-badge i { font-size: 10px; }
+
+.estado-disponible    { background: #e8f5e9; color: #2e7d32; }
+.estado-ocupado       { background: #fff3e0; color: #f57c00; }
 .estado-mantenimiento { background: #ffebee; color: #c62828; }
-.estado-pendiente   { background: #fff3e0; color: #f57c00; }
-.estado-aprobado    { background: #e8f5e9; color: #2e7d32; }
-.estado-rechazado   { background: #ffebee; color: #c62828; }
-.estado-habilitado  { background: #e8f5e9; color: #2e7d32; }
+.estado-habilitado    { background: #e8f5e9; color: #2e7d32; }
 .estado-deshabilitado { background: #ffebee; color: #c62828; }
+
+.estado-ocupado-ahora {
+    background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3);
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0%, 100% { box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3); }
+    50%       { box-shadow: 0 4px 16px rgba(67, 160, 71, 0.5); }
+}
+
+.estado-programado {
+    background: #fff3e0;
+    color: #e65100;
+    border: 2px solid #fb8c00;
+}
+
+.estado-desocupado {
+    background: #f5f5f5;
+    color: #757575;
+    border: 2px solid #e0e0e0;
+}
+
+.estado-pendiente {
+    background: #fff3e0;
+    color: #f57c00;
+    border: 2px solid #ffa726;
+}
+
+.estado-rechazado {
+    background: #ffebee;
+    color: #c62828;
+    border: 2px solid #e53935;
+}
 
 /* ================= BOTONES PRINCIPALES ================= */
 .btn-permiso {
@@ -325,6 +372,13 @@ tbody tr:hover { background-color: #f8f9ff; }
     padding: 40px;
     color: #999;
     font-style: italic;
+}
+
+.no-results i {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 15px;
+    opacity: 0.4;
 }
 
 /* ================= DESCRIPCIÓN AMBIENTE ================= */
@@ -398,67 +452,129 @@ tbody tr:hover { background-color: #f8f9ff; }
 }
 
 /* ================= NOVEDADES ================= */
-.novedades-cell {
-    position: relative;
-}
-
 .btn-ver-novedades {
-    background: #667eea;
+    background: #fb8c00;
     color: white;
     border: none;
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .btn-ver-novedades:hover {
-    background: #5568d3;
+    background: #f57c00;
     transform: translateY(-1px);
 }
 
-.novedades-content {
-    background: #fff3e0;
+/* ============================================================
+   MODAL DE NOVEDADES — usa position: fixed para que NUNCA
+   quede cortado por el overflow de la tabla o sus padres.
+   ============================================================ */
+.novedades-modal {
+    position: fixed;          /* sale del flujo de la tabla */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
     border: 2px solid #fb8c00;
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 8px;
-    max-width: 400px;
+    border-radius: 12px;
+    padding: 0;
+    width: 420px;
+    max-width: 90vw;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    z-index: 9999;
+    display: none;            /* oculto por defecto */
 }
 
-.novedades-content .popup-header {
-    background: #ffe0b2;
-    padding: 8px 10px;
-    border-radius: 6px;
-    margin-bottom: 8px;
+/* Overlay oscuro detrás del modal */
+.novedades-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.25);
+    z-index: 9998;
+    display: none;
 }
 
-.novedades-content .popup-header strong {
-    display: block;
+.modal-header {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    padding: 14px 18px;
+    border-bottom: 2px solid #fb8c00;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modal-header strong {
     color: #e65100;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 2px;
 }
 
-.novedades-content .popup-header span {
+.instructor-name {
     color: #333;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 1rem;
 }
 
-.novedades-content pre {
+/* Fecha de la novedad — se muestra siempre */
+.modal-fecha {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 4px;
+    background: rgba(230,81,0,0.10);
+    color: #bf360c;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    width: fit-content;
+}
+
+.modal-fecha::before {
+    content: '\f017'; /* fa-clock unicode */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 400;
+    font-size: 0.75rem;
+}
+
+/* Botón cerrar en la esquina */
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: #e65100;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.modal-close:hover { color: #bf360c; }
+
+.modal-content {
+    padding: 16px 18px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.modal-content pre {
     margin: 0;
     white-space: pre-wrap;
     font-family: inherit;
     font-size: 0.9rem;
     color: #333;
+    line-height: 1.6;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -477,12 +593,11 @@ tbody tr:hover { background-color: #f8f9ff; }
     .search-form { flex-direction: column; }
     .search-form input { min-width: 100%; }
     .search-form button { width: 100%; }
-    .table-container { overflow-x: auto; }
     table { font-size: 12px; min-width: 600px; }
     th, td { padding: 12px 10px; white-space: nowrap; }
     .info-grid { grid-template-columns: 1fr; }
     .btn-volver { width: 100%; justify-content: center; }
-    .novedades-content { max-width: 280px; }
+    .novedades-modal { width: 90vw; }
 }
 
 @media (max-width: 480px) {
@@ -491,33 +606,12 @@ tbody tr:hover { background-color: #f8f9ff; }
         flex-direction: column;
         text-align: center;
     }
-
     .header-left {
         flex-direction: column;
         gap: 12px;
         width: 100%;
     }
-
     .header-left img { width: 40px; height: 40px; }
-
-    .header-user {
-        background: rgba(255,255,255,0.2);
-        padding: 10px 20px;
-        border-radius: 25px;
-        color: white;
-        font-weight: 600;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.3);
-        animation: fadeIn 0.8s ease-out 0.3s both;
-        font-size: clamp(12px, 2.5vw, 14px);
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .user-icon { font-size: 1.1rem; color: white; }
-
     .consultar-container { padding: 15px 12px; }
     .search-section { padding: 15px; }
     .search-section h3 { font-size: 16px; margin-bottom: 15px; }
@@ -531,9 +625,8 @@ tbody tr:hover { background-color: #f8f9ff; }
     .info-item { padding: 12px; }
     .info-item label { font-size: 11px; }
     .info-item span { font-size: 14px; }
-    .btn-permiso { padding: 8px 20px; font-size: 12px; display: block; text-align: center; }
+    .btn-permiso { padding: 8px 20px; font-size: 12px; display: flex; justify-content: center; }
     .btn-volver { padding: 10px 20px; font-size: 14px; }
-    .novedades-content { max-width: 100%; }
 }
 
 @media (max-width: 360px) {

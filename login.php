@@ -64,26 +64,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION["rol"]        = $fila["rol"];
 
             /* =========================
-               REDIRECCIÓN SEGÚN EL ROL
+               REDIRECCIÓN SEGÚN EL ROL (normalización)
                ========================= */
-            if ($fila["rol"] === "administracion") {
-             header("Location: administracion/index.php");
+            // El valor almacenado en la base de datos puede tener mayúsculas,
+            // espacios o acentos. Para las comprobaciones internas (sesión,
+            // controles de acceso) utilizamos identificadores simples en
+            // minúsculas (administracion, subdireccion, instructor, guarda).
+            $rol_real = $fila["rol"];
+            $rol = '';
+            $destino = 'usuario/index.php';
 
-            } elseif ($fila["rol"] === "subdireccion") {
-            header("Location: subdireccion/index.php");
+            switch (mb_strtolower($rol_real, 'UTF-8')) {
+                case 'administracion':
+                case 'administración':
+                    $rol = 'administracion';
+                    $destino = 'administracion/index.php';
+                    break;
 
-            } elseif ($fila["rol"] === "instructor") {
-            header("Location: instructor/index.php");
+                case 'subdirección':
+                case 'subdireccion':
+                    $rol = 'subdireccion';
+                    $destino = 'subdireccion/index.php';
+                    break;
 
+                case 'instructor':
+                    $rol = 'instructor';
+                    $destino = 'instructor/index.php';
+                    break;
+
+                case 'guarda de seguridad':
+                case 'guarda':
+                    $rol = 'guarda';
+                    $destino = 'guarda/index.php';
+                    break;
+
+                default:
+                    // otros roles no contemplados van al panel de usuario genérico
+                    $rol = preg_replace('/\s+/', '', mb_strtolower($rol_real, 'UTF-8'));
+                    break;
             }
-            elseif ($fila["rol"] === "Guarda de Seguridad") {
-            header("Location: guarda/verificar.php");
 
-            }
-            
-            else {
-            header("Location: usuario/index.php");
-            }
+            // guardar el rol normalizado en la sesión
+            $_SESSION["rol"] = $rol;
+
+            header("Location: $destino");
+            exit;
 
           
             
