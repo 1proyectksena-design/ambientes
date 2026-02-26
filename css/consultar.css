@@ -48,7 +48,7 @@ body {
     min-width: 0;
 }
 
-.header-left img {
+.logo-sena {
     width: 50px;
     height: 50px;
     object-fit: contain;
@@ -57,7 +57,7 @@ body {
     flex-shrink: 0;
 }
 
-.header-left img:hover {
+.logo-sena:hover {
     transform: scale(1.1) rotate(5deg);
 }
 
@@ -114,6 +114,42 @@ body {
     to   { opacity: 1; transform: translateY(0);    }
 }
 
+/* ================= STATS MINI ================= */
+.stats-mini {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-mini {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.stat-mini .num {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.stat-mini .lbl {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.stat-mini.pendiente .num { color: #fb8c00; }
+.stat-mini.aprobado .num { color: #43a047; }
+.stat-mini.rechazado .num { color: #e53935; }
+.stat-mini.habilitado .num { color: #43a047; }
+.stat-mini.deshabilitado .num { color: #e53935; }
+.stat-mini.mantenimiento .num { color: #fb8c00; }
+
 /* ================= SECCIÓN DE BÚSQUEDA ================= */
 .search-section {
     background: white;
@@ -137,17 +173,20 @@ body {
     flex-wrap: wrap;
 }
 
-.search-form input {
+.search-form input,
+.search-form select {
     flex: 1;
-    min-width: 250px;
+    min-width: 200px;
     padding: 14px 20px;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
     font-size: 15px;
     transition: all 0.3s ease;
+    background: white;
 }
 
-.search-form input:focus {
+.search-form input:focus,
+.search-form select:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
@@ -163,6 +202,7 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .search-form button:hover {
@@ -209,12 +249,12 @@ body {
     font-weight: 600;
 }
 
-/* ================= TABLA DE REGISTROS ================= */
+/* ================= TABLA DE REGISTROS - RESPONSIVE ================= */
 .table-container {
     background: white;
     border-radius: 16px;
     box-shadow: var(--shadow-md);
-    overflow: visible; /* ← IMPORTANTE: permite que el modal flote fuera */
+    overflow: hidden; /* Solo en el contenedor principal */
     margin-bottom: 30px;
     animation: fadeInUp 0.6s ease-out 0.2s both;
 }
@@ -223,7 +263,6 @@ body {
     background: linear-gradient(135deg, #f5f7fa 0%, #e8ebf0 100%);
     padding: 20px 30px;
     border-bottom: 2px solid #e0e0e0;
-    border-radius: 16px 16px 0 0;
 }
 
 .table-header h3 {
@@ -233,13 +272,17 @@ body {
     font-weight: 600;
 }
 
-/* Wrapper con scroll horizontal pero sin cortar modales */
+/* SCROLL HORIZONTAL PARA TABLAS */
 .table-scroll-wrapper {
+    width: 100%;
     overflow-x: auto;
+    overflow-y: visible; /* Permite que modales floten fuera */
+    -webkit-overflow-scrolling: touch;
 }
 
 table {
     width: 100%;
+    min-width: 800px; /* Ancho mínimo para que no se rompa */
     border-collapse: collapse;
 }
 
@@ -252,6 +295,7 @@ th {
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 td {
@@ -275,6 +319,7 @@ tbody tr:hover { background-color: #f8f9ff; }
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .estado-badge i { font-size: 10px; }
@@ -284,6 +329,9 @@ tbody tr:hover { background-color: #f8f9ff; }
 .estado-mantenimiento { background: #ffebee; color: #c62828; }
 .estado-habilitado    { background: #e8f5e9; color: #2e7d32; }
 .estado-deshabilitado { background: #ffebee; color: #c62828; }
+.estado-pendiente     { background: #fff3e0; color: #f57c00; border: 2px solid #ffa726; }
+.estado-aprobado      { background: #e8f5e9; color: #2e7d32; }
+.estado-rechazado     { background: #ffebee; color: #c62828; border: 2px solid #e53935; }
 
 .estado-ocupado-ahora {
     background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
@@ -294,7 +342,7 @@ tbody tr:hover { background-color: #f8f9ff; }
 
 @keyframes pulse-green {
     0%, 100% { box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3); }
-    50%       { box-shadow: 0 4px 16px rgba(67, 160, 71, 0.5); }
+    50%      { box-shadow: 0 4px 16px rgba(67, 160, 71, 0.5); }
 }
 
 .estado-programado {
@@ -309,19 +357,7 @@ tbody tr:hover { background-color: #f8f9ff; }
     border: 2px solid #e0e0e0;
 }
 
-.estado-pendiente {
-    background: #fff3e0;
-    color: #f57c00;
-    border: 2px solid #ffa726;
-}
-
-.estado-rechazado {
-    background: #ffebee;
-    color: #c62828;
-    border: 2px solid #e53935;
-}
-
-/* ================= BOTONES PRINCIPALES ================= */
+/* ================= BOTONES ================= */
 .btn-permiso {
     display: inline-flex;
     align-items: center;
@@ -366,6 +402,32 @@ tbody tr:hover { background-color: #f8f9ff; }
     transform: translateX(-4px);
 }
 
+.btn-action-edit {
+    background: #fff3e0;
+    color: #f57c00;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(251, 140, 0, 0.3);
+    white-space: nowrap;
+}
+
+.btn-action-edit:hover {
+    background: #ffe0b2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(251, 140, 0, 0.4);
+}
+
+.btn-action-edit i {
+    font-size: 14px;
+}
+
 /* ================= MENSAJES ================= */
 .no-results {
     text-align: center;
@@ -381,7 +443,6 @@ tbody tr:hover { background-color: #f8f9ff; }
     opacity: 0.4;
 }
 
-/* ================= DESCRIPCIÓN AMBIENTE ================= */
 .descripcion-ambiente {
     background: #f8f9fa;
     padding: 15px;
@@ -400,7 +461,6 @@ tbody tr:hover { background-color: #f8f9ff; }
     margin: 0;
 }
 
-/* ================= AVISOS ================= */
 .alert-disabled {
     background: #fee2e2;
     border: 1px solid #dc2626;
@@ -424,7 +484,6 @@ tbody tr:hover { background-color: #f8f9ff; }
 
 .alert-disabled p { margin: 0; }
 
-/* ================= BOTONES DE ACCIÓN ================= */
 .action-buttons {
     display: flex;
     gap: 15px;
@@ -432,26 +491,7 @@ tbody tr:hover { background-color: #f8f9ff; }
     flex-wrap: wrap;
 }
 
-.btn-editar {
-    background: linear-gradient(135deg, #fb8c00 0%, #f57c00 100%);
-    color: white;
-    padding: 14px 28px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(251,140,0,0.3);
-}
-
-.btn-editar:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(251,140,0,0.4);
-}
-
-/* ================= NOVEDADES ================= */
+/* ================= NOVEDADES MODAL ================= */
 .btn-ver-novedades {
     background: #fb8c00;
     color: white;
@@ -459,25 +499,17 @@ tbody tr:hover { background-color: #f8f9ff; }
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .btn-ver-novedades:hover {
     background: #f57c00;
-    transform: translateY(-1px);
 }
 
-/* ============================================================
-   MODAL DE NOVEDADES — usa position: fixed para que NUNCA
-   quede cortado por el overflow de la tabla o sus padres.
-   ============================================================ */
 .novedades-modal {
-    position: fixed;          /* sale del flujo de la tabla */
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -485,85 +517,43 @@ tbody tr:hover { background-color: #f8f9ff; }
     border: 2px solid #fb8c00;
     border-radius: 12px;
     padding: 0;
-    width: 420px;
-    max-width: 90vw;
+    width: 90%;
+    max-width: 450px;
     box-shadow: 0 12px 40px rgba(0,0,0,0.2);
     z-index: 9999;
-    display: none;            /* oculto por defecto */
+    display: none;
 }
 
-/* Overlay oscuro detrás del modal */
 .novedades-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.25);
+    background: rgba(0,0,0,0.3);
     z-index: 9998;
     display: none;
 }
 
 .modal-header {
     background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-    padding: 14px 18px;
+    padding: 12px 15px;
     border-bottom: 2px solid #fb8c00;
     border-radius: 10px 10px 0 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
 }
 
 .modal-header strong {
+    display: block;
     color: #e65100;
-    font-size: 0.82rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
 }
 
 .instructor-name {
     color: #333;
-    font-weight: 700;
-    font-size: 1rem;
-}
-
-/* Fecha de la novedad — se muestra siempre */
-.modal-fecha {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 4px;
-    background: rgba(230,81,0,0.10);
-    color: #bf360c;
-    font-size: 0.78rem;
     font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
-    width: fit-content;
+    font-size: 1.05rem;
 }
-
-.modal-fecha::before {
-    content: '\f017'; /* fa-clock unicode */
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 400;
-    font-size: 0.75rem;
-}
-
-/* Botón cerrar en la esquina */
-.modal-close {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    background: none;
-    border: none;
-    font-size: 1.3rem;
-    color: #e65100;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0;
-}
-
-.modal-close:hover { color: #bf360c; }
 
 .modal-content {
-    padding: 16px 18px;
+    padding: 15px;
     max-height: 300px;
     overflow-y: auto;
 }
@@ -580,24 +570,29 @@ tbody tr:hover { background-color: #f8f9ff; }
 /* ================= RESPONSIVE ================= */
 @media (max-width: 1024px) {
     .consultar-container { padding: 25px 20px; }
-    table { font-size: 13px; }
 }
 
 @media (max-width: 768px) {
     .header { padding: 15px 20px; }
-    .header-left { gap: 15px; }
-    .header-left img { width: 45px; height: 45px; }
+    .logo-sena { width: 45px; height: 45px; }
     .consultar-container { padding: 20px 15px; }
     .search-section { padding: 20px; }
     .search-section h3 { font-size: 18px; }
     .search-form { flex-direction: column; }
-    .search-form input { min-width: 100%; }
-    .search-form button { width: 100%; }
-    table { font-size: 12px; min-width: 600px; }
-    th, td { padding: 12px 10px; white-space: nowrap; }
+    .search-form input,
+    .search-form select,
+    .search-form button { 
+        width: 100%; 
+        min-width: 100%;
+    }
     .info-grid { grid-template-columns: 1fr; }
     .btn-volver { width: 100%; justify-content: center; }
-    .novedades-modal { width: 90vw; }
+    
+    /* Tabla con scroll en móviles */
+    .table-scroll-wrapper {
+        margin: 0 -20px;
+        padding: 0 20px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -611,22 +606,21 @@ tbody tr:hover { background-color: #f8f9ff; }
         gap: 12px;
         width: 100%;
     }
-    .header-left img { width: 40px; height: 40px; }
+    .logo-sena { width: 40px; height: 40px; }
     .consultar-container { padding: 15px 12px; }
     .search-section { padding: 15px; }
-    .search-section h3 { font-size: 16px; margin-bottom: 15px; }
-    .search-form input { padding: 12px 16px; font-size: 14px; }
-    .search-form button { padding: 12px 24px; font-size: 14px; }
     .table-header { padding: 15px 20px; }
     .table-header h3 { font-size: 16px; }
-    table { font-size: 11px; }
-    th, td { padding: 10px 8px; }
+    th, td { padding: 14px 18px; font-size: 13px; }
     .ambiente-result { padding: 20px; }
-    .info-item { padding: 12px; }
-    .info-item label { font-size: 11px; }
-    .info-item span { font-size: 14px; }
-    .btn-permiso { padding: 8px 20px; font-size: 12px; display: flex; justify-content: center; }
+    .btn-permiso { 
+        padding: 12px 20px; 
+        font-size: 14px; 
+        width: 100%;
+        justify-content: center;
+    }
     .btn-volver { padding: 10px 20px; font-size: 14px; }
+    .novedades-modal { width: 95%; }
 }
 
 @media (max-width: 360px) {

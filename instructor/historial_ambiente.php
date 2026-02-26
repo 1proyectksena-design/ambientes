@@ -125,89 +125,91 @@ if($nombre_ambiente){
             </div>
             
             <?php if($historial && mysqli_num_rows($historial) > 0): ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Instructor</th>
-                        <th>Período</th>
-                        <th>Horario</th>
-                        <th>Estado Actual</th>
-                        <th>Autorizado Por</th>
-                        <th>Observaciones</th>
-                        <th>Novedades</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while($row = mysqli_fetch_assoc($historial)): 
-                        /* CALCULAR ESTADO ACTUAL */
-                        $estadoActual = 'desocupado';
-                        $textoEstado = 'Desocupado';
-                        $iconoEstado = '<i class="fa-solid fa-circle"></i>';
-                        
-                        if($row['estado'] == 'Aprobado') {
-                            if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
-                                if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
-                                    $estadoActual = 'ocupado-ahora';
-                                    $textoEstado = 'Ocupado Ahora';
-                                    $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
-                                } else {
-                                    $estadoActual = 'programado';
-                                    $textoEstado = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
-                                    $iconoEstado = '<i class="fa-regular fa-clock"></i>';
+            <div class="table-scroll-wrapper"> 
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Instructor</th>
+                            <th>Período</th>
+                            <th>Horario</th>
+                            <th>Estado Actual</th>
+                            <th>Autorizado Por</th>
+                            <th>Observaciones</th>
+                            <th>Novedades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while($row = mysqli_fetch_assoc($historial)): 
+                            /* CALCULAR ESTADO ACTUAL */
+                            $estadoActual = 'desocupado';
+                            $textoEstado = 'Desocupado';
+                            $iconoEstado = '<i class="fa-solid fa-circle"></i>';
+                            
+                            if($row['estado'] == 'Aprobado') {
+                                if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
+                                    if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
+                                        $estadoActual = 'ocupado-ahora';
+                                        $textoEstado = 'Ocupado Ahora';
+                                        $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
+                                    } else {
+                                        $estadoActual = 'programado';
+                                        $textoEstado = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                        $iconoEstado = '<i class="fa-regular fa-clock"></i>';
+                                    }
                                 }
+                            } elseif($row['estado'] == 'Pendiente') {
+                                $estadoActual = 'pendiente';
+                                $textoEstado = 'Pendiente';
+                                $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
+                            } elseif($row['estado'] == 'Rechazado') {
+                                $estadoActual = 'rechazado';
+                                $textoEstado = 'Rechazado';
+                                $iconoEstado = '<i class="fa-solid fa-ban"></i>';
                             }
-                        } elseif($row['estado'] == 'Pendiente') {
-                            $estadoActual = 'pendiente';
-                            $textoEstado = 'Pendiente';
-                            $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
-                        } elseif($row['estado'] == 'Rechazado') {
-                            $estadoActual = 'rechazado';
-                            $textoEstado = 'Rechazado';
-                            $iconoEstado = '<i class="fa-solid fa-ban"></i>';
-                        }
-                    ?>
-                    <tr>
-                        <td>
-                            <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
-                            <?= htmlspecialchars($row['nombre_instructor']) ?>
-                        </td>
-                        <td>
-                            <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?><br>
-                            <small style="color:#999;">al <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></small>
-                        </td>
-                        <td>
-                            <?= date('h:i A', strtotime($row['hora_inicio'])) ?> -<br>
-                            <?= date('h:i A', strtotime($row['hora_final'])) ?>
-                        </td>
-                        <td>
-                            <span class="estado-badge estado-<?= $estadoActual ?>">
-                                <?= $iconoEstado ?> <?= $textoEstado ?>
-                            </span>
-                        </td>
-                        <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                        <td><?= htmlspecialchars($row['observaciones'] ?: '—') ?></td>
-                        <td style="position: relative;">
-                            <?php if($row['novedades']): ?>
-                                <button onclick="verNovedades(this)" class="btn-ver-novedades">
-                                    <i class="fa-solid fa-eye"></i> Ver
-                                </button>
-                                <div class="novedades-modal" style="display:none;">
-                                    <div class="modal-header">
-                                        <strong>Novedades reportadas por:</strong>
-                                        <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                        ?>
+                        <tr>
+                            <td>
+                                <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
+                                <?= htmlspecialchars($row['nombre_instructor']) ?>
+                            </td>
+                            <td>
+                                <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?><br>
+                                <small style="color:#999;">al <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></small>
+                            </td>
+                            <td>
+                                <?= date('h:i A', strtotime($row['hora_inicio'])) ?> -<br>
+                                <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                            </td>
+                            <td>
+                                <span class="estado-badge estado-<?= $estadoActual ?>">
+                                    <?= $iconoEstado ?> <?= $textoEstado ?>
+                                </span>
+                            </td>
+                            <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
+                            <td><?= htmlspecialchars($row['observaciones'] ?: '—') ?></td>
+                            <td style="position: relative;">
+                                <?php if($row['novedades']): ?>
+                                    <button onclick="verNovedades(this)" class="btn-ver-novedades">
+                                        <i class="fa-solid fa-eye"></i> Ver
+                                    </button>
+                                    <div class="novedades-modal" style="display:none;">
+                                        <div class="modal-header">
+                                            <strong>Novedades reportadas por:</strong>
+                                            <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                        </div>
+                                        <div class="modal-content">
+                                            <pre><?= htmlspecialchars($row['novedades']) ?></pre>
+                                        </div>
                                     </div>
-                                    <div class="modal-content">
-                                        <pre><?= htmlspecialchars($row['novedades']) ?></pre>
-                                    </div>
-                                </div>
-                            <?php else: ?>
-                                <span style="color:#999;">Sin novedades</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
+                                <?php else: ?>
+                                    <span style="color:#999;">Sin novedades</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>    
             <?php else: ?>
             <div class="no-results">
                 <i class="fa-solid fa-inbox"></i>

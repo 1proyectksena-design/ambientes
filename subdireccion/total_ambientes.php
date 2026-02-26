@@ -85,34 +85,36 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
         </div>
         
         <?php if($total > 0): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Estado</th>
-                    <th>Horario Fijo</th>
-                    <th>Horario Disponible</th>
-                    <th>Descripción</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while($row = mysqli_fetch_assoc($resultado)): ?>
-                <tr>
-                    <td><?= $row['id'] ?></td>
-                    <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
-                    <td>
-                        <span class="estado-badge estado-<?= strtolower($row['estado']) ?>">
-                            <?= htmlspecialchars($row['estado']) ?>
-                        </span>
-                    </td>
-                    <td><?= htmlspecialchars($row['horario_fijo'] ?: '—') ?></td>
-                    <td><?= htmlspecialchars($row['horario_disponible'] ?: '—') ?></td>
-                    <td><?= htmlspecialchars(substr($row['descripcion_general'], 0, 50)) ?><?= strlen($row['descripcion_general']) > 50 ? '...' : '' ?></td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+        <div class="table-scroll-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th>Horario Fijo</th>
+                        <th>Horario Disponible</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while($row = mysqli_fetch_assoc($resultado)): ?>
+                    <tr>
+                        <td><?= $row['id'] ?></td>
+                        <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
+                        <td>
+                            <span class="estado-badge estado-<?= strtolower($row['estado']) ?>">
+                                <?= htmlspecialchars($row['estado']) ?>
+                            </span>
+                        </td>
+                        <td><?= htmlspecialchars($row['horario_fijo'] ?: '—') ?></td>
+                        <td><?= htmlspecialchars($row['horario_disponible'] ?: '—') ?></td>
+                        <td><?= htmlspecialchars(substr($row['descripcion_general'], 0, 50)) ?><?= strlen($row['descripcion_general']) > 50 ? '...' : '' ?></td>
+                    </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
         <?php else: ?>
         <div class="no-results">
             <i class="fa-solid fa-inbox"></i>

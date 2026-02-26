@@ -85,43 +85,40 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
         </div>
         
         <?php if($total > 0): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>Ambiente</th>
-                    <th>Instructor</th>
-                    <th>Período</th>
-                    <th>Horario</th>
-                    <th>Estado</th>
-                    <th>Autorizado Por</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while($row = mysqli_fetch_assoc($resultado)): ?>
-                <tr>
-                    <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
-                    <td>
-                        <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
-                        <?= htmlspecialchars($row['nombre_instructor']) ?>
-                    </td>
-                    <td>
-                        <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?> - 
-                        <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
-                    </td>
-                    <td>
-                        <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
-                        <?= date('h:i A', strtotime($row['hora_final'])) ?>
-                    </td>
-                    <td>
-                        <span class="estado-badge estado-<?= strtolower($row['estado']) ?>">
-                            <?= htmlspecialchars($row['estado']) ?>
-                        </span>
-                    </td>
-                    <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+        <div class="table-scroll-wrapper"> 
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ambiente</th>
+                        <th>Instructor</th>
+                        <th>Período</th>
+                        <th>Horario</th>
+                        <th>Autorizado Por</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while($row = mysqli_fetch_assoc($resultado)): ?>
+                    <tr>
+                        <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
+                        <td>
+                            <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
+                            <?= htmlspecialchars($row['nombre_instructor']) ?>
+                        </td>
+                        <td>
+                            <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?> - 
+                            <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
+                        </td>
+                        <td>
+                            <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
+                            <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                        </td>
+                        <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
+                    </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
+
         <?php else: ?>
         <div class="no-results">
             <i class="fa-solid fa-inbox"></i>

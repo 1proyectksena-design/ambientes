@@ -213,7 +213,7 @@ body {
 .menu-card-icon {
     width: 90px; 
     height: 90px;
-    background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+    background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
     border-radius: 20px;
     display: flex; 
     align-items: center; 
@@ -233,7 +233,7 @@ body {
 }
 
 .menu-card.search-card .menu-card-icon { 
-    background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%); 
+    background: linear-gradient(135deg, #2c3e8f 0%, #1a2654 100%); 
     box-shadow: 0 6px 20px rgba(30, 136, 229, 0.35); 
 }
 
@@ -294,7 +294,7 @@ body {
 }
 
 .btn-search {
-    background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
     color: white;
     padding: 14px 28px;
     border: none;

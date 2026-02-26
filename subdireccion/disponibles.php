@@ -68,35 +68,37 @@ $total = mysqli_num_rows($resultado);
         </div>
         
         <?php if($total > 0): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>Ambiente</th>
-                    <th>Horario Fijo</th>
-                    <th>Horario Disponible</th>
-                    <th>Descripción</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while($row = mysqli_fetch_assoc($resultado)): ?>
-                <tr>
-                    <td>
-                        <strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong>
-                        <span class="badge-disponible">Libre</span>
-                    </td>
-                    <td><?= htmlspecialchars($row['horario_fijo'] ?: '—') ?></td>
-                    <td><?= htmlspecialchars($row['horario_disponible'] ?: '—') ?></td>
-                    <td><?= htmlspecialchars(substr($row['descripcion_general'], 0, 40)) ?><?= strlen($row['descripcion_general']) > 40 ? '...' : '' ?></td>
-                    <td>
-                        <a href="permisos.php?id_ambiente=<?= $row['id'] ?>" class="btn-accion">
-                            <i class="fa-solid fa-plus-circle"></i> Autorizar
-                        </a>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+        <div class="table-scroll-wrapper"> 
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ambiente</th>
+                        <th>Horario Fijo</th>
+                        <th>Horario Disponible</th>
+                        <th>Descripción</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while($row = mysqli_fetch_assoc($resultado)): ?>
+                    <tr>
+                        <td>
+                            <strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong>
+                            <span class="badge-disponible">Libre</span>
+                        </td>
+                        <td><?= htmlspecialchars($row['horario_fijo'] ?: '—') ?></td>
+                        <td><?= htmlspecialchars($row['horario_disponible'] ?: '—') ?></td>
+                        <td><?= htmlspecialchars(substr($row['descripcion_general'], 0, 40)) ?><?= strlen($row['descripcion_general']) > 40 ? '...' : '' ?></td>
+                        <td>
+                            <a href="permisos.php?id_ambiente=<?= $row['id'] ?>" class="btn-accion">
+                                <i class="fa-solid fa-plus-circle"></i> Autorizar
+                            </a>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>    
         <?php else: ?>
         <div class="no-results">
             <i class="fa-solid fa-circle-xmark"></i>

@@ -104,32 +104,11 @@ $hora_actual = date('H:i:s');
 
 <div class="consultar-container">
 
-    <!-- ESTADÍSTICAS RÁPIDAS -->
-    <div class="stats-mini">
-        <div class="stat-mini pendiente">
-            <div class="num"><?= $statPendiente ?></div>
-            <div class="lbl">Pendientes</div>
-        </div>
-        <div class="stat-mini aprobado">
-            <div class="num"><?= $statAprobado ?></div>
-            <div class="lbl">Aprobados</div>
-        </div>
-        <div class="stat-mini rechazado">
-            <div class="num"><?= $statRechazado ?></div>
-            <div class="lbl">Rechazados</div>
-        </div>
-    </div>
-
     <!-- FILTROS -->
     <div class="search-section">
         <h3><i class="fa-solid fa-filter"></i> Filtrar Autorizaciones</h3>
         <form method="GET" class="search-form">
-            <select name="estado">
-                <option value="todos" <?= $filtro_estado == 'todos' ? 'selected' : '' ?>>Todos los estados</option>
-                <option value="Pendiente" <?= $filtro_estado == 'Pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                <option value="Aprobado" <?= $filtro_estado == 'Aprobado' ? 'selected' : '' ?>>Aprobado</option>
-                <option value="Rechazado" <?= $filtro_estado == 'Rechazado' ? 'selected' : '' ?>>Rechazado</option>
-            </select>
+          
             
             <select name="mes">
                 <?php for($m=1; $m<=12; $m++): ?>
@@ -161,90 +140,92 @@ $hora_actual = date('H:i:s');
         </div>
         
         <?php if($total > 0): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>Ambiente</th>
-                    <th>Instructor</th>
-                    <th>Fecha Inicio</th>
-                    <th>Fecha Fin</th>
-                    <th>Horario</th>
-                    <th>Estado Actual</th>
-                    <th>Autorizado Por</th>
-                    <th>Novedades</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while($row = mysqli_fetch_assoc($resultado)): 
-                    /* CALCULAR ESTADO ACTUAL */
-                    $estadoActual = 'desocupado';
-                    $textoEstado = 'Desocupado';
-                    $iconoEstado = '<i class="fa-solid fa-circle"></i>';
-                    
-                    if($row['estado'] == 'Aprobado') {
-                        // Verificar si está dentro del rango de fechas
-                        if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
-                            // Verificar si está dentro del horario
-                            if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
-                                $estadoActual = 'ocupado-ahora';
-                                $textoEstado = 'Ocupado Ahora';
-                                $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
-                            } else {
-                                $estadoActual = 'programado';
-                                $textoEstado = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
-                                $iconoEstado = '<i class="fa-regular fa-clock"></i>';
+        <div class="table-scroll-wrapper"> 
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ambiente</th>
+                        <th>Instructor</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Horario</th>
+                        <th>Estado Actual</th>
+                        <th>Autorizado Por</th>
+                        <th>Novedades</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while($row = mysqli_fetch_assoc($resultado)): 
+                        /* CALCULAR ESTADO ACTUAL */
+                        $estadoActual = 'desocupado';
+                        $textoEstado = 'Desocupado';
+                        $iconoEstado = '<i class="fa-solid fa-circle"></i>';
+                        
+                        if($row['estado'] == 'Aprobado') {
+                            // Verificar si está dentro del rango de fechas
+                            if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
+                                // Verificar si está dentro del horario
+                                if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
+                                    $estadoActual = 'ocupado-ahora';
+                                    $textoEstado = 'Ocupado Ahora';
+                                    $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
+                                } else {
+                                    $estadoActual = 'programado';
+                                    $textoEstado = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                    $iconoEstado = '<i class="fa-regular fa-clock"></i>';
+                                }
                             }
+                        } elseif($row['estado'] == 'Pendiente') {
+                            $estadoActual = 'pendiente';
+                            $textoEstado = 'Pendiente';
+                            $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
+                        } elseif($row['estado'] == 'Rechazado') {
+                            $estadoActual = 'rechazado';
+                            $textoEstado = 'Rechazado';
+                            $iconoEstado = '<i class="fa-solid fa-ban"></i>';
                         }
-                    } elseif($row['estado'] == 'Pendiente') {
-                        $estadoActual = 'pendiente';
-                        $textoEstado = 'Pendiente';
-                        $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
-                    } elseif($row['estado'] == 'Rechazado') {
-                        $estadoActual = 'rechazado';
-                        $textoEstado = 'Rechazado';
-                        $iconoEstado = '<i class="fa-solid fa-ban"></i>';
-                    }
-                ?>
-                <tr>
-                    <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
-                    <td>
-                        <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
-                        <?= htmlspecialchars($row['nombre_instructor']) ?>
-                    </td>
-                    <td><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
-                    <td><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
-                    <td>
-                        <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
-                        <?= date('h:i A', strtotime($row['hora_final'])) ?>
-                    </td>
-                    <td>
-                        <span class="estado-badge estado-<?= $estadoActual ?>">
-                            <?= $iconoEstado ?> <?= $textoEstado ?>
-                        </span>
-                    </td>
-                    <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                    <td style="position: relative;">
-                        <?php if($row['novedades']): ?>
-                            <button onclick="verNovedades(this)" class="btn-ver-novedades">
-                                <i class="fa-solid fa-eye"></i> Ver
-                            </button>
-                            <div class="novedades-modal" style="display:none;">
-                                <div class="modal-header">
-                                    <strong>Novedades reportadas por:</strong>
-                                    <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                    ?>
+                    <tr>
+                        <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
+                        <td>
+                            <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
+                            <?= htmlspecialchars($row['nombre_instructor']) ?>
+                        </td>
+                        <td><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
+                        <td><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
+                        <td>
+                            <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
+                            <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                        </td>
+                        <td>
+                            <span class="estado-badge estado-<?= $estadoActual ?>">
+                                <?= $iconoEstado ?> <?= $textoEstado ?>
+                            </span>
+                        </td>
+                        <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
+                        <td style="position: relative;">
+                            <?php if($row['novedades']): ?>
+                                <button onclick="verNovedades(this)" class="btn-ver-novedades">
+                                    <i class="fa-solid fa-eye"></i> Ver
+                                </button>
+                                <div class="novedades-modal" style="display:none;">
+                                    <div class="modal-header">
+                                        <strong>Novedades reportadas por:</strong>
+                                        <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                    </div>
+                                    <div class="modal-content">
+                                        <pre><?= htmlspecialchars($row['novedades']) ?></pre>
+                                    </div>
                                 </div>
-                                <div class="modal-content">
-                                    <pre><?= htmlspecialchars($row['novedades']) ?></pre>
-                                </div>
-                            </div>
-                        <?php else: ?>
-                            <span style="color:#999;">Sin novedades</span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+                            <?php else: ?>
+                                <span style="color:#999;">Sin novedades</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>    
         <?php else: ?>
         <div class="no-results">
             <i class="fa-solid fa-inbox"></i>

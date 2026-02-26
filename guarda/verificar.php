@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// protege la página: solo guardas pueden acceder
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'guarda') {
     header("Location: ../login.php");
     exit;
@@ -24,7 +23,7 @@ $resAmbiente = mysqli_query($conexion, "SELECT nombre_ambiente FROM ambientes WH
 $dataAmbiente = mysqli_fetch_assoc($resAmbiente);
 $nombre_ambiente = $dataAmbiente['nombre_ambiente'] ?? "Ambiente $id_ambiente";
 
-/* CONSULTA ACTUALIZADA CON NUEVA BD */
+/* CONSULTA */
 $sql = "SELECT 
             au.*,
             i.nombre AS nombre_instructor
@@ -39,9 +38,7 @@ $sql = "SELECT
 $resultado = mysqli_query($conexion, $sql);
 $total = mysqli_num_rows($resultado);
 
-/* ============================================================
-   SI LA PETICIÓN ES AJAX → DEVOLVER SOLO EL JSON
-   ============================================================ */
+/* SI ES AJAX → DEVOLVER JSON */
 if(isset($_GET['ajax'])){
     $filas = [];
     while($f = mysqli_fetch_assoc($resultado)){
@@ -98,7 +95,7 @@ if(isset($_GET['ajax'])){
             object-fit: contain;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
-        .header-title h1 { color: white; font-size: clamp(18px, 4vw, 24px); font-weight: 700; }
+        .header-title h1 { color: white; font-size: clamp(18px, 4vw, 24px); font-weight: 700; margin: 0; }
         .header-title span { color: rgba(255,255,255,0.85); font-size: 13px; }
         .header-badge {
             background: rgba(255,255,255,0.2);
@@ -107,19 +104,6 @@ if(isset($_GET['ajax'])){
             border: 1px solid rgba(255,255,255,0.3);
             backdrop-filter: blur(10px);
         }
-
-        /* ===== BARRA DE ACTUALIZACIÓN ===== */
-        
-        .spinner {
-            width: 14px; height: 14px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top: 2px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: none;
-        }
-        .spinner.activo { display: inline-block; }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ===== CONTENEDOR ===== */
         .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
@@ -134,7 +118,7 @@ if(isset($_GET['ajax'])){
             flex-wrap: wrap; gap: 15px;
             border-left: 6px solid #172f63;
         }
-        .ambiente-info h2 { font-size: clamp(20px, 5vw, 28px); color: #172f63; font-weight: 800; }
+        .ambiente-info h2 { font-size: clamp(20px, 5vw, 28px); color: #172f63; font-weight: 800; margin: 0; }
         .ambiente-info p { color: #666; font-size: 14px; margin-top: 5px; }
         .stat-pill {
             background: #f0f4ff; padding: 10px 20px;
@@ -144,65 +128,90 @@ if(isset($_GET['ajax'])){
         .stat-pill .num { font-size: 24px; font-weight: 800; color: #172f63; }
         .stat-pill .lbl { font-size: 11px; color: #666; text-transform: uppercase; font-weight: 600; }
 
-        /* ===== HORA ACTUAL ===== */
-        .hora-actual {
-            background: linear-gradient(135deg, #172f63, #355d91);
-            color: white; border-radius: 12px;
-            padding: 15px 25px; text-align: center;
-            margin-bottom: 25px; font-size: 13px;
-            letter-spacing: 0.5px;
-        }
-        .hora-actual strong { font-size: 26px; display: block; margin-top: 4px; }
-
         /* ===== TABLA ===== */
         .table-container {
-            background: white; border-radius: 16px;
+            background: white; 
+            border-radius: 16px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-            overflow: hidden; margin-bottom: 25px;
+            overflow: hidden;
+            margin-bottom: 25px;
             transition: opacity 0.3s ease;
         }
         .table-container.cargando { opacity: 0.5; }
+        
         .table-header {
             background: linear-gradient(135deg, #f8f9fa, #e9ecef);
             padding: 18px 25px;
             border-bottom: 2px solid #e0e0e0;
-            display: flex; align-items: center;
+            display: flex; 
+            align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .table-header h3 { color: #333; font-size: 16px; font-weight: 700; }
+        .table-header h3 { color: #333; font-size: 16px; font-weight: 700; margin: 0; }
         .ultima-actualizacion { font-size: 11px; color: #999; }
 
-        table { width: 100%; border-collapse: collapse; }
-        th {
-            background: #172f63; color: white;
-            padding: 14px 16px; text-align: left;
-            font-size: 12px; text-transform: uppercase;
-            letter-spacing: 0.5px; font-weight: 600;
+        /* SCROLL WRAPPER - CRÍTICO PARA RESPONSIVE */
+        .table-scroll-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
+
+        table { 
+            width: 100%; 
+            min-width: 800px; /* Ancho mínimo para no romper columnas */
+            border-collapse: collapse; 
+        }
+        
+        th {
+            background: #172f63; 
+            color: white;
+            padding: 14px 16px; 
+            text-align: left;
+            font-size: 12px; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px; 
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
         td {
             padding: 14px 16px;
             border-bottom: 1px solid #f0f0f0;
-            color: #444; font-size: 14px;
+            color: #444; 
+            font-size: 14px;
         }
+        
+        tbody tr { transition: background-color 0.2s ease; }
         tbody tr:hover { background: #f8f9ff; }
         tbody tr.activa-ahora { background: #e8f5e9; border-left: 4px solid #43a047; }
         tbody tr.activa-ahora td { color: #2e7d32; font-weight: 600; }
 
         /* ===== BADGES ===== */
         .badge-rol {
-            display: inline-block; padding: 5px 14px;
-            border-radius: 20px; font-size: 12px;
-            font-weight: 700; text-transform: capitalize;
+            display: inline-block; 
+            padding: 5px 14px;
+            border-radius: 20px; 
+            font-size: 12px;
+            font-weight: 700; 
+            text-transform: capitalize;
+            white-space: nowrap;
         }
         .badge-administracion { background: #e3f2fd; color: #1565c0; }
         .badge-subdireccion { background: #e8f5e9; color: #2e7d32; }
 
         .badge-activo {
-            background: #43a047; color: white;
-            padding: 4px 10px; border-radius: 12px;
-            font-size: 11px; font-weight: 700;
+            background: #43a047; 
+            color: white;
+            padding: 4px 10px; 
+            border-radius: 12px;
+            font-size: 11px; 
+            font-weight: 700;
             margin-left: 8px;
             animation: pulse 1.5s infinite;
+            white-space: nowrap;
         }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
@@ -216,27 +225,128 @@ if(isset($_GET['ajax'])){
             cursor: pointer;
             font-size: 0.75rem;
             font-weight: 600;
+            white-space: nowrap;
         }
-        .btn-ver-nov:hover {
-            background: #f57c00;
-        }
+        .btn-ver-nov:hover { background: #f57c00; }
 
         /* ===== SIN RESULTADOS ===== */
-        .no-results { text-align: center; padding: 60px 20px; color: #999; }
-        .no-results i { font-size: 4rem; margin-bottom: 15px; color: #ddd; display: block; }
+        .no-results { 
+            text-align: center; 
+            padding: 60px 20px; 
+            color: #999; 
+        }
+        .no-results i { 
+            font-size: 4rem; 
+            margin-bottom: 15px; 
+            color: #ddd; 
+            display: block; 
+        }
         .no-results p { font-size: 18px; font-weight: 600; }
         .no-results small { font-size: 13px; margin-top: 8px; display: block; }
+        /* ==================== FOOTER ==================== */
+        .footer {
+            background: linear-gradient(135deg, #2c5282 0%, #2d3e63 100%);
+            color: white;
+            padding: 28px 30px;
+            margin-top: auto;
+        }
 
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .footer-logo {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+            opacity: 0.85;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .footer-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .footer-sub {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            margin: 3px 0 0 0;
+        }
+
+        .footer-center {
+            text-align: center;
+            font-size: 13px;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .footer-center p {
+            margin: 3px 0;
+        }
+
+        .footer-year {
+            font-size: 11px;
+            color: rgba(255,255,255,0.55);
+            margin-top: 4px !important;
+        }
+
+        .footer-right {
+            text-align: right;
+            font-size: 12px;
+            color: rgba(255,255,255,0.75);
+        }
+
+        .footer-right p {
+            margin: 2px 0;
+        }
+
+        .footer-right strong {
+            color: white;
+            font-weight: 700;
+        }
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .container { padding: 0 15px; margin: 20px auto; }
             .ambiente-card { flex-direction: column; align-items: flex-start; }
-            .table-container { overflow-x: auto; }
-            table { min-width: 700px; }
-            th, td { padding: 12px 10px; font-size: 12px; }
+            
+            /* Compensar padding en móviles */
+            .table-scroll-wrapper {
+                margin: 0 -20px;
+                padding: 0 20px;
+            }
         }
+        
         @media (max-width: 480px) {
-            .header { padding: 15px; flex-direction: column; text-align: center; }
+            .header { 
+                padding: 15px; 
+                flex-direction: column; 
+                text-align: center; 
+            }
+            .header-left {
+                flex-direction: column;
+                gap: 10px;
+            }
+            th, td { 
+                padding: 12px 8px; 
+                font-size: 12px; 
+            }
         }
     </style>
 </head>
@@ -255,8 +365,6 @@ if(isset($_GET['ajax'])){
         <i class="fa-solid fa-shield-halved"></i> Guarda de Seguridad
     </div>
 </div>
-
-
 
 <div class="container">
 
@@ -281,12 +389,6 @@ if(isset($_GET['ajax'])){
         </div>
     </div>
 
-    <!-- HORA ACTUAL -->
-    <div class="hora-actual">
-        <span> Hora actual (Bogotá)</span>
-        <strong id="reloj"><?= date('h:i:s A') ?></strong>
-    </div>
-
     <!-- TABLA DE AUTORIZACIONES -->
     <div class="table-container" id="tabla-container">
         <div class="table-header">
@@ -298,60 +400,63 @@ if(isset($_GET['ajax'])){
                 Última actualización: <?= date('h:i:s A') ?>
             </span>
         </div>
+        
         <div id="tabla-body">
             <?php if($total > 0): ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Instructor</th>
-                        <th>Hora Inicio</th>
-                        <th>Hora Fin</th>
-                        <th>Autorizado Por</th>
-                        <th>Observación</th>
-                        <th>Novedades</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    mysqli_data_seek($resultado, 0);
-                    while($fila = mysqli_fetch_assoc($resultado)):
-                        $activa = ($hora_actual >= $fila['hora_inicio'] && $hora_actual <= $fila['hora_final']);
-                    ?>
-                    <tr class="<?= $activa ? 'activa-ahora' : '' ?>">
-                        <td>
-                            <i class="fa-solid fa-user" style="color:#355d91; margin-right:6px;"></i>
-                            <?= htmlspecialchars($fila['nombre_instructor']) ?>
-                            <?php if($activa): ?>
-                                <span class="badge-activo">EN CURSO</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <i class="fa-regular fa-clock" style="margin-right:4px; color:#666;"></i>
-                            <?= date('h:i A', strtotime($fila['hora_inicio'])) ?>
-                        </td>
-                        <td>
-                            <i class="fa-regular fa-clock" style="margin-right:4px; color:#666;"></i>
-                            <?= date('h:i A', strtotime($fila['hora_final'])) ?>
-                        </td>
-                        <td>
-                            <span class="badge-rol badge-<?= $fila['rol_autorizado'] ?>">
-                                <?= htmlspecialchars($fila['rol_autorizado']) ?>
-                            </span>
-                        </td>
-                        <td><?= htmlspecialchars($fila['observaciones'] ?: '—') ?></td>
-                        <td>
-                            <?php if($fila['novedades']): ?>
-                                <button onclick="alert('<?= htmlspecialchars(str_replace(["\r", "\n"], ' ', $fila['novedades'])) ?>')" class="btn-ver-nov">
-                                    <i class="fa-solid fa-eye"></i> Ver
-                                </button>
-                            <?php else: ?>
-                                <span style="color:#999;">—</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
+            <div class="table-scroll-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Instructor</th>
+                            <th>Hora Inicio</th>
+                            <th>Hora Fin</th>
+                            <th>Autorizado Por</th>
+                            <th>Observación</th>
+                            <th>Novedades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        mysqli_data_seek($resultado, 0);
+                        while($fila = mysqli_fetch_assoc($resultado)):
+                            $activa = ($hora_actual >= $fila['hora_inicio'] && $hora_actual <= $fila['hora_final']);
+                        ?>
+                        <tr class="<?= $activa ? 'activa-ahora' : '' ?>">
+                            <td>
+                                <i class="fa-solid fa-user" style="color:#355d91; margin-right:6px;"></i>
+                                <?= htmlspecialchars($fila['nombre_instructor']) ?>
+                                <?php if($activa): ?>
+                                    <span class="badge-activo">EN CURSO</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <i class="fa-regular fa-clock" style="margin-right:4px; color:#666;"></i>
+                                <?= date('h:i A', strtotime($fila['hora_inicio'])) ?>
+                            </td>
+                            <td>
+                                <i class="fa-regular fa-clock" style="margin-right:4px; color:#666;"></i>
+                                <?= date('h:i A', strtotime($fila['hora_final'])) ?>
+                            </td>
+                            <td>
+                                <span class="badge-rol badge-<?= $fila['rol_autorizado'] ?>">
+                                    <?= htmlspecialchars($fila['rol_autorizado']) ?>
+                                </span>
+                            </td>
+                            <td><?= htmlspecialchars($fila['observaciones'] ?: '—') ?></td>
+                            <td>
+                                <?php if($fila['novedades']): ?>
+                                    <button onclick="alert('<?= htmlspecialchars(str_replace(["\r", "\n", "'"], [' ', ' ', "\\'"], $fila['novedades'])) ?>')" class="btn-ver-nov">
+                                        <i class="fa-solid fa-eye"></i> Ver
+                                    </button>
+                                <?php else: ?>
+                                    <span style="color:#999;">—</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>
             <?php else: ?>
             <div class="no-results">
                 <i class="fa-solid fa-calendar-xmark"></i>
@@ -361,35 +466,18 @@ if(isset($_GET['ajax'])){
             <?php endif; ?>
         </div>
     </div>
+   
 
 </div>
 
 <script>
-    /* RELOJ EN TIEMPO REAL */
-    function actualizarReloj() {
-        const ahora = new Date();
-        const h = ahora.getHours();
-        const m = String(ahora.getMinutes()).padStart(2, '0');
-        const s = String(ahora.getSeconds()).padStart(2, '0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        const h12 = h % 12 || 12;
-        document.getElementById('reloj').textContent =
-            `${String(h12).padStart(2, '0')}:${m}:${s} ${ampm}`;
-    }
-    setInterval(actualizarReloj, 1000);
-    actualizarReloj();
-
-    /* COUNTDOWN + FETCH AUTOMÁTICO CADA 30 SEGUNDOS */
+    /* AUTO-ACTUALIZACIÓN CADA 30 SEGUNDOS 
+     */
     let segundosRestantes = 30;
 
     function actualizarDatos() {
-        const spinner  = document.getElementById('spinner');
-        const estado   = document.getElementById('estado-refresh');
-        const tabla    = document.getElementById('tabla-container');
-
-        spinner.classList.add('activo');
+        const tabla = document.getElementById('tabla-container');
         tabla.classList.add('cargando');
-        estado.textContent = '🔄 Actualizando...';
 
         const url = `?id=<?= $id_ambiente ?>&ajax=1`;
 
@@ -402,7 +490,7 @@ if(isset($_GET['ajax'])){
 
                 let html = '';
                 if(data.filas.length > 0){
-                    html += `<table>
+                    html += `<div class="table-scroll-wrapper"><table>
                         <thead><tr>
                             <th>Instructor</th>
                             <th>Hora Inicio</th>
@@ -443,7 +531,7 @@ if(isset($_GET['ajax'])){
                             <td>${btnNov}</td>
                         </tr>`;
                     });
-                    html += '</tbody></table>';
+                    html += '</tbody></table></div>';
                 } else {
                     html = `<div class="no-results">
                         <i class="fa-solid fa-calendar-xmark"></i>
@@ -453,22 +541,18 @@ if(isset($_GET['ajax'])){
                 }
 
                 document.getElementById('tabla-body').innerHTML = html;
-                spinner.classList.remove('activo');
                 tabla.classList.remove('cargando');
-                estado.textContent = '✅ Datos actualizados';
                 segundosRestantes = 30;
             })
             .catch(() => {
-                spinner.classList.remove('activo');
                 tabla.classList.remove('cargando');
-                estado.textContent = '❌ Error al actualizar';
                 segundosRestantes = 30;
             });
     }
 
+    /* COUNTDOWN Y AUTO-REFRESH */
     setInterval(() => {
         segundosRestantes--;
-        document.getElementById('countdown').textContent = segundosRestantes;
         if(segundosRestantes <= 0){
             actualizarDatos();
         }
