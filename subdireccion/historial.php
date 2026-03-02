@@ -52,7 +52,7 @@ $hora_actual = date('H:i:s');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historial de Autorizaciones</title>
-    <link rel="stylesheet" href="../css/consultar.css">
+    <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -206,130 +206,7 @@ $hora_actual = date('H:i:s');
 
 </div>
 
-<style>
-.search-form select {
-    padding: 14px 20px;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 15px;
-    transition: all 0.3s ease;
-    background: white;
-}
-.search-form select:focus {
-    outline: none;
-    border-color: #667eea;
-}
 
-.estado-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.estado-badge i { font-size: 10px; }
-
-.estado-badge.estado-ocupado-ahora {
-    background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3);
-    animation: pulse-green 2s infinite;
-}
-
-@keyframes pulse-green {
-    0%, 100% { box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3); }
-    50%       { box-shadow: 0 4px 16px rgba(67, 160, 71, 0.5); }
-}
-
-.estado-badge.estado-programado {
-    background: #fff3e0;
-    color: #e65100;
-    border: 2px solid #fb8c00;
-}
-
-.estado-badge.estado-desocupado {
-    background: #f5f5f5;
-    color: #757575;
-    border: 2px solid #e0e0e0;
-}
-
-.estado-badge.estado-pendiente {
-    background: #fff3e0;
-    color: #f57c00;
-    border: 2px solid #ffa726;
-}
-
-.estado-badge.estado-rechazado {
-    background: #ffebee;
-    color: #c62828;
-    border: 2px solid #e53935;
-}
-
-.btn-ver-novedades {
-    background: #fb8c00;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.btn-ver-novedades:hover { background: #f57c00; }
-
-.novedades-modal {
-    position: absolute;
-    top: 40px;
-    right: 0;
-    background: white;
-    border: 2px solid #fb8c00;
-    border-radius: 12px;
-    padding: 0;
-    min-width: 350px;
-    max-width: 450px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    z-index: 100;
-}
-
-.modal-header {
-    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-    padding: 12px 15px;
-    border-bottom: 2px solid #fb8c00;
-    border-radius: 10px 10px 0 0;
-}
-
-.modal-header strong {
-    display: block;
-    color: #e65100;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-}
-
-.instructor-name {
-    color: #333;
-    font-weight: 600;
-    font-size: 1.05rem;
-}
-
-.modal-content {
-    padding: 15px;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.modal-content pre {
-    margin: 0;
-    white-space: pre-wrap;
-    font-family: inherit;
-    font-size: 0.9rem;
-    color: #333;
-    line-height: 1.6;
-}
-</style>
 
 <script>
 function verNovedades(btn) {

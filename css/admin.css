@@ -115,7 +115,7 @@ body {
 }
 .stat-card:hover::before { transform: scaleX(1); }
 
-.stat-label { font-size: clamp(12px, 2.5vw, 14px); color: #666; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-label { font-size: clamp(12px, 2.5vw, 14px); color: #4b4b4b; margin-bottom: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: 0.5px; }
 
 .stat-value {
     font-size: clamp(36px, 8vw, 48px); font-weight: 800; margin: 10px 0;

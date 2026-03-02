@@ -321,6 +321,50 @@ if(isset($_GET['ajax'])){
             color: white;
             font-weight: 700;
         }
+        /*BOTONNNNN DE VOLVER*/
+        .btn-volver {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn-volver {
+            background: white;
+            border: 2px solid #02050f;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-volver:hover {
+            border-color: #667eea;
+            background: #416792;
+            color: white;
+        }
+
+        .btn-volver.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        .btn-volver i {
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 480px) {
+            .toggle-forms {
+                grid-template-columns: 1fr;
+            }
+        }
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .container { padding: 0 15px; margin: 20px auto; }
@@ -466,7 +510,10 @@ if(isset($_GET['ajax'])){
             <?php endif; ?>
         </div>
     </div>
-   
+   <a href="index.php" class="btn-volver">
+        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+    </a>
+
 
 </div>
 
