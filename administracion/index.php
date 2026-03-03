@@ -62,7 +62,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
         </div>
     </div>
     <div class="header-user">
-        Cerrar Sesión
+        Salir
         <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
             <i class="fa-solid fa-right-from-bracket"></i>
         </a>
@@ -118,10 +118,9 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
     <div class="footer-top-line"></div>
     <div class="footer-container">
 
-        <!-- MARCA -->
         <div class="footer-brand">
             <div class="footer-logo">
-                <span class="footer-logo-icon">&#94;</span>
+                <span>&#94;</span>
             </div>
             <div class="footer-brand-text">
                 <span class="footer-label">INSTITUCIONAL</span>
@@ -129,12 +128,10 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             </div>
         </div>
 
-        <!-- DESCRIPCIÓN -->
         <div class="footer-description">
             <p>Plataforma institucional para la administración y control de ambientes de aprendizaje, orientada a la excelencia en la formación técnica y tecnológica.</p>
         </div>
 
-        <!-- NAVEGACIÓN -->
         <div class="footer-nav">
             <span class="footer-section-title">NAVEGACIÓN</span>
             <ul>
@@ -146,7 +143,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             </ul>
         </div>
 
-        <!-- UBICACIÓN -->
         <div class="footer-location">
             <span class="footer-section-title">UBICACIÓN</span>
             <ul>
