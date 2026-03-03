@@ -338,86 +338,196 @@ include("../includes/conexion.php");
             color: #f57c00;
         }
 
-        /* ==================== FOOTER ==================== */
+        /* ===================== FOOTER ===================== */
         .footer {
-            background: linear-gradient(135deg, #2c5282 0%, #2d3e63 100%);
-            color: white;
-            padding: 28px 30px;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            border-top: 1px solid #c9a84c33;
+            padding-top: 0;
             margin-top: auto;
         }
 
-        .footer-content {
-            max-width: 1400px;
+        .footer-top-line {
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #c9a84c, #f0d080, #c9a84c, transparent);
+        }
+
+        .footer-container {
+            max-width: 1280px;
             margin: 0 auto;
+            padding: 48px 40px 32px;
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .footer-left {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .footer-logo {
-            width: 38px;
-            height: 38px;
-            object-fit: contain;
-            filter: brightness(0) invert(1);
-            opacity: 0.85;
+            grid-template-columns: 1.4fr 1.6fr 1fr 1.2fr;
+            gap: 48px;
+            align-items: start;
         }
 
         .footer-brand {
             display: flex;
-            flex-direction: column;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .footer-logo {
+            width: 48px;
+            height: 48px;
+            border: 1.5px solid #c9a84c;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #c9a84c;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .footer-label {
+            display: block;
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: #c9a84c;
+            font-family: 'Arial', sans-serif;
+            font-weight: 600;
+            margin-bottom: 4px;
         }
 
         .footer-title {
-            font-size: 15px;
+            font-size: 17px;
             font-weight: 700;
+            color: #f0f0f0;
             margin: 0;
+            line-height: 1.35;
+            font-family: 'Georgia', serif;
         }
 
-        .footer-sub {
-            font-size: 11px;
-            color: rgba(255,255,255,0.7);
-            margin: 3px 0 0 0;
+        .footer-description p {
+            font-size: 13.5px;
+            line-height: 1.75;
+            color: #8b949e;
+            margin: 0;
+            font-family: 'Georgia', serif;
         }
 
-        .footer-center {
-            text-align: center;
-            font-size: 13px;
-            color: rgba(255,255,255,0.85);
-        }
-
-        .footer-center p {
-            margin: 3px 0;
-        }
-
-        .footer-year {
-            font-size: 11px;
-            color: rgba(255,255,255,0.55);
-            margin-top: 4px !important;
-        }
-
-        .footer-right {
-            text-align: right;
-            font-size: 12px;
-            color: rgba(255,255,255,0.75);
-        }
-
-        .footer-right p {
-            margin: 2px 0;
-        }
-
-        .footer-right strong {
-            color: white;
+        .footer-section-title {
+            display: block;
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: #c9a84c;
+            font-family: 'Arial', sans-serif;
             font-weight: 700;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #c9a84c44;
+        }
+
+        .footer-nav ul,
+        .footer-location ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-nav ul li a {
+            text-decoration: none;
+            color: #8b949e;
+            font-size: 13.5px;
+            font-family: 'Georgia', serif;
+            transition: color 0.2s ease, padding-left 0.2s ease;
+            display: inline-block;
+        }
+
+        .footer-nav ul li a:hover {
+            color: #c9a84c;
+            padding-left: 6px;
+        }
+
+        .footer-location ul li {
+            font-size: 13px;
+            color: #8b949e;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.55;
+            font-family: 'Georgia', serif;
+        }
+
+        .footer-icon {
+            color: #c9a84c;
+            font-size: 11px;
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+
+        .footer-divider {
+            max-width: 1280px;
+            margin: 0 auto;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #c9a84c33, transparent);
+        }
+
+        .footer-bottom {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer-bottom p {
+            font-size: 12.5px;
+            color: #6e7681;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .footer-bottom strong {
+            color: #c9a84c;
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            color: #8b949e;
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .footer-status-dot {
+            width: 8px;
+            height: 8px;
+            background: #3fb950;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #3fb95088;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 900px) {
+            .footer-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 32px;
+                padding: 36px 30px 28px;
+            }
+        }
+
         @media (max-width: 768px) {
             .header {
                 padding: 20px;
@@ -456,27 +566,19 @@ include("../includes/conexion.php");
             .btn-search {
                 width: 100%;
             }
+        }
 
-            .footer-content {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto;
+        @media (max-width: 560px) {
+            .footer-container {
+                grid-template-columns: 1fr;
+                padding: 32px 20px 24px;
+                gap: 28px;
             }
 
-            .footer-left {
-                grid-column: 1;
-                grid-row: 1;
-            }
-
-            .footer-right {
-                grid-column: 2;
-                grid-row: 1;
-            }
-
-            .footer-center {
-                grid-column: 1 / -1;
-                grid-row: 2;
-                padding-top: 12px;
-                border-top: 1px solid rgba(255,255,255,0.15);
+            .footer-bottom {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 16px 20px;
             }
         }
 
@@ -491,31 +593,12 @@ include("../includes/conexion.php");
                 width: 100%;
                 justify-content: center;
             }
-
-            .footer-content {
-                grid-template-columns: 1fr;
-                text-align: center;
-                gap: 14px;
-            }
-
-            .footer-left {
-                justify-content: center;
-            }
-
-            .footer-center {
-                border-top: none;
-                padding-top: 0;
-            }
-
-            .footer-right {
-                text-align: center;
-            }
         }
     </style>
 </head>
 <body>
 
-<!-- HEADER MEJORADO -->
+<!-- HEADER -->
 <div class="header">
     <div class="header-left">
         <img src="../css/img/senab.png" alt="Logo SENA">
@@ -536,7 +619,6 @@ include("../includes/conexion.php");
 <!-- CONTENEDOR PRINCIPAL -->
 <div class="dashboard-container">
 
-    <!-- ACCIONES PRINCIPALES -->
     <div class="actions-container">
         <h2 class="actions-title">
             <i class="fa-solid fa-list-check"></i>
@@ -544,7 +626,7 @@ include("../includes/conexion.php");
         </h2>
 
         <div class="menu-grid">
-            
+
             <!-- ESCANEAR QR -->
             <div class="menu-card qr-card" onclick="abrirScanner()">
                 <div class="menu-card-icon">
@@ -565,21 +647,21 @@ include("../includes/conexion.php");
                 <p class="menu-card-description">
                     Busca manualmente por número o nombre del ambiente
                 </p>
-                
+
                 <?php if(isset($_SESSION['error_busqueda'])): ?>
                 <div class="error-message">
                     <i class="fa-solid fa-exclamation-circle"></i>
                     <?= htmlspecialchars($_SESSION['error_busqueda']) ?>
                 </div>
-                <?php 
+                <?php
                     unset($_SESSION['error_busqueda']);
                 endif; ?>
-                
+
                 <form method="POST" action="buscar_ambiente.php" class="search-form">
-                    <input 
-                        type="text" 
-                        name="nombre_ambiente" 
-                        placeholder="Ej: 308, Lab Química..." 
+                    <input
+                        type="text"
+                        name="nombre_ambiente"
+                        placeholder="Ej: 308, Lab Química..."
                         required
                     >
                     <button type="submit" class="btn-search">
@@ -594,28 +676,65 @@ include("../includes/conexion.php");
 
 </div>
 
-<!-- FOOTER -->
-<div class="footer">
-    <div class="footer-content">
-        <div class="footer-left">
-            <img src="../css/img/senab.png" alt="Logo SENA" class="footer-logo">
-            <div class="footer-brand">
-                <p class="footer-title">SENA</p>
-                <p class="footer-sub">Centro de Industria y Servicios</p>
+<!-- FOOTER OSCURO DORADO -->
+<footer class="footer">
+    <div class="footer-top-line"></div>
+    <div class="footer-container">
+
+        <div class="footer-brand">
+            <div class="footer-logo">
+                <span>&#94;</span>
+            </div>
+            <div class="footer-brand-text">
+                <span class="footer-label">INSTITUCIONAL</span>
+                <h3 class="footer-title">Sistema de Gestión<br>de Ambientes</h3>
             </div>
         </div>
-        
-        <div class="footer-center">
-            <p>Sistema de Gestión de Ambientes</p>
-            <p class="footer-year">© <?= date('Y') ?> - Todos los derechos reservados</p>
+
+        <div class="footer-description">
+            <p>Plataforma institucional para la administración y control de ambientes de aprendizaje, orientada a la excelencia en la formación técnica y tecnológica.</p>
         </div>
-        
-        <div class="footer-right">
-            <p><strong>Panel:</strong> Guarda de Seguridad</p>
-            <p>Control de Acceso</p>
+
+        <div class="footer-nav">
+            <span class="footer-section-title">NAVEGACIÓN</span>
+            <ul>
+                <li><a href="#">Inicio</a></li>
+                <li><a href="#">Escanear QR</a></li>
+                <li><a href="#">Buscar Ambiente</a></li>
+                <li><a href="#">Panel de Seguridad</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-location">
+            <span class="footer-section-title">UBICACIÓN</span>
+            <ul>
+                <li>
+                    <span class="footer-icon">&#9679;</span>
+                    Centro de Industria y Comercio<br>Villavicencio, Meta — Colombia
+                </li>
+                <li>
+                    <span class="footer-icon">&#9711;</span>
+                    Regional Llanos Orientales
+                </li>
+                <li>
+                    <span class="footer-icon">&#9993;</span>
+                    sena.edu.co
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="footer-divider"></div>
+
+    <div class="footer-bottom">
+        <p>© <?= date('Y') ?> <strong>SENA</strong> — Gestión de Ambientes. Todos los derechos reservados.</p>
+        <div class="footer-status">
+            <span class="footer-status-dot"></span>
+            Sistema operativo
         </div>
     </div>
-</div>
+</footer>
 
 <!-- MODAL SCANNER QR -->
 <div class="modal-overlay" id="scannerModal">
@@ -640,9 +759,9 @@ let html5QrCode = null;
 function abrirScanner() {
     document.getElementById('scannerModal').classList.add('active');
     document.getElementById('scannerStatus').textContent = '📷 Iniciando cámara...';
-    
+
     html5QrCode = new Html5Qrcode("reader");
-    
+
     html5QrCode.start(
         { facingMode: "environment" },
         {
@@ -652,7 +771,7 @@ function abrirScanner() {
         (decodedText) => {
             document.getElementById('scannerStatus').className = 'scanner-status scanning';
             document.getElementById('scannerStatus').textContent = ' QR Detectado! Redirigiendo...';
-            
+
             html5QrCode.stop().then(() => {
                 window.location.href = decodedText;
             });
