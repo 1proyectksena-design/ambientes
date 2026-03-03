@@ -77,7 +77,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
         </div>
     </div>
     <div class="header-user">
-        Cerrar Sesión
         <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
             <i class="fa-solid fa-right-from-bracket"></i>
         </a>
@@ -130,23 +129,62 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 </div>
 
 <footer class="footer">
-    <div class="footer-content">
-        <div class="footer-left">
-            <img src="../css/img/senab.png" alt="Logo SENA" class="footer-logo">
-            <div>
-                <p class="footer-title">SENA</p>
-                <p class="footer-sub">Servicio Nacional de Aprendizaje</p>
+    <div class="footer-top-line"></div>
+    <div class="footer-container">
+
+        <div class="footer-brand">
+            <div class="footer-logo">
+                <span>&#94;</span>
+            </div>
+            <div class="footer-brand-text">
+                <span class="footer-label">INSTITUCIONAL</span>
+                <h3 class="footer-title">Sistema de Gestión<br>de Ambientes</h3>
             </div>
         </div>
-        <div class="footer-center">
-            <p>Sistema de Gestión de Ambientes</p>
-            <p class="footer-year">© <?= date('Y') ?> — Todos los derechos reservados</p>
+
+        <div class="footer-description">
+            <p>Plataforma institucional para la administración y control de ambientes de aprendizaje, orientada a la excelencia en la formación técnica y tecnológica.</p>
         </div>
-        <div class="footer-right">
-            <p>Desarrollado para</p>
-            <p><strong>Centro de Gestión de Mercados,<br>Logística y TIC's</strong></p>
+
+        <div class="footer-nav">
+            <span class="footer-section-title">NAVEGACIÓN</span>
+            <ul>
+                <li><a href="#">Inicio</a></li>
+                <li><a href="#">Consultar Ambiente</a></li>
+                <li><a href="#">Historial Autorizaciones</a></li>
+                <li><a href="#">Crear Registros</a></li>
+                <li><a href="#">Panel de Subdirección</a></li>
+            </ul>
         </div>
-        
+
+        <div class="footer-location">
+            <span class="footer-section-title">UBICACIÓN</span>
+            <ul>
+                <li>
+                    <span class="footer-icon">&#9679;</span>
+                    Centro de Industria y Comercio<br>Villavicencio, Meta — Colombia
+                </li>
+                <li>
+                    <span class="footer-icon">&#9711;</span>
+                    Regional Llanos Orientales
+                </li>
+                <li>
+                    <span class="footer-icon">&#9993;</span>
+                    sena.edu.co
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="footer-divider"></div>
+
+    <div class="footer-bottom">
+        <p>© <?= date('Y') ?> <strong>SENA</strong> — Gestión de Ambientes. Todos los derechos reservados.</p>
+        <div class="footer-status">
+            <span class="footer-status-dot"></span>
+            Sistema operativo
+        </div>
     </div>
 </footer>
 
