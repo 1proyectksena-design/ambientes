@@ -202,7 +202,7 @@ if(isset($_POST['crear_instructor'])){
 }
 
 .toggle-btn.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #24315e 0%, #6177a0 100%);
     border-color: #667eea;
     color: white;
 }

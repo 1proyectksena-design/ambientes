@@ -9,7 +9,12 @@ if (!isset($_SESSION['rol'])) {
     header("Location: ../login.php");
     exit;
 }
-
+/* MESES EN ESPAÑOL */
+$meses_espanol = [
+    '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
+    '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto',
+    '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
+];
 $rol = $_SESSION['rol'];
 $hoy = date('Y-m-d');
 $hora_actual = date('H:i:s');

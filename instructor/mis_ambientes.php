@@ -1,5 +1,7 @@
 <?php
 session_start();
+date_default_timezone_set('America/Bogota');
+
 if ($_SESSION['rol'] != 'instructor') {
     header("Location: ../login.php");
     exit;
@@ -22,9 +24,9 @@ if(isset($_POST['reportar_novedad'])){
                   WHERE id = '$id_autorizacion'";
     
     if(mysqli_query($conexion, $sqlUpdate)){
-        echo "<script>alert('✅ Novedad reportada correctamente');</script>";
+        echo "<script>alert('Novedad reportada correctamente');</script>";
     } else {
-        echo "<script>alert('❌ Error al reportar novedad');</script>";
+        echo "<script>alert(' Error al reportar novedad');</script>";
     }
 }
 
@@ -151,7 +153,7 @@ if($identificacion_buscada){
                             <?= htmlspecialchars($amb['nombre_ambiente']) ?>
                         </h4>
                         <?php if($activo): ?>
-                            <span class="badge-activo">🟢 En Uso Ahora</span>
+                            <span class="badge-activo"> En Uso Ahora</span>
                         <?php endif; ?>
                     </div>
                     

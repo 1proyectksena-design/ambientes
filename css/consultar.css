@@ -60,7 +60,7 @@ body {
 .logo-sena:hover {
     transform: scale(1.1) rotate(5deg);
 }
- 
+
 .header-title { min-width: 0; }
 
 .header-title h1 {
@@ -530,7 +530,6 @@ tbody tr:hover { background-color: #f8f9ff; }
 .novedades-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.3);
     z-index: 9998;
     display: none;
 }
@@ -567,6 +566,7 @@ tbody tr:hover { background-color: #f8f9ff; }
     font-family: inherit;
     font-size: 0.9rem;
     color: #333;
+    font-weight: 400;
     line-height: 1.6;
 }
 
@@ -577,6 +577,7 @@ tbody tr:hover { background-color: #f8f9ff; }
 
 @media (max-width: 768px) {
     .header { padding: 15px 20px; }
+    .logo-sena { width: 45px; height: 45px; }
     .consultar-container { padding: 20px 15px; }
     .search-section { padding: 20px; }
     .search-section h3 { font-size: 18px; }
@@ -614,6 +615,7 @@ tbody tr:hover { background-color: #f8f9ff; }
         gap: 12px;
         width: 100%;
     }
+    .logo-sena { width: 40px; height: 40px; }
     .consultar-container { padding: 15px 12px; }
     .search-section { padding: 15px; }
     .table-header { padding: 15px 20px; }

@@ -9,9 +9,14 @@ if ($_SESSION['rol'] != 'subdireccion') {
 
 include("../includes/conexion.php");
 
-/* =========================
-   FILTROS
-   ========================= */
+/* MESES EN ESPAÑOL */
+$meses_espanol = [
+    '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
+    '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto',
+    '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
+];
+
+/* FILTROS */
 $filtro_mes = $_GET['mes'] ?? date('m');
 $filtro_anio = $_GET['anio'] ?? date('Y');
 
@@ -20,9 +25,7 @@ $whereMain[] = "MONTH(au.fecha_inicio) = '$filtro_mes'";
 $whereMain[] = "YEAR(au.fecha_inicio) = '$filtro_anio'";
 $whereSQLMain = implode(' AND ', $whereMain);
 
-/* =========================
-   CONSULTA PRINCIPAL
-   ========================= */
+/* CONSULTA */
 $sql = "SELECT 
             au.*,
             a.nombre_ambiente,
@@ -41,7 +44,7 @@ if(!$resultado){
 
 $total = mysqli_num_rows($resultado);
 
-/* Fecha y hora actual para calcular estados */
+/* Fecha y hora actual */
 $fecha_actual = date('Y-m-d');
 $hora_actual = date('H:i:s');
 ?>
@@ -52,7 +55,7 @@ $hora_actual = date('H:i:s');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historial de Autorizaciones</title>
-    <link rel="stylesheet" href="../css/historial.css">
+    <link rel="stylesheet" href="../css/consultar.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -77,11 +80,12 @@ $hora_actual = date('H:i:s');
     <div class="search-section">
         <h3><i class="fa-solid fa-filter"></i> Filtrar Autorizaciones</h3>
         <form method="GET" class="search-form">
-
             <select name="mes">
-                <?php for($m=1; $m<=12; $m++): ?>
-                <option value="<?= str_pad($m, 2, '0', STR_PAD_LEFT) ?>" <?= $filtro_mes == str_pad($m, 2, '0', STR_PAD_LEFT) ? 'selected' : '' ?>>
-                    <?= date('F', mktime(0,0,0,$m,1)) ?>
+                <?php for($m=1; $m<=12; $m++): 
+                    $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT);
+                ?>
+                <option value="<?= $mes_num ?>" <?= $filtro_mes == $mes_num ? 'selected' : '' ?>>
+                    <?= $meses_espanol[$mes_num] ?>
                 </option>
                 <?php endfor; ?>
             </select>
@@ -98,7 +102,7 @@ $hora_actual = date('H:i:s');
         </form>
     </div>
 
-    <!-- TABLA DE AUTORIZACIONES -->
+    <!-- TABLA -->
     <div class="table-container">
         <div class="table-header">
             <h3>
@@ -124,7 +128,7 @@ $hora_actual = date('H:i:s');
                 </thead>
                 <tbody>
                     <?php while($row = mysqli_fetch_assoc($resultado)): 
-                        /* CALCULAR ESTADO ACTUAL */
+                        /* CALCULAR ESTADO */
                         $estadoActual = 'desocupado';
                         $textoEstado = 'Desocupado';
                         $iconoEstado = '<i class="fa-solid fa-circle"></i>';
@@ -137,7 +141,7 @@ $hora_actual = date('H:i:s');
                                     $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
                                 } else {
                                     $estadoActual = 'programado';
-                                    $textoEstado = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                    $textoEstado = 'Programado';
                                     $iconoEstado = '<i class="fa-regular fa-clock"></i>';
                                 }
                             }
@@ -169,9 +173,9 @@ $hora_actual = date('H:i:s');
                             </span>
                         </td>
                         <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                        <td style="position: relative;">
+                        <td>
                             <?php if($row['novedades']): ?>
-                                <button onclick="verNovedades(this)" class="btn-ver-novedades">
+                                <button onclick="mostrarModal(this)" class="btn-ver-novedades">
                                     <i class="fa-solid fa-eye"></i> Ver
                                 </button>
                                 <div class="novedades-modal" style="display:none;">
@@ -206,33 +210,38 @@ $hora_actual = date('H:i:s');
 
 </div>
 
-
+<!-- OVERLAY -->
+<div class="novedades-overlay" id="modalOverlay" onclick="cerrarTodosModales()"></div>
 
 <script>
-function verNovedades(btn) {
+function mostrarModal(btn) {
+    cerrarTodosModales();
+    
     const modal = btn.nextElementSibling;
-    const allModals = document.querySelectorAll('.novedades-modal');
-
-    allModals.forEach(m => {
-        if(m !== modal) m.style.display = 'none';
-    });
-
-    if(modal.style.display === 'none') {
-        modal.style.display = 'block';
-        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
-    } else {
-        modal.style.display = 'none';
-        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-    }
+    const overlay = document.getElementById('modalOverlay');
+    
+    overlay.style.display = 'block';
+    modal.style.display = 'block';
+    
+    btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
+    btn.dataset.abierto = 'true';
 }
 
-document.addEventListener('click', function(e) {
-    if(!e.target.closest('td')) {
-        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
-        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-        });
-    }
+function cerrarTodosModales() {
+    const overlay = document.getElementById('modalOverlay');
+    const modales = document.querySelectorAll('.novedades-modal');
+    const botones = document.querySelectorAll('.btn-ver-novedades');
+    
+    overlay.style.display = 'none';
+    modales.forEach(m => m.style.display = 'none');
+    botones.forEach(b => {
+        b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+        delete b.dataset.abierto;
+    });
+}
+
+document.addEventListener('keydown', function(e) {
+    if(e.key === 'Escape') cerrarTodosModales();
 });
 </script>
 

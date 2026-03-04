@@ -8,7 +8,7 @@ if(!$id_ambiente){
     die("ID inválido");
 }
 
-$contenido = "http://localhost/am bientes/guarda/verificar.php?id=".$id_ambiente;
+$contenido = "http://localhost/ambientes/guarda/verificar.php?id=".$id_ambiente;
 
 $ruta = "qrs/ambiente_".$id_ambiente.".png";
 

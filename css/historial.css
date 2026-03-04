@@ -323,7 +323,6 @@ tbody tr:hover { background-color: #f8f9ff; }
 .novedades-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.3);
     z-index: 9998;
     display: none;
     cursor: pointer;
