@@ -12,7 +12,7 @@
 /* ===== BODY CON IMAGEN DE FONDO ===== */
 body {
     min-height: 100vh;
-    background-image: url('img/fondo.jpg');
+    background: #0b0b1a;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
