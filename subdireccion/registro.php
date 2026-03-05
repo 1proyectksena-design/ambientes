@@ -150,7 +150,7 @@ if(isset($_POST['crear_instructor'])){
                 </div>
                 
                 <div class="form-group">
-                    <label>Fecha Fin (Opcional)</label>
+                    <label>Fecha Fin</label>
                     <input type="date" name="fecha_fin">
                 </div>
             </div>

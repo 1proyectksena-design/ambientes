@@ -195,7 +195,19 @@ if($nombre_ambiente){
                             <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
                             <td><?= htmlspecialchars($row['observaciones'] ?: '—') ?></td>
                             <td>
-                                <?php if($row['novedades']): ?>
+                                <?php if($row['novedades']): 
+                                    /* EXTRAER FECHA/HORA SI EXISTE */
+                                    $novedad_texto = $row['novedades'];
+                                    $fecha_novedad = '';
+                                    
+                                    // Buscar patrón [YYYY-MM-DD HH:MM]
+                                    if(preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
+                                        $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
+                                        $novedad_texto = $matches[2];
+                                    } else {
+                                        $fecha_novedad = date('d/m/Y h:i A', strtotime($row['fecha_registro']));
+                                    }
+                                ?>
                                     <button onclick="mostrarModal(this)" class="btn-ver-novedades">
                                         <i class="fa-solid fa-eye"></i> Ver
                                     </button>
@@ -203,9 +215,12 @@ if($nombre_ambiente){
                                         <div class="modal-header">
                                             <strong>Novedades reportadas por:</strong>
                                             <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                            <div style="font-size: 0.85rem; color: #f57c00; margin-top: 4px;">
+                                                <i class="fa-regular fa-clock"></i> <?= $fecha_novedad ?>
+                                            </div>
                                         </div>
                                         <div class="modal-content">
-                                            <pre><?= htmlspecialchars($row['novedades']) ?></pre>
+                                            <pre><?= htmlspecialchars($novedad_texto) ?></pre>
                                         </div>
                                     </div>
                                 <?php else: ?>

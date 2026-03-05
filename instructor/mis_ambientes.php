@@ -323,7 +323,7 @@ if($identificacion_buscada){
 }
 
 .btn-reportar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
     color: white;
     padding: 12px 24px;
     border: none;

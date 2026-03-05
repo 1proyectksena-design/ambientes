@@ -21,7 +21,7 @@ body {
 
 /* ================= HEADER ================= */
 .header {
-    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
+    background: #0b2449;
     padding: 20px 30px;
     display: flex; justify-content: space-between; align-items: center;
     box-shadow: var(--shadow-md);
@@ -134,7 +134,7 @@ body {
 
 /* ===================== FOOTER ===================== */
 .footer {
-    background-color: #0d1117;
+    background-color: #081d3d;
     color: #c9d1d9;
     font-family: 'Georgia', 'Times New Roman', serif;
     border-top: 1px solid #c9a84c33;
