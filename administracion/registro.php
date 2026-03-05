@@ -19,6 +19,13 @@ if(isset($_POST['crear_ambiente'])){
             VALUES ('$nombre', '$estado', '$descripcion', '$horario_fijo', '$horario_disponible')";
     
     if(mysqli_query($conexion, $sql)){
+        $id_ambiente = mysqli_insert_id($conexion);
+        
+        // ============ GENERAR QR AUTOMÁTICAMENTE ============
+        include("../includes/generar_qr.php");
+        generarQR($id_ambiente, $nombre); // Pasar nombre del ambiente
+        // ====================================================
+        
         echo "<script>alert('✅ Ambiente creado correctamente');</script>";
     } else {
         echo "<script>alert('❌ Error: ".mysqli_error($conexion)."');</script>";

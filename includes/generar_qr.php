@@ -8,10 +8,11 @@
  * Genera un código QR para un ambiente específico
  * 
  * @param int $id_ambiente ID del ambiente
+ * @param string $nombre_ambiente Nombre del ambiente (opcional, si no se pasa se consulta en BD)
  * @param bool $forzar Si true, regenera aunque ya exista
  * @return bool True si se generó correctamente
  */
-function generarQR($id_ambiente, $forzar = false) {
+function generarQR($id_ambiente, $nombre_ambiente = null, $forzar = false) {
     // Incluir librería QR
     $qrlib_path = __DIR__ . "/../qrs/phpqrcode/qrlib.php";
     if(!file_exists($qrlib_path)){
@@ -21,13 +22,39 @@ function generarQR($id_ambiente, $forzar = false) {
     
     require_once($qrlib_path);
     
+    // Si no se pasó el nombre, consultarlo en la BD
+    if($nombre_ambiente === null){
+        global $conexion;
+        if(!isset($conexion)){
+            include(__DIR__ . "/conexion.php");
+        }
+        
+        $sql = "SELECT nombre_ambiente FROM ambientes WHERE id = " . intval($id_ambiente);
+        $resultado = mysqli_query($conexion, $sql);
+        
+        if($resultado && mysqli_num_rows($resultado) > 0){
+            $row = mysqli_fetch_assoc($resultado);
+            $nombre_ambiente = $row['nombre_ambiente'];
+        } else {
+            error_log("ERROR: No se encontró ambiente con ID $id_ambiente");
+            return false;
+        }
+    }
+    
+    // Limpiar nombre para usarlo como nombre de archivo
+    // Eliminar caracteres especiales y espacios
+    $nombre_limpio = preg_replace('/[^A-Za-z0-9_\-]/', '_', $nombre_ambiente);
+    $nombre_limpio = preg_replace('/_+/', '_', $nombre_limpio); // Evitar guiones bajos múltiples
+    $nombre_limpio = trim($nombre_limpio, '_'); // Quitar guiones al inicio/final
+    
     // Crear directorio si no existe
     $dir = __DIR__ . "/../qrs";
     if(!is_dir($dir)) {
         mkdir($dir, 0777, true);
     }
     
-    $ruta = $dir . "/ambiente_" . $id_ambiente . ".png";
+    // Nombre de archivo: nombre_ambiente + ID (para evitar duplicados si hay ambientes con mismo nombre)
+    $ruta = $dir . "/" . $nombre_limpio . "_" . $id_ambiente . ".png";
     
     // Si ya existe y no se fuerza regenerar, salir
     if(file_exists($ruta) && !$forzar){
@@ -54,7 +81,7 @@ function generarQR($id_ambiente, $forzar = false) {
  * @return int Número de QR generados
  */
 function generarTodosQR($conexion) {
-    $sql = "SELECT id FROM ambientes ORDER BY id";
+    $sql = "SELECT id, nombre_ambiente FROM ambientes ORDER BY id";
     $resultado = mysqli_query($conexion, $sql);
     
     if(!$resultado){
@@ -65,7 +92,7 @@ function generarTodosQR($conexion) {
     $total = 0;
     
     while($row = mysqli_fetch_assoc($resultado)){
-        if(generarQR($row['id'], false)){
+        if(generarQR($row['id'], $row['nombre_ambiente'], false)){
             $total++;
         }
     }
@@ -80,7 +107,7 @@ function generarTodosQR($conexion) {
  * @return array ['generados' => int, 'existentes' => int]
  */
 function verificarQRFaltantes($conexion) {
-    $sql = "SELECT id FROM ambientes ORDER BY id";
+    $sql = "SELECT id, nombre_ambiente FROM ambientes ORDER BY id";
     $resultado = mysqli_query($conexion, $sql);
     
     $generados = 0;
@@ -90,10 +117,17 @@ function verificarQRFaltantes($conexion) {
     
     while($row = mysqli_fetch_assoc($resultado)){
         $id = $row['id'];
-        $ruta = $dir . "/ambiente_" . $id . ".png";
+        $nombre_ambiente = $row['nombre_ambiente'];
+        
+        // Limpiar nombre
+        $nombre_limpio = preg_replace('/[^A-Za-z0-9_\-]/', '_', $nombre_ambiente);
+        $nombre_limpio = preg_replace('/_+/', '_', $nombre_limpio);
+        $nombre_limpio = trim($nombre_limpio, '_');
+        
+        $ruta = $dir . "/" . $nombre_limpio . "_" . $id . ".png";
         
         if(!file_exists($ruta)){
-            if(generarQR($id)){
+            if(generarQR($id, $nombre_ambiente)){
                 $generados++;
             }
         } else {
