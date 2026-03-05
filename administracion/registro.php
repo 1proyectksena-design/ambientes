@@ -14,9 +14,10 @@ if(isset($_POST['crear_ambiente'])){
     $descripcion = mysqli_real_escape_string($conexion, $_POST['descripcion']);
     $horario_fijo = mysqli_real_escape_string($conexion, $_POST['horario_fijo']);
     $horario_disponible = mysqli_real_escape_string($conexion, $_POST['horario_disponible']);
+    $instructor_id = !empty($_POST['instructor_id']) ? mysqli_real_escape_string($conexion, $_POST['instructor_id']) : NULL;
     
-    $sql = "INSERT INTO ambientes (nombre_ambiente, estado, descripcion_general, horario_fijo, horario_disponible)
-            VALUES ('$nombre', '$estado', '$descripcion', '$horario_fijo', '$horario_disponible')";
+    $sql = "INSERT INTO ambientes (nombre_ambiente, estado, descripcion_general, horario_fijo, horario_disponible, instructor_id)
+            VALUES ('$nombre', '$estado', '$descripcion', '$horario_fijo', '$horario_disponible', ".($instructor_id ? "'$instructor_id'" : "NULL").")";
     
     if(mysqli_query($conexion, $sql)){
         echo "<script>alert('✅ Ambiente creado correctamente');</script>";
@@ -99,6 +100,19 @@ if(isset($_POST['crear_instructor'])){
                     <option value="Habilitado">Habilitado</option>
                     <option value="Deshabilitado">Deshabilitado</option>
                     <option value="Mantenimiento">Mantenimiento</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Instructor Asignado</label>
+                <select name="instructor_id">
+                    <option value="">— Sin asignar —</option>
+                    <?php
+                    $res = mysqli_query($conexion, "SELECT id, nombre FROM instructores ORDER BY nombre ASC");
+                    while($row = mysqli_fetch_assoc($res)){
+                        echo "<option value='".$row['id']."'>".$row['nombre']."</option>";
+                    }
+                    ?>
                 </select>
             </div>
             
