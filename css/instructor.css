@@ -1,6 +1,6 @@
 /* ================= VARIABLES ================= */
 :root {
-    --instructor-primary: #667eea;
+    --instructor-primary: #1e88e5;
     --instructor-secondary: #764ba2;
     --success: #43a047;
     --warning: #fb8c00;
@@ -22,7 +22,7 @@ body {
 
 /* ================= HEADER ================= */
 .header {
-    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
+    background: #0b2449;
     padding: 20px 30px;
     display: flex; justify-content: space-between; align-items: center;
     box-shadow: var(--shadow-md);
@@ -45,7 +45,7 @@ body {
 .header-title span { color: rgba(255,255,255,0.9); font-size: clamp(12px, 2.5vw, 13px); display: block; margin-top: 2px; }
 
 .header-user {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     padding: 10px 20px; border-radius: 25px;
     color: white; font-weight: 600;
     backdrop-filter: blur(10px);
@@ -101,7 +101,7 @@ body {
 
 /* ===================== FOOTER ===================== */
 .footer {
-    background-color: #0d1117;
+    background-color: #0b2449;
     color: #c9d1d9;
     font-family: 'Georgia', 'Times New Roman', serif;
     border-top: 1px solid #c9a84c33;

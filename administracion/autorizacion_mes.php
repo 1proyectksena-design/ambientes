@@ -7,6 +7,13 @@ if ($_SESSION['rol'] != 'administracion') {
 
 include("../includes/conexion.php");
 
+/* MESES EN ESPAÑOL */
+$meses_espanol = [
+    '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
+    '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto',
+    '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
+];
+
 $mes = $_GET['mes'] ?? date('m');
 $anio = $_GET['anio'] ?? date('Y');
 
@@ -25,9 +32,23 @@ $resultado = mysqli_query($conexion, $sql);
 $total = mysqli_num_rows($resultado);
 
 /* Stats */
-$pendiente = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM autorizaciones_ambientes WHERE MONTH(fecha_inicio)='$mes' AND YEAR(fecha_inicio)='$anio' AND estado='Pendiente'"))[0];
-$aprobado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM autorizaciones_ambientes WHERE MONTH(fecha_inicio)='$mes' AND YEAR(fecha_inicio)='$anio' AND estado='Aprobado'"))[0];
-$rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM autorizaciones_ambientes WHERE MONTH(fecha_inicio)='$mes' AND YEAR(fecha_inicio)='$anio' AND estado='Rechazado'"))[0];
+$pendiente = mysqli_fetch_row(mysqli_query($conexion,
+"SELECT COUNT(*) FROM autorizaciones_ambientes 
+ WHERE MONTH(fecha_inicio)='$mes'
+ AND YEAR(fecha_inicio)='$anio'
+ AND estado='Pendiente'"))[0];
+
+$aprobado = mysqli_fetch_row(mysqli_query($conexion,
+"SELECT COUNT(*) FROM autorizaciones_ambientes 
+ WHERE MONTH(fecha_inicio)='$mes'
+ AND YEAR(fecha_inicio)='$anio'
+ AND estado='Aprobado'"))[0];
+
+$rechazado = mysqli_fetch_row(mysqli_query($conexion,
+"SELECT COUNT(*) FROM autorizaciones_ambientes 
+ WHERE MONTH(fecha_inicio)='$mes'
+ AND YEAR(fecha_inicio)='$anio'
+ AND estado='Rechazado'"))[0];
 ?>
 
 <!DOCTYPE html>
@@ -46,7 +67,7 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
         <div class="header-title">
             <h1>Autorizaciones del Mes</h1>
-            <span><?= date('F Y', mktime(0,0,0,$mes,1,$anio)) ?></span>
+            <span><?= $meses_espanol[$mes] ?> <?= $anio ?></span>
         </div>
     </div>
     <div class="header-user">
@@ -56,16 +77,16 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
 
 <div class="consultar-container">
 
-    
-
     <!-- SELECTOR DE MES -->
     <div class="search-section">
         <h3><i class="fa-regular fa-calendar"></i> Seleccionar Mes</h3>
         <form method="GET" class="search-form">
             <select name="mes">
-                <?php for($m=1; $m<=12; $m++): ?>
-                <option value="<?= str_pad($m, 2, '0', STR_PAD_LEFT) ?>" <?= $mes == str_pad($m, 2, '0', STR_PAD_LEFT) ? 'selected' : '' ?>>
-                    <?= date('F', mktime(0,0,0,$m,1)) ?>
+                <?php for($m=1; $m<=12; $m++): 
+                    $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT);
+                ?>
+                <option value="<?= $mes_num ?>" <?= $mes == $mes_num ? 'selected' : '' ?>>
+                    <?= $meses_espanol[$mes_num] ?>
                 </option>
                 <?php endfor; ?>
             </select>
@@ -81,11 +102,14 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
     <!-- TABLA -->
     <div class="table-container">
         <div class="table-header">
-            <h3><i class="fa-solid fa-list-check"></i> <?= $total ?> autorizaciones en <?= date('F Y', mktime(0,0,0,$mes,1,$anio)) ?></h3>
+            <h3>
+                <i class="fa-solid fa-list-check"></i> 
+                <?= $total ?> autorizaciones en <?= $meses_espanol[$mes] ?> <?= $anio ?>
+            </h3>
         </div>
         
         <?php if($total > 0): ?>
-        <div class="table-scroll-wrapper"> 
+        <div class="table-scroll-wrapper">
             <table>
                 <thead>
                     <tr>
@@ -134,9 +158,18 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
 </div>
 
 <style>
-
-.search-form select { padding: 14px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; transition: all 0.3s ease; background: white; }
-.search-form select:focus { outline: none; border-color: #667eea; }
+.search-form select { 
+    padding: 14px 20px; 
+    border: 2px solid #e0e0e0; 
+    border-radius: 10px; 
+    font-size: 15px; 
+    transition: all 0.3s ease; 
+    background: white; 
+}
+.search-form select:focus { 
+    outline: none; 
+    border-color: #667eea; 
+}
 </style>
 
 </body>

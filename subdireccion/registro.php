@@ -150,7 +150,7 @@ if(isset($_POST['crear_instructor'])){
                 </div>
                 
                 <div class="form-group">
-                    <label>Fecha Fin (Opcional)</label>
+                    <label>Fecha Fin</label>
                     <input type="date" name="fecha_fin">
                 </div>
             </div>
@@ -202,7 +202,7 @@ if(isset($_POST['crear_instructor'])){
 }
 
 .toggle-btn.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #333d68 0%, #53729b 100%);
     border-color: #667eea;
     color: white;
 }

@@ -18,13 +18,13 @@ $meses_espanol = [
 
 /* FILTROS */
 $filtro_estado = $_GET['estado'] ?? 'todos';
-$filtro_mes    = $_GET['mes']    ?? date('m');
-$filtro_anio   = $_GET['anio']   ?? date('Y');
+$filtro_mes = $_GET['mes'] ?? date('m');
+$filtro_anio = $_GET['anio'] ?? date('Y');
 
 /* WHERE principal */
 $whereMain = [];
 
-if ($filtro_estado != 'todos') {
+if($filtro_estado != 'todos'){
     $estadoSeguro = mysqli_real_escape_string($conexion, $filtro_estado);
     $whereMain[] = "au.estado = '$estadoSeguro'";
 }
@@ -47,7 +47,7 @@ $sql = "SELECT
 
 $resultado = mysqli_query($conexion, $sql);
 
-if (!$resultado) {
+if(!$resultado){
     die("Error en consulta: " . mysqli_error($conexion));
 }
 
@@ -55,15 +55,16 @@ $total = mysqli_num_rows($resultado);
 
 /* Fecha y hora actual */
 $fecha_actual = date('Y-m-d');
-$hora_actual  = date('H:i:s');
+$hora_actual = date('H:i:s');
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historial de Autorizaciones</title>
-    <link rel="stylesheet" href="../css/historial.css">
+    <link rel="stylesheet" href="../css/consultar.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -89,20 +90,21 @@ $hora_actual  = date('H:i:s');
         <h3><i class="fa-solid fa-filter"></i> Filtrar Autorizaciones</h3>
         <form method="GET" class="search-form">
             <select name="mes">
-                <?php for ($m = 1; $m <= 12; $m++):
-                    $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT); ?>
+                <?php for($m=1; $m<=12; $m++): 
+                    $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT);
+                ?>
                 <option value="<?= $mes_num ?>" <?= $filtro_mes == $mes_num ? 'selected' : '' ?>>
                     <?= $meses_espanol[$mes_num] ?>
                 </option>
                 <?php endfor; ?>
             </select>
-
+            
             <select name="anio">
-                <?php for ($y = date('Y'); $y >= date('Y') - 3; $y--): ?>
+                <?php for($y=date('Y'); $y>=date('Y')-3; $y--): ?>
                 <option value="<?= $y ?>" <?= $filtro_anio == $y ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endfor; ?>
             </select>
-
+            
             <button type="submit">
                 <i class="fa-solid fa-search"></i> Filtrar
             </button>
@@ -113,12 +115,12 @@ $hora_actual  = date('H:i:s');
     <div class="table-container">
         <div class="table-header">
             <h3>
-                <i class="fa-solid fa-list"></i>
+                <i class="fa-solid fa-list"></i> 
                 Mostrando <?= $total ?> autorizaciones
             </h3>
         </div>
-
-        <?php if ($total > 0): ?>
+        
+        <?php if($total > 0): ?>
         <div class="table-scroll-wrapper">
             <table>
                 <thead>
@@ -134,32 +136,32 @@ $hora_actual  = date('H:i:s');
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while ($row = mysqli_fetch_assoc($resultado)):
+                    <?php while($row = mysqli_fetch_assoc($resultado)): 
                         /* CALCULAR ESTADO ACTUAL */
                         $estadoActual = 'desocupado';
-                        $textoEstado  = 'Desocupado';
-                        $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
-
-                        if ($row['estado'] == 'Aprobado') {
-                            if ($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
-                                if ($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
+                        $textoEstado = 'Desocupado';
+                        $iconoEstado = '<i class="fa-solid fa-circle"></i>';
+                        
+                        if($row['estado'] == 'Aprobado') {
+                            if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
+                                if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
                                     $estadoActual = 'ocupado-ahora';
-                                    $textoEstado  = 'Ocupado Ahora';
-                                    $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
+                                    $textoEstado = 'Ocupado Ahora';
+                                    $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
                                 } else {
                                     $estadoActual = 'programado';
-                                    $textoEstado  = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
-                                    $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
+                                    $textoEstado = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                    $iconoEstado = '<i class="fa-regular fa-clock"></i>';
                                 }
                             }
-                        } elseif ($row['estado'] == 'Pendiente') {
+                        } elseif($row['estado'] == 'Pendiente') {
                             $estadoActual = 'pendiente';
-                            $textoEstado  = 'Pendiente';
-                            $iconoEstado  = '<i class="fa-solid fa-hourglass-half"></i>';
-                        } elseif ($row['estado'] == 'Rechazado') {
+                            $textoEstado = 'Pendiente';
+                            $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
+                        } elseif($row['estado'] == 'Rechazado') {
                             $estadoActual = 'rechazado';
-                            $textoEstado  = 'Rechazado';
-                            $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
+                            $textoEstado = 'Rechazado';
+                            $iconoEstado = '<i class="fa-solid fa-ban"></i>';
                         }
                     ?>
                     <tr>
@@ -171,7 +173,7 @@ $hora_actual  = date('H:i:s');
                         <td><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
                         <td><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
                         <td>
-                            <?= date('h:i A', strtotime($row['hora_inicio'])) ?> -
+                            <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
                             <?= date('h:i A', strtotime($row['hora_final'])) ?>
                         </td>
                         <td>
@@ -180,18 +182,33 @@ $hora_actual  = date('H:i:s');
                             </span>
                         </td>
                         <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                        <td style="position: relative;">
-                            <?php if ($row['novedades']): ?>
-                                <button onclick="verNovedades(this)" class="btn-ver-novedades">
+                        <td>
+                            <?php if($row['novedades']): 
+                                /* EXTRAER FECHA/HORA SI EXISTE */
+                                $novedad_texto = $row['novedades'];
+                                $fecha_novedad = '';
+                                
+                                // Buscar patrón [YYYY-MM-DD HH:MM]
+                                if(preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
+                                    $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
+                                    $novedad_texto = $matches[2];
+                                } else {
+                                    $fecha_novedad = date('d/m/Y h:i A', strtotime($row['fecha_registro']));
+                                }
+                            ?>
+                                <button onclick="mostrarModal(this)" class="btn-ver-novedades">
                                     <i class="fa-solid fa-eye"></i> Ver
                                 </button>
                                 <div class="novedades-modal" style="display:none;">
                                     <div class="modal-header">
                                         <strong>Novedades reportadas por:</strong>
                                         <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                        <div style="font-size: 0.85rem; color: #f57c00; margin-top: 4px;">
+                                            <i class="fa-regular fa-clock"></i> <?= $fecha_novedad ?>
+                                        </div>
                                     </div>
                                     <div class="modal-content">
-                                        <pre><?= htmlspecialchars($row['novedades']) ?></pre>
+                                        <pre><?= htmlspecialchars($novedad_texto) ?></pre>
                                     </div>
                                 </div>
                             <?php else: ?>
@@ -217,33 +234,51 @@ $hora_actual  = date('H:i:s');
 
 </div>
 
+<!-- OVERLAY PARA MODAL -->
+<div class="novedades-overlay" id="modalOverlay" onclick="cerrarTodosModales()"></div>
+
 <script>
-function verNovedades(btn) {
+function mostrarModal(btn) {
+    // Cerrar todos los modales primero
+    cerrarTodosModales();
+    
+    // Obtener el modal de este botón
     const modal = btn.nextElementSibling;
-    const allModals = document.querySelectorAll('.novedades-modal');
-
-    allModals.forEach(m => {
-        if (m !== modal) m.style.display = 'none';
-    });
-
-    if (modal.style.display === 'none') {
-        modal.style.display = 'block';
-        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
-    } else {
-        modal.style.display = 'none';
-        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-    }
+    const overlay = document.getElementById('modalOverlay');
+    
+    // Mostrar overlay y modal
+    overlay.style.display = 'block';
+    modal.style.display = 'block';
+    
+    // Cambiar texto del botón
+    btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
+    
+    // Agregar atributo para saber que está abierto
+    btn.dataset.abierto = 'true';
 }
 
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('td')) {
-        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
-        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-        });
+function cerrarTodosModales() {
+    const overlay = document.getElementById('modalOverlay');
+    const modales = document.querySelectorAll('.novedades-modal');
+    const botones = document.querySelectorAll('.btn-ver-novedades');
+    
+    overlay.style.display = 'none';
+    
+    modales.forEach(m => m.style.display = 'none');
+    
+    botones.forEach(b => {
+        b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+        delete b.dataset.abierto;
+    });
+}
+
+// Cerrar con tecla ESC
+document.addEventListener('keydown', function(e) {
+    if(e.key === 'Escape') {
+        cerrarTodosModales();
     }
 });
 </script>
 
 </body>
-</html>     
+</html>

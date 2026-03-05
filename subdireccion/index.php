@@ -5,10 +5,25 @@ ini_set('display_errors', 1);
 session_start();
 include("../includes/conexion.php");
 
+
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
     header("Location: ../login.php");
     exit;
 }
+$meses_espanol = [
+    '01' => 'Enero',
+    '02' => 'Febrero',
+    '03' => 'Marzo',
+    '04' => 'Abril',
+    '05' => 'Mayo',
+    '06' => 'Junio',
+    '07' => 'Julio',
+    '08' => 'Agosto',
+    '09' => 'Septiembre',
+    '10' => 'Octubre',
+    '11' => 'Noviembre',
+    '12' => 'Diciembre'
+];
 
 $rol = $_SESSION['rol'];
 $hoy = date('Y-m-d');

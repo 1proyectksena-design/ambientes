@@ -9,7 +9,12 @@ if (!isset($_SESSION['rol'])) {
     header("Location: ../login.php");
     exit;
 }
-
+/* MESES EN ESPAÑOL */
+$meses_espanol = [
+    '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
+    '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto',
+    '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
+];
 $rol = $_SESSION['rol'];
 $hoy = date('Y-m-d');
 $hora_actual = date('H:i:s');
@@ -136,9 +141,9 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             <span class="footer-section-title">NAVEGACIÓN</span>
             <ul>
                 <li><a href="#">Inicio</a></li>
-                <li><a href="#">Consultar Ambiente</a></li>
-                <li><a href="#">Historial Autorizaciones</a></li>
-                <li><a href="#">Crear Registros</a></li>
+                <li><a href="consultar.php">Consultar Ambiente</a></li>
+                <li><a href="historial.php">Historial Autorizaciones</a></li>
+                <li><a href="registro.php">Crear Registros</a></li>
                 <li><a href="#">Panel de Administración</a></li>
             </ul>
         </div>
