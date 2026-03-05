@@ -44,9 +44,14 @@ if(isset($_POST['crear_instructor'])){
             VALUES ('$nombre', '$identificacion', '$fecha_inicio', ".($fecha_fin ? "'$fecha_fin'" : "NULL").", '$novedades')";
     
     if(mysqli_query($conexion, $sql)){
-        echo "<script>alert('✅ Instructor creado correctamente');</script>";
+        echo "<script>alert('
+        
+        
+        
+        
+        Instructor creado correctamente');</script>";
     } else {
-        echo "<script>alert('❌ Error: ".mysqli_error($conexion)."');</script>";
+        echo "<script>alert('Error: ".mysqli_error($conexion)."');</script>";
     }
 }
 ?>
