@@ -14,8 +14,11 @@ if(!$id_ambiente){
     exit;
 }
 
-/* Obtener info del ambiente */
-$sql = "SELECT * FROM ambientes WHERE id = '".mysqli_real_escape_string($conexion, $id_ambiente)."'";
+/* Obtener info del ambiente con su instructor asignado */
+$sql = "SELECT a.*, i.nombre AS nombre_instructor_actual 
+        FROM ambientes a
+        LEFT JOIN instructores i ON a.instructor_id = i.id
+        WHERE a.id = '".mysqli_real_escape_string($conexion, $id_ambiente)."'";
 $res = mysqli_query($conexion, $sql);
 $ambiente = mysqli_fetch_assoc($res);
 
@@ -26,18 +29,22 @@ if(!$ambiente){
 
 /* ACTUALIZAR ESTADO */
 if(isset($_POST['actualizar'])){
-    $nuevo_estado = mysqli_real_escape_string($conexion, $_POST['estado']);
-    $descripcion = mysqli_real_escape_string($conexion, $_POST['descripcion_general']);
-    $horario_fijo = mysqli_real_escape_string($conexion, $_POST['horario_fijo']);
+    $nuevo_estado       = mysqli_real_escape_string($conexion, $_POST['estado']);
+    $descripcion        = mysqli_real_escape_string($conexion, $_POST['descripcion_general']);
+    $horario_fijo       = mysqli_real_escape_string($conexion, $_POST['horario_fijo']);
     $horario_disponible = mysqli_real_escape_string($conexion, $_POST['horario_disponible']);
-    
+    $instructor_id      = !empty($_POST['instructor_id'])
+                            ? "'".mysqli_real_escape_string($conexion, $_POST['instructor_id'])."'"
+                            : "NULL";
+
     $sqlUpdate = "UPDATE ambientes 
-                  SET estado = '$nuevo_estado',
+                  SET estado              = '$nuevo_estado',
                       descripcion_general = '$descripcion',
-                      horario_fijo = '$horario_fijo',
-                      horario_disponible = '$horario_disponible'
+                      horario_fijo        = '$horario_fijo',
+                      horario_disponible  = '$horario_disponible',
+                      instructor_id       = $instructor_id
                   WHERE id = '$id_ambiente'";
-    
+
     if(mysqli_query($conexion, $sqlUpdate)){
         echo "<script>
                 alert('✅ Ambiente actualizado correctamente');
@@ -89,6 +96,17 @@ if(isset($_POST['actualizar'])){
             <span class="estado-badge estado-<?= strtolower($ambiente['estado']) ?>">
                 <?= htmlspecialchars($ambiente['estado']) ?>
             </span>
+
+            <?php if($ambiente['nombre_instructor_actual']): ?>
+                <span class="instructor-actual-badge">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <?= htmlspecialchars($ambiente['nombre_instructor_actual']) ?>
+                </span>
+            <?php else: ?>
+                <span class="instructor-actual-badge sin-instructor">
+                    <i class="fa-solid fa-user-slash"></i> Sin instructor asignado
+                </span>
+            <?php endif; ?>
         </div>
 
         <form method="POST">
@@ -97,16 +115,31 @@ if(isset($_POST['actualizar'])){
             <div class="form-group">
                 <label><i class="fa-solid fa-toggle-on"></i> Cambiar Estado *</label>
                 <select name="estado" required>
-                    <option value="Habilitado" <?= $ambiente['estado'] == 'Habilitado' ? 'selected' : '' ?>>
-                        Habilitado (Disponible para autorizaciones)
-                    </option>
-                    <option value="Deshabilitado" <?= $ambiente['estado'] == 'Deshabilitado' ? 'selected' : '' ?>>
-                        Deshabilitado (Fuera de servicio)
-                    </option>
-                    <option value="Mantenimiento" <?= $ambiente['estado'] == 'Mantenimiento' ? 'selected' : '' ?>>
-                        Mantenimiento (En reparación)
-                    </option>
+                    <option value="Habilitado"    <?= $ambiente['estado'] == 'Habilitado'    ? 'selected' : '' ?>>Habilitado (Disponible para autorizaciones)</option>
+                    <option value="Deshabilitado" <?= $ambiente['estado'] == 'Deshabilitado' ? 'selected' : '' ?>>Deshabilitado (Fuera de servicio)</option>
+                    <option value="Mantenimiento" <?= $ambiente['estado'] == 'Mantenimiento' ? 'selected' : '' ?>>Mantenimiento (En reparación)</option>
                 </select>
+            </div>
+
+            <!-- INSTRUCTOR ASIGNADO (HORARIO FIJO) -->
+            <div class="form-group">
+                <label><i class="fa-solid fa-chalkboard-user"></i> Instructor de Horario Fijo</label>
+                <select name="instructor_id" id="instructor_select">
+                    <option value="">— Sin asignar —</option>
+                    <?php
+                    $resInst = mysqli_query($conexion, "SELECT id, nombre, identificacion FROM instructores ORDER BY nombre ASC");
+                    while($inst = mysqli_fetch_assoc($resInst)):
+                        $selected = ($ambiente['instructor_id'] == $inst['id']) ? 'selected' : '';
+                    ?>
+                        <option value="<?= $inst['id'] ?>" <?= $selected ?>>
+                            <?= htmlspecialchars($inst['nombre']) ?> — <?= htmlspecialchars($inst['identificacion']) ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+                <small class="form-hint">
+                    <i class="fa-solid fa-circle-info"></i>
+                    El instructor asignado aquí es quien ocupa el ambiente en su horario fijo habitual.
+                </small>
             </div>
 
             <!-- DESCRIPCIÓN -->
@@ -134,12 +167,12 @@ if(isset($_POST['actualizar'])){
                     <i class="fa-solid fa-circle-check"></i>
                     <p>El ambiente estará disponible para nuevas autorizaciones</p>
                 </div>
-                
+
                 <div class="warning-item warning-danger" id="warn-deshabilitado" style="display: none;">
                     <i class="fa-solid fa-ban"></i>
                     <p><strong>Advertencia:</strong> No se podrán crear nuevas autorizaciones mientras esté deshabilitado</p>
                 </div>
-                
+
                 <div class="warning-item warning-warning" id="warn-mantenimiento" style="display: none;">
                     <i class="fa-solid fa-wrench"></i>
                     <p><strong>Nota:</strong> El ambiente estará temporalmente fuera de servicio</p>
@@ -151,7 +184,7 @@ if(isset($_POST['actualizar'])){
                 <button type="submit" name="actualizar" class="btn-submit">
                     <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
                 </button>
-                
+
                 <a href="consultar.php?ambiente=<?= urlencode($ambiente['nombre_ambiente']) ?>" class="btn-cancel">
                     <i class="fa-solid fa-xmark"></i> Cancelar
                 </a>
@@ -162,6 +195,7 @@ if(isset($_POST['actualizar'])){
 </div>
 
 <style>
+/* ---- Estado actual + instructor badge ---- */
 .estado-actual {
     background: #f8f9fa;
     padding: 15px 20px;
@@ -170,6 +204,7 @@ if(isset($_POST['actualizar'])){
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 .estado-actual strong {
@@ -177,9 +212,37 @@ if(isset($_POST['actualizar'])){
     font-size: 1.05rem;
 }
 
-.estado-warnings {
-    margin: 20px 0;
+.instructor-actual-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #e8f0fe;
+    color: #1a56db;
+    border: 1px solid #b3c6f7;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
 }
+
+.instructor-actual-badge.sin-instructor {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+}
+
+/* ---- Hint debajo del select ---- */
+.form-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: #6b7280;
+}
+
+.form-hint i { color: #667eea; margin-right: 4px; }
+
+/* ---- Warnings ---- */
+.estado-warnings { margin: 20px 0; }
 
 .warning-item {
     background: #e3f2fd;
@@ -192,35 +255,17 @@ if(isset($_POST['actualizar'])){
     margin-bottom: 10px;
 }
 
-.warning-item i {
-    font-size: 1.3rem;
-    color: #2196f3;
-}
+.warning-item i { font-size: 1.3rem; color: #2196f3; }
 
-.warning-item.warning-danger {
-    background: #ffebee;
-    border-left-color: #e53935;
-}
+.warning-item.warning-danger { background: #ffebee; border-left-color: #e53935; }
+.warning-item.warning-danger i { color: #e53935; }
 
-.warning-item.warning-danger i {
-    color: #e53935;
-}
+.warning-item.warning-warning { background: #fff3e0; border-left-color: #fb8c00; }
+.warning-item.warning-warning i { color: #fb8c00; }
 
-.warning-item.warning-warning {
-    background: #fff3e0;
-    border-left-color: #fb8c00;
-}
+.warning-item p { margin: 0; font-size: 0.95rem; color: #555; }
 
-.warning-item.warning-warning i {
-    color: #fb8c00;
-}
-
-.warning-item p {
-    margin: 0;
-    font-size: 0.95rem;
-    color: #555;
-}
-
+/* ---- Botones ---- */
 .form-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -243,15 +288,11 @@ if(isset($_POST['actualizar'])){
     transition: all 0.3s ease;
 }
 
-.btn-cancel:hover {
-    background: #5a6268;
-    transform: translateY(-2px);
-}
+.btn-cancel:hover { background: #5a6268; transform: translateY(-2px); }
 
 @media (max-width: 768px) {
-    .form-buttons {
-        grid-template-columns: 1fr;
-    }
+    .form-buttons { grid-template-columns: 1fr; }
+    .estado-actual { flex-direction: column; align-items: flex-start; }
 }
 </style>
 
@@ -259,7 +300,7 @@ if(isset($_POST['actualizar'])){
 // Mostrar advertencia según el estado seleccionado
 const estadoSelect = document.querySelector('select[name="estado"]');
 const warnings = {
-    'Habilitado': document.getElementById('warn-habilitado'),
+    'Habilitado':    document.getElementById('warn-habilitado'),
     'Deshabilitado': document.getElementById('warn-deshabilitado'),
     'Mantenimiento': document.getElementById('warn-mantenimiento')
 };
@@ -267,13 +308,11 @@ const warnings = {
 function updateWarning() {
     Object.values(warnings).forEach(w => w.style.display = 'none');
     const selected = estadoSelect.value;
-    if(warnings[selected]) {
-        warnings[selected].style.display = 'flex';
-    }
+    if(warnings[selected]) warnings[selected].style.display = 'flex';
 }
 
 estadoSelect.addEventListener('change', updateWarning);
-updateWarning(); // Mostrar al cargar
+updateWarning();
 </script>
 
 </body>
