@@ -1,6 +1,6 @@
 <?php
 session_start();
-if ($_SESSION['rol'] != 'subdireccion') {
+if ($_SESSION['rol'] != 'administracion') {
     header("Location: ../login.php");
     exit;
 }
@@ -8,17 +8,52 @@ if ($_SESSION['rol'] != 'subdireccion') {
 include("../includes/conexion.php");
 
 /* =========================
+   FUNCIÓN PARA PARSEAR HORARIO TEXTO A TIME (HH:MM)
+   Soporta: "7AM", "7:30AM", "12PM", "13:00", "1PM - 6PM"
+   ========================= */
+function parsearHora($texto) {
+    $texto = strtoupper(trim($texto));
+    // Formato 24h directo: 07:00 o 13:00
+    if (preg_match('/^(\d{1,2}):(\d{2})$/', $texto, $m)) {
+        return sprintf('%02d:%02d', $m[1], $m[2]);
+    }
+    // Formato con AM/PM y minutos: 7:30AM
+    if (preg_match('/^(\d{1,2}):(\d{2})(AM|PM)$/', $texto, $m)) {
+        $h = (int)$m[1]; $min = (int)$m[2];
+        if ($m[3] == 'PM' && $h != 12) $h += 12;
+        if ($m[3] == 'AM' && $h == 12) $h = 0;
+        return sprintf('%02d:%02d', $h, $min);
+    }
+    // Formato solo hora AM/PM: 7AM, 12PM
+    if (preg_match('/^(\d{1,2})(AM|PM)$/', $texto, $m)) {
+        $h = (int)$m[1];
+        if ($m[2] == 'PM' && $h != 12) $h += 12;
+        if ($m[2] == 'AM' && $h == 12) $h = 0;
+        return sprintf('%02d:00', $h);
+    }
+    return null;
+}
+
+function parsearRangoHorario($horario_texto) {
+    if (empty($horario_texto)) return null;
+    // Separar por " - " o "-"
+    $partes = preg_split('/\s*-\s*/', trim($horario_texto));
+    if (count($partes) < 2) return null;
+    $inicio = parsearHora($partes[0]);
+    $fin    = parsearHora($partes[1]);
+    if (!$inicio || !$fin) return null;
+    return ['inicio' => $inicio, 'fin' => $fin];
+}
+
+/* =========================
    OBTENER ID SI VIENE DE CONSULTAR
    ========================= */
 $id_ambiente_seleccionado = $_GET['id_ambiente'] ?? null;
 
 /* =========================
-   CONSULTAS BASE CON FILTROS
+   CONSULTAS BASE
    ========================= */
-// Solo ambientes HABILITADOS
 $ambientes = mysqli_query($conexion, "SELECT * FROM ambientes WHERE estado = 'Habilitado' ORDER BY nombre_ambiente");
-
-// Solo instructores ACTIVOS (sin fecha_fin o con fecha_fin >= hoy)
 $hoy = date('Y-m-d');
 $instructores = mysqli_query($conexion, "
     SELECT * FROM instructores 
@@ -31,58 +66,62 @@ $instructores = mysqli_query($conexion, "
    AUTORIZAR
    ========================= */
 if(isset($_POST['autorizar'])){
-    $ambiente = mysqli_real_escape_string($conexion, $_POST['ambiente']);
-    $instructor = mysqli_real_escape_string($conexion, $_POST['instructor']);
+    $ambiente    = mysqli_real_escape_string($conexion, $_POST['ambiente']);
+    $instructor  = mysqli_real_escape_string($conexion, $_POST['instructor']);
     $fecha_inicio = mysqli_real_escape_string($conexion, $_POST['fecha_inicio']);
-    $fecha_fin = mysqli_real_escape_string($conexion, $_POST['fecha_fin']);
+    $fecha_fin   = mysqli_real_escape_string($conexion, $_POST['fecha_fin']);
     $hora_inicio = mysqli_real_escape_string($conexion, $_POST['hora_inicio']);
-    $hora_fin = mysqli_real_escape_string($conexion, $_POST['hora_fin']);
-    $obs = mysqli_real_escape_string($conexion, $_POST['observaciones']);
-    $novedades = mysqli_real_escape_string($conexion, $_POST['novedades']);
+    $hora_fin    = mysqli_real_escape_string($conexion, $_POST['hora_fin']);
+    $obs         = mysqli_real_escape_string($conexion, $_POST['observaciones']);
+    $novedades   = mysqli_real_escape_string($conexion, $_POST['novedades']);
 
-    /* VALIDAR QUE EL AMBIENTE ESTÉ HABILITADO */
-    $checkAmbiente = mysqli_query($conexion, "SELECT estado FROM ambientes WHERE id='$ambiente'");
-    $ambienteData = mysqli_fetch_assoc($checkAmbiente);
+    /* VALIDAR AMBIENTE HABILITADO Y OBTENER HORARIO */
+    $checkAmbiente = mysqli_query($conexion, "SELECT * FROM ambientes WHERE id='$ambiente'");
+    $ambienteData  = mysqli_fetch_assoc($checkAmbiente);
     
     if(!$ambienteData || $ambienteData['estado'] != 'Habilitado'){
-        echo "<script>
-                alert('⚠️ No se puede autorizar: El ambiente no está habilitado');
-                window.history.back();
-              </script>";
+        echo "<script>alert('⚠️ No se puede autorizar: El ambiente no está habilitado'); window.history.back();</script>";
         exit;
     }
 
-    /* VALIDAR QUE EL INSTRUCTOR ESTÉ ACTIVO */
+    /* VALIDAR QUE LAS HORAS ESTÉN DENTRO DEL HORARIO DISPONIBLE */
+    $horario_disponible = $ambienteData['horario_disponible'];
+    $rango = parsearRangoHorario($horario_disponible);
+
+    if($rango){
+        $hi = $hora_inicio; // HH:MM del input type="time"
+        $hf = $hora_fin;
+
+        if($hi < $rango['inicio'] || $hf > $rango['fin']){
+            echo "<script>
+                    alert('⚠️ Horario fuera del rango permitido.\\nEste ambiente solo está disponible de " . addslashes($horario_disponible) . "\\nIngresaste: ' + '$hora_inicio' + ' - ' + '$hora_fin');
+                    window.history.back();
+                  </script>";
+            exit;
+        }
+    }
+
+    /* VALIDAR INSTRUCTOR ACTIVO */
     $checkInstructor = mysqli_query($conexion, "
         SELECT * FROM instructores 
         WHERE id='$instructor' 
         AND (fecha_fin IS NULL OR fecha_fin >= '$fecha_inicio')
         AND fecha_inicio <= '$fecha_fin'
     ");
-    
     if(mysqli_num_rows($checkInstructor) == 0){
-        echo "<script>
-                alert('⚠️ No se puede autorizar: El instructor no está activo en el período seleccionado');
-                window.history.back();
-              </script>";
+        echo "<script>alert('⚠️ El instructor no está activo en el período seleccionado'); window.history.back();</script>";
         exit;
     }
 
     /* VALIDAR FECHAS */
     if($fecha_inicio > $fecha_fin){
-        echo "<script>
-                alert('⚠️ La fecha fin debe ser igual o mayor que la fecha inicio');
-                window.history.back();
-              </script>";
+        echo "<script>alert('⚠️ La fecha fin debe ser igual o mayor que la fecha inicio'); window.history.back();</script>";
         exit;
     }
 
-    /* VALIDAR QUE HORA FIN SEA MAYOR */
+    /* VALIDAR HORA FIN MAYOR QUE INICIO */
     if($hora_inicio >= $hora_fin){
-        echo "<script>
-                alert('⚠️ La hora fin debe ser mayor que la hora inicio');
-                window.history.back();
-              </script>";
+        echo "<script>alert('⚠️ La hora fin debe ser mayor que la hora inicio'); window.history.back();</script>";
         exit;
     }
 
@@ -94,14 +133,9 @@ if(isset($_POST['autorizar'])){
                         (fecha_inicio <= '$fecha_fin' AND fecha_fin >= '$fecha_inicio')
                         AND (hora_inicio < '$hora_fin' AND hora_final > '$hora_inicio')
                       )";
-    
     $resChoque = mysqli_query($conexion, $sqlChoque);
-
-    if (mysqli_num_rows($resChoque) > 0) {
-        echo "<script>
-                alert('⚠️ El ambiente ya tiene una autorización aprobada en ese período y horario');
-                window.history.back();
-              </script>";
+    if(mysqli_num_rows($resChoque) > 0){
+        echo "<script>alert('⚠️ El ambiente ya tiene una autorización aprobada en ese período y horario'); window.history.back();</script>";
         exit;
     }
 
@@ -110,29 +144,20 @@ if(isset($_POST['autorizar'])){
         (id_ambiente, id_instructor, rol_autorizado, fecha_inicio, fecha_fin, 
          hora_inicio, hora_final, estado, observaciones, novedades)
         VALUES
-        ('$ambiente', '$instructor', 'subdireccion', '$fecha_inicio', '$fecha_fin',
+        ('$ambiente', '$instructor', 'administracion', '$fecha_inicio', '$fecha_fin',
          '$hora_inicio', '$hora_fin', 'Aprobado', '$obs', '$novedades')";
     
     if(mysqli_query($conexion, $sqlInsert)){
-        echo "<script>
-                alert('✅ Ambiente autorizado correctamente');
-                window.location.href='index.php';
-              </script>";
+        echo "<script>alert('✅ Ambiente autorizado correctamente'); window.location.href='index.php';</script>";
         exit;
     } else {
-        echo "<script>
-                alert('❌ Error al crear la autorización: ".mysqli_error($conexion)."');
-                window.history.back();
-              </script>";
+        echo "<script>alert('❌ Error al crear la autorización: ".mysqli_error($conexion)."'); window.history.back();</script>";
         exit;
     }
 }
 
-/* Verificar si hay ambientes disponibles */
-$totalAmbientes = mysqli_num_rows($ambientes);
+$totalAmbientes    = mysqli_num_rows($ambientes);
 $totalInstructores = mysqli_num_rows($instructores);
-
-// Reiniciar punteros
 mysqli_data_seek($ambientes, 0);
 mysqli_data_seek($instructores, 0);
 ?>
@@ -142,23 +167,22 @@ mysqli_data_seek($instructores, 0);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autorizar Ambiente - Subdirección</title>
+    <title>Autorizar Ambiente - Administración</title>
     <link rel="stylesheet" href="../css/permisos.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
-<!-- ========================= HEADER ========================= -->
 <div class="header">
     <div class="header-left">
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
         <div class="header-title">
             <h1>Autorizar Ambiente</h1>
-            <span>Panel de Subdirección</span>
+            <span>Panel de Administración</span>
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Subdirección
+        <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
 
@@ -168,7 +192,7 @@ mysqli_data_seek($instructores, 0);
         <div class="alert-warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <strong>No hay ambientes disponibles</strong>
-            <p>Todos los ambientes están deshabilitados o en mantenimiento. No es posible crear autorizaciones en este momento.</p>
+            <p>Todos los ambientes están deshabilitados o en mantenimiento.</p>
             <a href="index.php" class="btn-volver" style="margin-top:15px;">
                 <i class="fa-solid fa-arrow-left"></i> Volver al Panel
             </a>
@@ -177,7 +201,7 @@ mysqli_data_seek($instructores, 0);
         <div class="alert-warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <strong>No hay instructores activos</strong>
-            <p>No hay instructores disponibles para crear autorizaciones en este momento.</p>
+            <p>No hay instructores disponibles para crear autorizaciones.</p>
             <a href="index.php" class="btn-volver" style="margin-top:15px;">
                 <i class="fa-solid fa-arrow-left"></i> Volver al Panel
             </a>
@@ -190,15 +214,13 @@ mysqli_data_seek($instructores, 0);
             <p>Complete el formulario para autorizar el uso de un ambiente</p>
         </div>
 
-        
-
-        <form method="POST">
+        <form method="POST" id="form-autorizacion">
 
             <!-- AMBIENTE -->
             <div class="form-group">
                 <label><i class="fa-solid fa-building"></i> Ambiente * <small>(Solo habilitados)</small></label>
 
-                <?php if($id_ambiente_seleccionado){ ?>
+                <?php if($id_ambiente_seleccionado): ?>
                     <?php
                     $ambiente_unico = mysqli_fetch_assoc(
                         mysqli_query($conexion, "SELECT * FROM ambientes WHERE id='$id_ambiente_seleccionado' AND estado='Habilitado'")
@@ -207,19 +229,33 @@ mysqli_data_seek($instructores, 0);
                     ?>
                     <input type="hidden" name="ambiente" value="<?= $ambiente_unico['id'] ?>">
                     <input type="text" class="ambiente-readonly" value="<?= htmlspecialchars($ambiente_unico['nombre_ambiente']) ?>" readonly>
-                    <?php else: ?>
-                    <div class="alert-warning">Este ambiente no está habilitado</div>
+                    <?php if(!empty($ambiente_unico['horario_disponible'])): ?>
+                        <div class="horario-info">
+                            <i class="fa-solid fa-clock"></i>
+                            Horario disponible: <strong><?= htmlspecialchars($ambiente_unico['horario_disponible']) ?></strong>
+                        </div>
+                        <input type="hidden" id="horario_disponible_txt" value="<?= htmlspecialchars($ambiente_unico['horario_disponible']) ?>">
                     <?php endif; ?>
-                <?php } else { ?>
-                    <select name="ambiente" required>
+                    <?php else: ?>
+                        <div class="alert-warning">Este ambiente no está habilitado</div>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <select name="ambiente" id="select-ambiente" required onchange="mostrarHorario(this)">
                         <option value="">-- Seleccione un ambiente --</option>
-                        <?php while($a = mysqli_fetch_assoc($ambientes)){ ?>
-                            <option value="<?= $a['id'] ?>">
+                        <?php while($a = mysqli_fetch_assoc($ambientes)): ?>
+                            <option value="<?= $a['id'] ?>" 
+                                    data-horario="<?= htmlspecialchars($a['horario_disponible'] ?: '') ?>">
                                 <?= htmlspecialchars($a['nombre_ambiente']) ?>
                             </option>
-                        <?php } ?>
+                        <?php endwhile; ?>
                     </select>
-                <?php } ?>
+                    <!-- Muestra el horario disponible al seleccionar -->
+                    <div class="horario-info" id="horario-info-box" style="display:none;">
+                        <i class="fa-solid fa-clock"></i>
+                        Horario disponible: <strong id="horario-info-texto"></strong>
+                    </div>
+                    <input type="hidden" id="horario_disponible_txt" value="">
+                <?php endif; ?>
             </div>
 
             <!-- INSTRUCTOR -->
@@ -227,12 +263,12 @@ mysqli_data_seek($instructores, 0);
                 <label><i class="fa-solid fa-user"></i> Instructor * <small>(Solo activos)</small></label>
                 <select name="instructor" required>
                     <option value="">-- Seleccione un instructor --</option>
-                    <?php while($i = mysqli_fetch_assoc($instructores)){ ?>
+                    <?php while($i = mysqli_fetch_assoc($instructores)): ?>
                         <option value="<?= $i['id'] ?>">
                             <?= htmlspecialchars($i['nombre']) ?>
                             (<?= htmlspecialchars($i['identificacion']) ?>)
                         </option>
-                    <?php } ?>
+                    <?php endwhile; ?>
                 </select>
             </div>
 
@@ -242,7 +278,6 @@ mysqli_data_seek($instructores, 0);
                     <label><i class="fa-regular fa-calendar-days"></i> Fecha Inicio *</label>
                     <input type="date" name="fecha_inicio" min="<?= date('Y-m-d') ?>" required>
                 </div>
-
                 <div class="form-group">
                     <label><i class="fa-regular fa-calendar-days"></i> Fecha Fin *</label>
                     <input type="date" name="fecha_fin" min="<?= date('Y-m-d') ?>" required>
@@ -253,19 +288,23 @@ mysqli_data_seek($instructores, 0);
             <div class="time-grid">
                 <div class="form-group">
                     <label><i class="fa-regular fa-clock"></i> Hora Inicio *</label>
-                    <input type="time" name="hora_inicio" required>
+                    <input type="time" name="hora_inicio" id="hora_inicio" required onchange="validarHoraEnCliente()">
                 </div>
-
                 <div class="form-group">
                     <label><i class="fa-regular fa-clock"></i> Hora Fin *</label>
-                    <input type="time" name="hora_fin" required>
+                    <input type="time" name="hora_fin" id="hora_fin" required onchange="validarHoraEnCliente()">
                 </div>
+            </div>
+
+            <!-- AVISO DE HORA FUERA DE RANGO (se muestra en tiempo real) -->
+            <div id="aviso-horario" style="display:none; background:#fff3cd; color:#856404; border:1px solid #ffc107; border-radius:8px; padding:10px 15px; margin-bottom:15px; font-size:14px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> <span id="aviso-texto"></span>
             </div>
 
             <!-- OBSERVACIONES -->
             <div class="form-group">
                 <label><i class="fa-solid fa-comment"></i> Observaciones</label>
-                <textarea name="observaciones" rows="3" placeholder="Observaciones generales sobre la autorización..."></textarea>
+                <textarea name="observaciones" rows="3" placeholder="Observaciones generales..."></textarea>
             </div>
 
             <!-- NOVEDADES -->
@@ -274,7 +313,6 @@ mysqli_data_seek($instructores, 0);
                 <textarea name="novedades" rows="3" placeholder="Alguna novedad especial o restricción..."></textarea>
             </div>
 
-            <!-- BOTÓN SUBMIT -->
             <button type="submit" name="autorizar" class="btn-submit">
                 <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
             </button>
@@ -283,13 +321,106 @@ mysqli_data_seek($instructores, 0);
 
     <?php endif; ?>
 
-    <!-- BOTÓN VOLVER -->
     <a href="index.php" class="btn-volver">
         <i class="fa-solid fa-arrow-left"></i> Volver al Panel
     </a>
 
 </div>
 
+<style>
+.horario-info {
+    margin-top: 8px;
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+</style>
+
+<script>
+/* ---- Mostrar horario disponible al seleccionar ambiente en el select ---- */
+function mostrarHorario(sel) {
+    const opcion = sel.options[sel.selectedIndex];
+    const horario = opcion.getAttribute('data-horario');
+    const box = document.getElementById('horario-info-box');
+    const texto = document.getElementById('horario-info-texto');
+    const hidden = document.getElementById('horario_disponible_txt');
+
+    if(horario){
+        texto.textContent = horario;
+        box.style.display = 'inline-flex';
+        hidden.value = horario;
+    } else {
+        box.style.display = 'none';
+        hidden.value = '';
+    }
+    validarHoraEnCliente();
+}
+
+/* ---- Parser de hora AM/PM a HH:MM comparable ---- */
+function parsearHoraJS(txt) {
+    txt = txt.trim().toUpperCase();
+    // 24h: 07:00
+    let m = txt.match(/^(\d{1,2}):(\d{2})$/);
+    if(m) return m[1].padStart(2,'0') + ':' + m[2];
+    // Con minutos: 7:30AM
+    m = txt.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
+    if(m){
+        let h = parseInt(m[1]), min = m[2];
+        if(m[3]=='PM' && h!=12) h+=12;
+        if(m[3]=='AM' && h==12) h=0;
+        return String(h).padStart(2,'0')+':'+min;
+    }
+    // Solo hora: 7AM
+    m = txt.match(/^(\d{1,2})(AM|PM)$/);
+    if(m){
+        let h = parseInt(m[1]);
+        if(m[2]=='PM' && h!=12) h+=12;
+        if(m[2]=='AM' && h==12) h=0;
+        return String(h).padStart(2,'0')+':00';
+    }
+    return null;
+}
+
+/* ---- Validar en tiempo real antes de enviar ---- */
+function validarHoraEnCliente() {
+    const horarioTxt = document.getElementById('horario_disponible_txt')?.value || '';
+    const hi = document.getElementById('hora_inicio')?.value;
+    const hf = document.getElementById('hora_fin')?.value;
+    const aviso = document.getElementById('aviso-horario');
+    const avisoTxt = document.getElementById('aviso-texto');
+
+    if(!horarioTxt || !hi || !hf){ aviso.style.display='none'; return; }
+
+    const partes = horarioTxt.split(/\s*-\s*/);
+    if(partes.length < 2){ aviso.style.display='none'; return; }
+
+    const rInicio = parsearHoraJS(partes[0]);
+    const rFin    = parsearHoraJS(partes[1]);
+
+    if(!rInicio || !rFin){ aviso.style.display='none'; return; }
+
+    if(hi < rInicio || hf > rFin){
+        avisoTxt.textContent = `Las horas deben estar dentro del horario disponible (${horarioTxt}). Estás ingresando ${hi} - ${hf}.`;
+        aviso.style.display = 'block';
+    } else {
+        aviso.style.display = 'none';
+    }
+}
+
+/* ---- Bloquear envío si hay error de horario ---- */
+document.getElementById('form-autorizacion')?.addEventListener('submit', function(e){
+    const aviso = document.getElementById('aviso-horario');
+    if(aviso && aviso.style.display === 'block'){
+        e.preventDefault();
+        alert('⚠️ Corrige el horario antes de continuar. Las horas deben estar dentro del rango disponible del ambiente.');
+    }
+});
+</script>
 
 </body>
 </html>

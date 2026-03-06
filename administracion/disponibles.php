@@ -10,7 +10,6 @@ include("../includes/conexion.php");
 $hoy = date('Y-m-d');
 $hora_actual = date('H:i:s');
 
-/* Ambientes DISPONIBLES = Habilitados SIN autorizaciones activas AHORA */
 $sql = "SELECT 
             a.*,
             (SELECT COUNT(*) 
@@ -57,9 +56,6 @@ $total = mysqli_num_rows($resultado);
 
 <div class="consultar-container">
 
-    
-
-    <!-- TABLA -->
     <div class="table-container">
         <div class="table-header">
             <h3>
@@ -74,7 +70,6 @@ $total = mysqli_num_rows($resultado);
                 <thead>
                     <tr>
                         <th>Ambiente</th>
-                        <th>Horario Fijo</th>
                         <th>Horario Disponible</th>
                         <th>Descripción</th>
                         <th>Acción</th>
@@ -87,8 +82,16 @@ $total = mysqli_num_rows($resultado);
                             <strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong>
                             <span class="badge-disponible">Libre</span>
                         </td>
-                        <td><?= htmlspecialchars($row['horario_fijo'] ?: '—') ?></td>
-                        <td><?= htmlspecialchars($row['horario_disponible'] ?: '—') ?></td>
+                        <td>
+                            <?php if(!empty($row['horario_disponible'])): ?>
+                                <span class="badge-horario">
+                                    <i class="fa-solid fa-clock"></i>
+                                    <?= htmlspecialchars($row['horario_disponible']) ?>
+                                </span>
+                            <?php else: ?>
+                                <span style="color:#aaa;">—</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= htmlspecialchars(substr($row['descripcion_general'], 0, 40)) ?><?= strlen($row['descripcion_general']) > 40 ? '...' : '' ?></td>
                         <td>
                             <a href="permisos.php?id_ambiente=<?= $row['id'] ?>" class="btn-accion">
@@ -116,19 +119,6 @@ $total = mysqli_num_rows($resultado);
 </div>
 
 <style>
-.hora-actual-banner {
-    background: linear-gradient(135deg, #43a047, #66bb6a);
-    color: white;
-    padding: 20px 30px;
-    border-radius: 12px;
-    text-align: center;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 15px rgba(67, 160, 71, 0.3);
-}
-.hora-actual-banner i { font-size: 1.5rem; margin-right: 10px; }
-.hora-actual-banner strong { font-size: 2rem; display: block; margin: 8px 0; }
-.hora-actual-banner span { font-size: 0.9rem; opacity: 0.9; }
-
 .badge-disponible {
     background: #e8f5e9;
     color: #2e7d32;
@@ -138,7 +128,17 @@ $total = mysqli_num_rows($resultado);
     font-weight: 700;
     margin-left: 8px;
 }
-
+.badge-horario {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
 .btn-accion {
     background: #43a047;
     color: white;
@@ -154,7 +154,6 @@ $total = mysqli_num_rows($resultado);
 }
 .btn-accion:hover { background: #2e7d32; transform: translateY(-2px); }
 </style>
-
 
 </body>
 </html>
