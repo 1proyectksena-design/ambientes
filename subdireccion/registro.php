@@ -21,12 +21,19 @@ if(isset($_POST['crear_ambiente'])){
     if(mysqli_query($conexion, $sql)){
         $id_ambiente = mysqli_insert_id($conexion);
         
-        // ============ GENERAR QR AUTOMÁTICAMENTE ============
-        include("../includes/generar_qr.php");
-        generarQR($id_ambiente, $nombre); // Pasar nombre del ambiente
-        // ====================================================
-        
-        echo "<script>alert('✅ Ambiente creado correctamente');</script>";
+        // ============ GENERAR QR CON MANEJO DE ERRORES ============
+        $qr_msg = "✅ Ambiente creado correctamente";
+        try {
+            include_once("../includes/generar_qr.php");
+            generarQR($id_ambiente, $nombre);
+        } catch (Exception $e) {
+            $qr_msg = "✅ Ambiente creado. QR no generado: " . $e->getMessage();
+        } catch (Error $e) {
+            $qr_msg = "✅ Ambiente creado. Error en QR: " . $e->getMessage();
+        }
+        // ==========================================================
+
+        echo "<script>alert('$qr_msg'); window.location.href='registro.php';</script>";
     } else {
         echo "<script>alert('❌ Error: ".mysqli_error($conexion)."');</script>";
     }
@@ -44,14 +51,9 @@ if(isset($_POST['crear_instructor'])){
             VALUES ('$nombre', '$identificacion', '$fecha_inicio', ".($fecha_fin ? "'$fecha_fin'" : "NULL").", '$novedades')";
     
     if(mysqli_query($conexion, $sql)){
-        echo "<script>alert('
-        
-        
-        
-        
-        Instructor creado correctamente');</script>";
+        echo "<script>alert('✅ Instructor creado correctamente'); window.location.href='registro.php';</script>";
     } else {
-        echo "<script>alert('Error: ".mysqli_error($conexion)."');</script>";
+        echo "<script>alert('❌ Error: ".mysqli_error($conexion)."');</script>";
     }
 }
 ?>
