@@ -10,16 +10,21 @@ include("../includes/conexion.php");
 /* Filtro por estado */
 $filtro = $_GET['estado'] ?? 'todos';
 
-$where = $filtro != 'todos' ? "WHERE estado = '".mysqli_real_escape_string($conexion, $filtro)."'" : '';
+$where = $filtro != 'todos' ? "WHERE a.estado = '".mysqli_real_escape_string($conexion, $filtro)."'" : '';
 
-$sql = "SELECT * FROM ambientes $where ORDER BY nombre_ambiente ASC";
+// JOIN con instructores para traer el nombre del instructor asignado
+$sql = "SELECT a.*, i.nombre AS nombre_instructor 
+        FROM ambientes a
+        LEFT JOIN instructores i ON a.instructor_id = i.id
+        $where 
+        ORDER BY a.nombre_ambiente ASC";
 $resultado = mysqli_query($conexion, $sql);
 $total = mysqli_num_rows($resultado);
 
 /* Contadores */
-$habilitados = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Habilitado'"))[0];
+$habilitados    = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Habilitado'"))[0];
 $deshabilitados = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Deshabilitado'"))[0];
-$mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Mantenimiento'"))[0];
+$mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Mantenimiento'"))[0];
 ?>
 
 <!DOCTYPE html>
@@ -69,10 +74,10 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
                 <h3><i class="fa-solid fa-filter"></i> Filtrar por Estado</h3>
                 <form method="GET" class="search-form">
                     <select name="estado">
-                        <option value="todos" <?= $filtro == 'todos' ? 'selected' : '' ?>>Todos</option>
-                        <option value="Habilitado" <?= $filtro == 'Habilitado' ? 'selected' : '' ?>>Habilitado</option>
-                        <option value="Deshabilitado" <?= $filtro == 'Deshabilitado' ? 'selected' : '' ?>>Deshabilitado</option>
-                        <option value="Mantenimiento" <?= $filtro == 'Mantenimiento' ? 'selected' : '' ?>>Mantenimiento</option>
+                        <option value="todos"          <?= $filtro == 'todos'          ? 'selected' : '' ?>>Todos</option>
+                        <option value="Habilitado"     <?= $filtro == 'Habilitado'     ? 'selected' : '' ?>>Habilitado</option>
+                        <option value="Deshabilitado"  <?= $filtro == 'Deshabilitado'  ? 'selected' : '' ?>>Deshabilitado</option>
+                        <option value="Mantenimiento"  <?= $filtro == 'Mantenimiento'  ? 'selected' : '' ?>>Mantenimiento</option>
                     </select>
                     <button type="submit"><i class="fa-solid fa-search"></i> Filtrar</button>
                 </form>
@@ -92,6 +97,7 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
                                 <th>ID</th>
                                 <th>Nombre</th>
                                 <th>Estado</th>
+                                <th>Instructor Asignado</th>
                                 <th>Horario Fijo</th>
                                 <th>Horario Disponible</th>
                                 <th>Descripción</th>
@@ -107,6 +113,16 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
                                     <span class="estado-badge estado-<?= strtolower($row['estado']) ?>">
                                         <?= htmlspecialchars($row['estado']) ?>
                                     </span>
+                                </td>
+                                <td>
+                                    <?php if($row['nombre_instructor']): ?>
+                                        <span class="instructor-badge">
+                                            <i class="fa-solid fa-chalkboard-user"></i>
+                                            <?= htmlspecialchars($row['nombre_instructor']) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="sin-instructor">— Sin asignar —</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?= htmlspecialchars($row['horario_fijo'] ?: '—') ?></td>
                                 <td><?= htmlspecialchars($row['horario_disponible'] ?: '—') ?></td>
@@ -143,8 +159,29 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
             .stat-mini.habilitado .num { color: #43a047; }
             .stat-mini.deshabilitado .num { color: #e53935; }
             .stat-mini.mantenimiento .num { color: #fb8c00; }
+
             .search-form select { padding: 14px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; transition: all 0.3s ease; background: white; }
             .search-form select:focus { outline: none; border-color: #667eea; }
+
+            /* Instructor badge */
+            .instructor-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: #e8f0fe;
+                color: #3b5bdb;
+                padding: 5px 10px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            .instructor-badge i { font-size: 12px; }
+
+            .sin-instructor {
+                color: #aaa;
+                font-size: 13px;
+                font-style: italic;
+            }
 
             /* BOTÓN DE EDITAR */
             .btn-action-edit {
@@ -161,11 +198,7 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
                 transition: all 0.3s ease;
                 box-shadow: 0 2px 8px rgba(251, 140, 0, 0.3);
             }
-
-
-            .btn-action-edit i {
-                font-size: 14px;
-            }
+            .btn-action-edit i { font-size: 14px; }
         </style>
 
     </body>
