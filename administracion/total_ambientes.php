@@ -200,6 +200,7 @@ $mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM
             }
             .btn-action-edit i { font-size: 14px; }
         </style>
+      /*  ALTER TABLE ambientes ADD COLUMN instructor_id INT NULL;*/
 
     </body>
 </html>
