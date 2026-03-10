@@ -56,7 +56,7 @@ if($nombre_ambiente){
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historial de Ambiente</title>
-    <link rel="stylesheet" href="../css/consultar.css">
+    <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -257,42 +257,66 @@ if($nombre_ambiente){
 </div>
 
 <!-- OVERLAY PARA MODAL -->
-<div class="novedades-overlay" id="modalOverlay" onclick="cerrarTodosModales()"></div>
+<div class="novedades-overlay" id="modalOverlay"></div>
 
 <script>
+/**
+ * MODAL TOGGLE - VERSIÓN DEFINITIVA
+ * Copy-paste este script completo en todos los archivos consultar.php e historial.php
+ */
+
 function mostrarModal(btn) {
-    // Cerrar todos primero
-    cerrarTodosModales();
-    
-    // Obtener modal y overlay
     const modal = btn.nextElementSibling;
     const overlay = document.getElementById('modalOverlay');
     
-    // Mostrar
-    overlay.style.display = 'block';
-    modal.style.display = 'block';
+    // Verificar si está abierto (el modal está visible)
+    const estaAbierto = modal.style.display === 'block';
     
-    // Cambiar botón
-    btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
-    btn.dataset.abierto = 'true';
+    if(estaAbierto) {
+        // CERRAR
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    } else {
+        // Primero cerrar todos los demás
+        cerrarTodosModales();
+        
+        // ABRIR este
+        overlay.style.display = 'block';
+        modal.style.display = 'block';
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar';
+    }
 }
 
 function cerrarTodosModales() {
     const overlay = document.getElementById('modalOverlay');
-    const modales = document.querySelectorAll('.novedades-modal');
-    const botones = document.querySelectorAll('.btn-ver-novedades');
+    if(overlay) {
+        overlay.style.display = 'none';
+    }
     
-    overlay.style.display = 'none';
-    modales.forEach(m => m.style.display = 'none');
-    botones.forEach(b => {
-        b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-        delete b.dataset.abierto;
+    // Cerrar todos los modales
+    document.querySelectorAll('.novedades-modal').forEach(function(modal) {
+        modal.style.display = 'none';
+    });
+    
+    // Resetear todos los botones
+    document.querySelectorAll('.btn-ver-novedades').forEach(function(btn) {
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
     });
 }
 
-// Cerrar con ESC
+// Cerrar al hacer click en el overlay
+document.addEventListener('click', function(e) {
+    if(e.target && e.target.id === 'modalOverlay') {
+        cerrarTodosModales();
+    }
+});
+
+// Cerrar con tecla ESC
 document.addEventListener('keydown', function(e) {
-    if(e.key === 'Escape') cerrarTodosModales();
+    if(e.key === 'Escape') {
+        cerrarTodosModales();
+    }
 });
 </script>
 

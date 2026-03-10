@@ -434,9 +434,7 @@ tr.row-instructor-fijo:hover td { background: #ede9fe; }
 
 /* Badge "Fijo" dentro de la tabla */
 .badge-fijo {
-    background: #eef2ff;
     color: #4f46e5;
-    border: 1px solid #c7d2fe;
     border-radius: 12px;
     font-size: 0.72rem;
     font-weight: 700;

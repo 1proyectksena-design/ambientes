@@ -159,9 +159,7 @@ if ($ambienteBuscado) {
             <div class="instructor-fijo-card sin-instructor">
                 <i class="fa-solid fa-user-slash"></i>
                 <span>Este ambiente no tiene instructor de horario fijo asignado</span>
-                <a href="editar.php?id=<?= $ambienteInfo['id'] ?>" class="btn-asignar-link">
-                    <i class="fa-solid fa-plus"></i> Asignar instructor
-                </a>
+                
             </div>
             <?php endif; ?>
 

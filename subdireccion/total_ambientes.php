@@ -10,16 +10,21 @@ include("../includes/conexion.php");
 /* Filtro por estado */
 $filtro = $_GET['estado'] ?? 'todos';
 
-$where = $filtro != 'todos' ? "WHERE estado = '".mysqli_real_escape_string($conexion, $filtro)."'" : '';
+$where = $filtro != 'todos' ? "WHERE a.estado = '".mysqli_real_escape_string($conexion, $filtro)."'" : '';
 
-$sql = "SELECT * FROM ambientes $where ORDER BY nombre_ambiente ASC";
+// JOIN con instructores para traer el nombre del instructor asignado
+$sql = "SELECT a.*, i.nombre AS nombre_instructor 
+        FROM ambientes a
+        LEFT JOIN instructores i ON a.instructor_id = i.id
+        $where 
+        ORDER BY a.nombre_ambiente ASC";
 $resultado = mysqli_query($conexion, $sql);
 $total = mysqli_num_rows($resultado);
 
 /* Contadores */
-$habilitados = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Habilitado'"))[0];
+$habilitados    = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Habilitado'"))[0];
 $deshabilitados = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Deshabilitado'"))[0];
-$mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Mantenimiento'"))[0];
+$mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Mantenimiento'"))[0];
 ?>
 
 <!DOCTYPE html>
@@ -42,7 +47,7 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Administración
+        <i class="fa-solid fa-user user-icon"></i> Subdirección
     </div>
 </div>
 
@@ -69,8 +74,8 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
         <h3><i class="fa-solid fa-filter"></i> Filtrar por Estado</h3>
         <form method="GET" class="search-form">
             <select name="estado">
-                <option value="todos" <?= $filtro == 'todos' ? 'selected' : '' ?>>Todos</option>
-                <option value="Habilitado" <?= $filtro == 'Habilitado' ? 'selected' : '' ?>>Habilitado</option>
+                <option value="todos"         <?= $filtro == 'todos'         ? 'selected' : '' ?>>Todos</option>
+                <option value="Habilitado"    <?= $filtro == 'Habilitado'    ? 'selected' : '' ?>>Habilitado</option>
                 <option value="Deshabilitado" <?= $filtro == 'Deshabilitado' ? 'selected' : '' ?>>Deshabilitado</option>
                 <option value="Mantenimiento" <?= $filtro == 'Mantenimiento' ? 'selected' : '' ?>>Mantenimiento</option>
             </select>
@@ -83,7 +88,7 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
         <div class="table-header">
             <h3><i class="fa-solid fa-building"></i> Mostrando <?= $total ?> ambientes</h3>
         </div>
-        
+
         <?php if($total > 0): ?>
         <div class="table-scroll-wrapper">
             <table>
@@ -92,9 +97,11 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
                         <th>ID</th>
                         <th>Nombre</th>
                         <th>Estado</th>
+                        <th>Instructor Asignado</th>
                         <th>Horario Fijo</th>
                         <th>Horario Disponible</th>
                         <th>Descripción</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -107,9 +114,24 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
                                 <?= htmlspecialchars($row['estado']) ?>
                             </span>
                         </td>
+                        <td>
+                            <?php if($row['nombre_instructor']): ?>
+                                <span class="instructor-badge">
+                                    <i class="fa-solid fa-chalkboard-user"></i>
+                                    <?= htmlspecialchars($row['nombre_instructor']) ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="sin-instructor">— Sin asignar —</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= htmlspecialchars($row['horario_fijo'] ?: '—') ?></td>
                         <td><?= htmlspecialchars($row['horario_disponible'] ?: '—') ?></td>
                         <td><?= htmlspecialchars(substr($row['descripcion_general'], 0, 50)) ?><?= strlen($row['descripcion_general']) > 50 ? '...' : '' ?></td>
+                        <td>
+                            <a href="editar_ambiente.php?id=<?= $row['id'] ?>" class="btn-action-edit" title="Editar ambiente">
+                                <i class="fa-solid fa-pen-to-square"></i> Editar
+                            </a>
+                        </td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -137,8 +159,49 @@ $mantenimiento = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM 
 .stat-mini.habilitado .num { color: #43a047; }
 .stat-mini.deshabilitado .num { color: #e53935; }
 .stat-mini.mantenimiento .num { color: #fb8c00; }
+
 .search-form select { padding: 14px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; transition: all 0.3s ease; background: white; }
 .search-form select:focus { outline: none; border-color: #667eea; }
+
+.instructor-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e8f0fe;
+    color: #3b5bdb;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.instructor-badge i { font-size: 12px; }
+
+.sin-instructor {
+    color: #aaa;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.btn-action-edit {
+    background: #fff3e0;
+    color: #f57c00;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(251, 140, 0, 0.3);
+}
+.btn-action-edit:hover {
+    background: #f57c00;
+    color: white;
+    transform: translateY(-1px);
+}
+.btn-action-edit i { font-size: 14px; }
 </style>
 
 </body>

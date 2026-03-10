@@ -156,7 +156,6 @@ if ($ambienteBuscado) {
                     </thead>
                     <tbody>
                         <?php while($row = mysqli_fetch_assoc($historialAmbiente)): 
-                            /* CALCULAR ESTADO */
                             $estadoActual = 'desocupado';
                             $textoEstado = 'Desocupado';
                             $iconoEstado = '<i class="fa-solid fa-circle"></i>';
@@ -200,18 +199,31 @@ if ($ambienteBuscado) {
                                 </span>
                             </td>
                             <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                            <td>
-                                <?php if($row['novedades']): ?>
-                                    <button onclick="mostrarModal(this)" class="btn-ver-novedades">
+                            <td style="position: relative;">
+                                <?php if($row['novedades']): 
+                                    $novedad_texto = $row['novedades'];
+                                    $fecha_novedad = '';
+                                    
+                                    if(preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
+                                        $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
+                                        $novedad_texto = $matches[2];
+                                    } else {
+                                        $fecha_novedad = date('d/m/Y h:i A', strtotime($row['fecha_registro']));
+                                    }
+                                ?>
+                                    <button onclick="verNovedades(this)" class="btn-ver-novedades">
                                         <i class="fa-solid fa-eye"></i> Ver
                                     </button>
                                     <div class="novedades-modal" style="display:none;">
                                         <div class="modal-header">
                                             <strong>Novedades reportadas por:</strong>
                                             <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                            <div style="font-size: 0.85rem; color: #f57c00; margin-top: 4px;">
+                                                <i class="fa-regular fa-clock"></i> <?= $fecha_novedad ?>
+                                            </div>
                                         </div>
                                         <div class="modal-content">
-                                            <pre><?= htmlspecialchars($row['novedades']) ?></pre>
+                                            <pre><?= htmlspecialchars($novedad_texto) ?></pre>
                                         </div>
                                     </div>
                                 <?php else: ?>
@@ -249,38 +261,41 @@ if ($ambienteBuscado) {
 
 </div>
 
-<!-- OVERLAY -->
-<div class="novedades-overlay" id="modalOverlay" onclick="cerrarTodosModales()"></div>
-
 <script>
-function mostrarModal(btn) {
-    cerrarTodosModales();
-    
+function verNovedades(btn) {
     const modal = btn.nextElementSibling;
-    const overlay = document.getElementById('modalOverlay');
-    
-    overlay.style.display = 'block';
-    modal.style.display = 'block';
-    
-    btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
-    btn.dataset.abierto = 'true';
+    const allModals = document.querySelectorAll('.novedades-modal');
+
+    allModals.forEach(m => { if(m !== modal) m.style.display = 'none'; });
+    document.querySelectorAll('.btn-ver-novedades').forEach(b => {
+        if(b !== btn) b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    });
+
+    if(modal.style.display === 'none') {
+        modal.style.display = 'block';
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
+    } else {
+        modal.style.display = 'none';
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    }
 }
 
-function cerrarTodosModales() {
-    const overlay = document.getElementById('modalOverlay');
-    const modales = document.querySelectorAll('.novedades-modal');
-    const botones = document.querySelectorAll('.btn-ver-novedades');
-    
-    overlay.style.display = 'none';
-    modales.forEach(m => m.style.display = 'none');
-    botones.forEach(b => {
-        b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-        delete b.dataset.abierto;
-    });
-}
+document.addEventListener('click', function(e) {
+    if(!e.target.closest('td') && !e.target.closest('.novedades-modal')) {
+        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
+        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
+            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+        });
+    }
+});
 
 document.addEventListener('keydown', function(e) {
-    if(e.key === 'Escape') cerrarTodosModales();
+    if(e.key === 'Escape') {
+        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
+        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
+            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+        });
+    }
 });
 </script>
 
