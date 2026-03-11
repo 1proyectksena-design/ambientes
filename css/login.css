@@ -11,6 +11,7 @@
 
 /* ===== BODY CON IMAGEN DE FONDO ===== */
 body {
+    font-family: 'Nunito', sans-serif;
     min-height: 100vh;
     background: #0b0b1a;
     background-size: cover;

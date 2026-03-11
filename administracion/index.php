@@ -134,7 +134,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
         </div>
 
         <div class="footer-description">
-            <p>Plataforma institucional para la administración y control de ambientes de aprendizaje, orientada a la excelencia en la formación técnica y tecnológica.</p>
+            <p>Plataforma institucional para la administración y control de ambientes de aprendizaje.</p>
         </div>
 
         <div class="footer-nav">
@@ -153,11 +153,11 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             <ul>
                 <li>
                     <span class="footer-icon">&#9679;</span>
-                    Centro de Industria y Comercio<br>Villavicencio, Meta — Colombia
+                    Centro de Industria y Servicios del Meta
                 </li>
                 <li>
                     <span class="footer-icon">&#9711;</span>
-                    Regional Llanos Orientales
+                    Villavicencio, Meta — Colombia
                 </li>
                 <li>
                     <span class="footer-icon">&#9993;</span>

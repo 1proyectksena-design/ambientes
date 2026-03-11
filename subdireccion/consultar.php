@@ -21,7 +21,14 @@ $historialAmbiente = null;
 if ($ambienteBuscado) {
     $ambienteBuscado = mysqli_real_escape_string($conexion, $ambienteBuscado);
     
-    $sqlAmb = "SELECT * FROM ambientes WHERE nombre_ambiente LIKE '%$ambienteBuscado%'";
+    /* Buscar info del ambiente + instructor asignado */
+    $sqlAmb = "SELECT a.*, 
+                      i.nombre          AS nombre_instructor_fijo,
+                      i.identificacion  AS doc_instructor_fijo,
+                      i.novedades       AS novedades_instructor_fijo
+               FROM ambientes a
+               LEFT JOIN instructores i ON a.instructor_id = i.id
+               WHERE a.nombre_ambiente LIKE '%$ambienteBuscado%'";
     $resAmb = mysqli_query($conexion, $sqlAmb);
     $ambienteInfo = mysqli_fetch_assoc($resAmb);
     
@@ -48,6 +55,8 @@ if ($ambienteBuscado) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultar Ambiente - Subdirección</title>
+    
+    
     <link rel="stylesheet" href="../css/consultar.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> 
 </head>
@@ -88,10 +97,11 @@ if ($ambienteBuscado) {
     <!-- RESULTADO -->
     <?php if ($ambienteBuscado && $ambienteInfo): ?>
         <div class="ambiente-result">
-            <h3 style="margin: 0 0 20px 0; color: #333;">
-                <i class="fa-solid fa-door-open" style="color:#355d91;"></i> 
-                Información del Ambiente
-            </h3>
+            <div class="result-title-row">
+                <h3><i class="fa-solid fa-door-open" style="color:#355d91;"></i> Información del Ambiente</h3>
+            </div>
+            
+            <!-- GRID DE DATOS BÁSICOS -->
             <div class="info-grid">
                 <div class="info-item">
                     <label>Nombre</label>
@@ -112,7 +122,43 @@ if ($ambienteBuscado) {
                     <span><?= htmlspecialchars($ambienteInfo['horario_disponible'] ?: 'No definido') ?></span>
                 </div>
             </div>
+
+            <!-- ===== INSTRUCTOR DE HORARIO FIJO ===== -->
+            <?php if($ambienteInfo['nombre_instructor_fijo']): ?>
+            <div class="instructor-fijo-card">
+                <div class="instructor-fijo-header">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <strong>Instructor de Horario Fijo</strong>
+                </div>
+                <div class="instructor-fijo-body">
+                    <div class="instructor-fijo-info">
+                        <div class="instr-avatar">
+                            <?= strtoupper(substr($ambienteInfo['nombre_instructor_fijo'], 0, 1)) ?>
+                        </div>
+                        <div>
+                            <p class="instr-nombre"><?= htmlspecialchars($ambienteInfo['nombre_instructor_fijo']) ?></p>
+                            <p class="instr-doc">
+                                <i class="fa-solid fa-id-card"></i>
+                                <?= htmlspecialchars($ambienteInfo['doc_instructor_fijo']) ?>
+                            </p>
+                            <?php if($ambienteInfo['novedades_instructor_fijo']): ?>
+                            <p class="instr-novedad">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <?= htmlspecialchars($ambienteInfo['novedades_instructor_fijo']) ?>
+                            </p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="instructor-fijo-card sin-instructor">
+                <i class="fa-solid fa-user-slash"></i>
+                <span>Este ambiente no tiene instructor de horario fijo asignado</span>
+            </div>
+            <?php endif; ?>
             
+            <!-- DESCRIPCIÓN -->
             <?php if($ambienteInfo['descripcion_general']): ?>
             <div class="descripcion-ambiente">
                 <strong>Descripción:</strong>
@@ -120,6 +166,7 @@ if ($ambienteBuscado) {
             </div>
             <?php endif; ?>
 
+            <!-- BOTONES DE ACCIÓN -->
             <?php if($ambienteInfo['estado'] == 'Habilitado'): ?>
                 <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
                     <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
@@ -168,7 +215,7 @@ if ($ambienteBuscado) {
                                         $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
                                     } else {
                                         $estadoActual = 'programado';
-                                        $textoEstado = 'Programado';
+                                        $textoEstado = 'Programado ('.date('h:i A', strtotime($row['hora_inicio'])).' - '.date('h:i A', strtotime($row['hora_final'])).')';
                                         $iconoEstado = '<i class="fa-regular fa-clock"></i>';
                                     }
                                 }
@@ -181,11 +228,30 @@ if ($ambienteBuscado) {
                                 $textoEstado = 'Rechazado';
                                 $iconoEstado = '<i class="fa-solid fa-ban"></i>';
                             }
+
+                            /* Marcar si esta fila es del instructor fijo */
+                            $esFijo = ($ambienteInfo['instructor_id'] && $row['id_instructor'] == $ambienteInfo['instructor_id']);
+                            
+                            /* EXTRAER FECHA/HORA DE NOVEDAD SI EXISTE */
+                            $novedad_texto = $row['novedades'];
+                            $fecha_novedad = '';
+                            
+                            if($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
+                                $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
+                                $novedad_texto = $matches[2];
+                            } elseif($novedad_texto) {
+                                $fecha_novedad = date('d/m/Y h:i A', strtotime($row['fecha_registro']));
+                            }
                         ?>
-                        <tr>
+                        <tr <?= $esFijo ? 'class="row-instructor-fijo"' : '' ?>>
                             <td>
                                 <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
                                 <?= htmlspecialchars($row['nombre_instructor']) ?>
+                                <?php if($esFijo): ?>
+                                    <span class="badge-fijo" title="Instructor de horario fijo">
+                                        <i class="fa-solid fa-star"></i> Fijo
+                                    </span>
+                                <?php endif; ?>
                             </td>
                             <td><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
                             <td><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
@@ -199,19 +265,9 @@ if ($ambienteBuscado) {
                                 </span>
                             </td>
                             <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                            <td style="position: relative;">
-                                <?php if($row['novedades']): 
-                                    $novedad_texto = $row['novedades'];
-                                    $fecha_novedad = '';
-                                    
-                                    if(preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
-                                        $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
-                                        $novedad_texto = $matches[2];
-                                    } else {
-                                        $fecha_novedad = date('d/m/Y h:i A', strtotime($row['fecha_registro']));
-                                    }
-                                ?>
-                                    <button onclick="verNovedades(this)" class="btn-ver-novedades">
+                            <td>
+                                <?php if($row['novedades']): ?>
+                                    <button onclick="mostrarModal(this)" class="btn-ver-novedades">
                                         <i class="fa-solid fa-eye"></i> Ver
                                     </button>
                                     <div class="novedades-modal" style="display:none;">
@@ -261,40 +317,61 @@ if ($ambienteBuscado) {
 
 </div>
 
+<!-- OVERLAY OSCURO -->
+<div class="novedades-overlay" id="modalOverlay"></div>
+
 <script>
-function verNovedades(btn) {
+function mostrarModal(btn) {
     const modal = btn.nextElementSibling;
-    const allModals = document.querySelectorAll('.novedades-modal');
-
-    allModals.forEach(m => { if(m !== modal) m.style.display = 'none'; });
-    document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-        if(b !== btn) b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-    });
-
-    if(modal.style.display === 'none') {
-        modal.style.display = 'block';
-        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
-    } else {
+    const overlay = document.getElementById('modalOverlay');
+    
+    // Verificar si está abierto (el modal está visible)
+    const estaAbierto = modal.style.display === 'block';
+    
+    if(estaAbierto) {
+        // CERRAR
+        overlay.style.display = 'none';
         modal.style.display = 'none';
         btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    } else {
+        // Primero cerrar todos los demás
+        cerrarTodosModales();
+        
+        // ABRIR este
+        overlay.style.display = 'block';
+        modal.style.display = 'block';
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar';
     }
 }
 
+function cerrarTodosModales() {
+    const overlay = document.getElementById('modalOverlay');
+    if(overlay) {
+        overlay.style.display = 'none';
+    }
+    
+    // Cerrar todos los modales
+    document.querySelectorAll('.novedades-modal').forEach(function(modal) {
+        modal.style.display = 'none';
+    });
+    
+    // Resetear todos los botones
+    document.querySelectorAll('.btn-ver-novedades').forEach(function(btn) {
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    });
+}
+
+// Cerrar al hacer click en el overlay
 document.addEventListener('click', function(e) {
-    if(!e.target.closest('td') && !e.target.closest('.novedades-modal')) {
-        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
-        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-        });
+    if(e.target && e.target.id === 'modalOverlay') {
+        cerrarTodosModales();
     }
 });
 
+// Cerrar con tecla ESC
 document.addEventListener('keydown', function(e) {
     if(e.key === 'Escape') {
-        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
-        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-        });
+        cerrarTodosModales();
     }
 });
 </script>
