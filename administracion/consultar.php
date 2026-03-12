@@ -15,8 +15,8 @@ $hora_actual  = date('H:i:s');
 /* =========================
    BUSCAR AMBIENTE
    ========================= */
-$ambienteBuscado = $_GET['ambiente'] ?? null;
-$ambienteInfo    = null;
+$ambienteBuscado   = $_GET['ambiente'] ?? null;
+$ambienteInfo      = null;
 $historialAmbiente = null;
 
 if ($ambienteBuscado) {
@@ -30,7 +30,7 @@ if ($ambienteBuscado) {
                FROM ambientes a
                LEFT JOIN instructores i ON a.instructor_id = i.id
                WHERE a.nombre_ambiente LIKE '%$ambienteBuscado%'";
-    $resAmb = mysqli_query($conexion, $sqlAmb);
+    $resAmb       = mysqli_query($conexion, $sqlAmb);
     $ambienteInfo = mysqli_fetch_assoc($resAmb);
 
     if($ambienteInfo){
@@ -81,11 +81,11 @@ if ($ambienteBuscado) {
     <div class="search-section">
         <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Ambiente</h3>
         <form method="GET" class="search-form">
-            <input 
-                type="text" 
-                name="ambiente" 
-                placeholder="Ej: 308, Laboratorio de Química, Sala 101..." 
-                value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>" 
+            <input
+                type="text"
+                name="ambiente"
+                placeholder="Ej: 308, Laboratorio de Química, Sala 101..."
+                value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>"
                 required
             >
             <button type="submit">
@@ -97,9 +97,10 @@ if ($ambienteBuscado) {
     <!-- RESULTADO DE BÚSQUEDA -->
     <?php if ($ambienteBuscado && $ambienteInfo): ?>
         <div class="ambiente-result">
+
+            <!-- Título + botón Editar (solo admin) -->
             <div class="result-title-row">
                 <h3><i class="fa-solid fa-door-open" style="color:#355d91;"></i> Información del Ambiente</h3>
-                <!-- Botón editar directo desde aquí -->
                 <a href="editar_ambiente.php?id=<?= $ambienteInfo['id'] ?>" class="btn-action-edit">
                     <i class="fa-solid fa-pen-to-square"></i> Editar
                 </a>
@@ -127,7 +128,7 @@ if ($ambienteBuscado) {
                 </div>
             </div>
 
-            <!-- ===== INSTRUCTOR DE HORARIO FIJO ===== -->
+            <!-- INSTRUCTOR DE HORARIO FIJO -->
             <?php if($ambienteInfo['nombre_instructor_fijo']): ?>
             <div class="instructor-fijo-card">
                 <div class="instructor-fijo-header">
@@ -209,7 +210,8 @@ if ($ambienteBuscado) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($row = mysqli_fetch_assoc($historialAmbiente)): 
+                        <?php while($row = mysqli_fetch_assoc($historialAmbiente)):
+
                             $estadoActual = 'desocupado';
                             $textoEstado  = 'Desocupado';
                             $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
@@ -238,6 +240,14 @@ if ($ambienteBuscado) {
 
                             /* Marcar si esta fila es del instructor fijo */
                             $esFijo = ($ambienteInfo['instructor_id'] && $row['id_instructor'] == $ambienteInfo['instructor_id']);
+
+                            /* Extraer fecha/hora de novedad si existe */
+                            $novedad_texto = $row['novedades'];
+                            $fecha_novedad = '';
+                            if($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
+                                $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
+                                $novedad_texto = $matches[2];
+                            }
                         ?>
                         <tr <?= $esFijo ? 'class="row-instructor-fijo"' : '' ?>>
                             <td>
@@ -249,11 +259,23 @@ if ($ambienteBuscado) {
                                     </span>
                                 <?php endif; ?>
                             </td>
-                            <td><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
-                            <td><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
                             <td>
-                                <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
-                                <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                <span class="cell-fecha">
+                                    <i class="fa-regular fa-calendar"></i>
+                                    <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="cell-fecha">
+                                    <i class="fa-regular fa-calendar"></i>
+                                    <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="cell-horario">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <?= date('h:i A', strtotime($row['hora_inicio'])) ?> &mdash; <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                </span>
                             </td>
                             <td>
                                 <span class="estado-badge estado-<?= $estadoActual ?>">
@@ -261,18 +283,31 @@ if ($ambienteBuscado) {
                                 </span>
                             </td>
                             <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
-                            <td style="position: relative;">
+                            <td>
                                 <?php if($row['novedades']): ?>
-                                    <button onclick="verNovedades(this)" class="btn-ver-novedades">
+                                    <button onclick="mostrarModal(this)" class="btn-ver-novedades">
                                         <i class="fa-solid fa-eye"></i> Ver
                                     </button>
                                     <div class="novedades-modal" style="display:none;">
                                         <div class="modal-header">
-                                            <strong>Novedades reportadas por:</strong>
-                                            <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
+                                            <div class="modal-instructor-row">
+                                                <div class="modal-avatar">
+                                                    <?= strtoupper(substr($row['nombre_instructor'], 0, 1)) ?>
+                                                </div>
+                                                <div>
+                                                    <div class="modal-label">Novedad reportada por</div>
+                                                    <div class="modal-instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></div>
+                                                </div>
+                                            </div>
+                                            <?php if($fecha_novedad): ?>
+                                            <div class="modal-fecha-badge">
+                                                <i class="fa-regular fa-calendar-check"></i>
+                                                <?= $fecha_novedad ?>
+                                            </div>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="modal-content">
-                                            <pre><?= htmlspecialchars($row['novedades']) ?></pre>
+                                            <pre><?= htmlspecialchars($novedad_texto) ?></pre>
                                         </div>
                                     </div>
                                 <?php else: ?>
@@ -311,34 +346,41 @@ if ($ambienteBuscado) {
 
 </div>
 
-
+<!-- OVERLAY OSCURO -->
+<div class="novedades-overlay" id="modalOverlay"></div>
 
 <script>
-function verNovedades(btn) {
-    const modal = btn.nextElementSibling;
-    const allModals = document.querySelectorAll('.novedades-modal');
+function mostrarModal(btn) {
+    const modal   = btn.nextElementSibling;
+    const overlay = document.getElementById('modalOverlay');
+    const abierto = modal.style.display === 'block';
 
-    allModals.forEach(m => { if(m !== modal) m.style.display = 'none'; });
-    document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-        if(b !== btn) b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-    });
-
-    if(modal.style.display === 'none') {
-        modal.style.display = 'block';
-        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Ocultar';
-    } else {
-        modal.style.display = 'none';
+    if(abierto) {
+        overlay.style.display = 'none';
+        modal.style.display   = 'none';
         btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    } else {
+        cerrarTodosModales();
+        overlay.style.display = 'block';
+        modal.style.display   = 'block';
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar';
     }
 }
 
-document.addEventListener('click', function(e) {
-    if(!e.target.closest('td') && !e.target.closest('.novedades-modal')) {
-        document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
-        document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-            b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-        });
-    }
+function cerrarTodosModales() {
+    document.getElementById('modalOverlay').style.display = 'none';
+    document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
+    document.querySelectorAll('.btn-ver-novedades').forEach(b => {
+        b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    });
+}
+
+document.addEventListener('click', e => {
+    if(e.target && e.target.id === 'modalOverlay') cerrarTodosModales();
+});
+
+document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') cerrarTodosModales();
 });
 </script>
 

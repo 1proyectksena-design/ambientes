@@ -168,7 +168,7 @@ $mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM
     align-items: center;
     gap: 6px;
     background: #e8f0fe;
-    color: #3b5bdb;
+    color: #172f63;
     padding: 5px 10px;
     border-radius: 20px;
     font-size: 13px;

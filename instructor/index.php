@@ -76,7 +76,6 @@ $usuario = $_SESSION['usuario'] ?? 'Instructor';
                 <li><a href="#">Inicio</a></li>
                 <li><a href="#">Mis Ambientes Hoy</a></li>
                 <li><a href="#">Historial de Ambientes</a></li>
-                <li><a href="#">Panel de Instructor</a></li>
             </ul>
         </div>
 
@@ -85,7 +84,7 @@ $usuario = $_SESSION['usuario'] ?? 'Instructor';
             <ul>
                 <li>
                     <span class="footer-icon">&#9679;</span>
-                    Centro de Industria y Comercio<br>Villavicencio, Meta — Colombia
+                    Centro de Industria y Servicios del Meta<br>Villavicencio, Meta — Colombia
                 </li>
                 <li>
                     <span class="footer-icon">&#9711;</span>

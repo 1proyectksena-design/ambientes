@@ -153,7 +153,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
                 <li><a href="#">Consultar Ambiente</a></li>
                 <li><a href="#">Historial Autorizaciones</a></li>
                 <li><a href="#">Crear Registros</a></li>
-                <li><a href="#">Panel de Subdirección</a></li>
             </ul>
         </div>
 
@@ -162,7 +161,7 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
             <ul>
                 <li>
                     <span class="footer-icon">&#9679;</span>
-                    Centro de Industria y Comercio<br>Villavicencio, Meta — Colombia
+                    Centro de Industria y Servicios del Meta<br>Villavicencio, Meta — Colombia
                 </li>
                 <li>
                     <span class="footer-icon">&#9711;</span>

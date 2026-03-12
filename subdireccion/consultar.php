@@ -9,19 +9,16 @@ if ($_SESSION['rol'] != 'subdireccion') {
 
 include("../includes/conexion.php");
 
-/* Fecha y hora actual */
 $fecha_actual = date('Y-m-d');
-$hora_actual = date('H:i:s');
+$hora_actual  = date('H:i:s');
 
-/* BUSCAR AMBIENTE */
-$ambienteBuscado = $_GET['ambiente'] ?? null;
-$ambienteInfo = null;
+$ambienteBuscado   = $_GET['ambiente'] ?? null;
+$ambienteInfo      = null;
 $historialAmbiente = null;
 
 if ($ambienteBuscado) {
     $ambienteBuscado = mysqli_real_escape_string($conexion, $ambienteBuscado);
-    
-    /* Buscar info del ambiente + instructor asignado */
+
     $sqlAmb = "SELECT a.*, 
                       i.nombre          AS nombre_instructor_fijo,
                       i.identificacion  AS doc_instructor_fijo,
@@ -29,9 +26,9 @@ if ($ambienteBuscado) {
                FROM ambientes a
                LEFT JOIN instructores i ON a.instructor_id = i.id
                WHERE a.nombre_ambiente LIKE '%$ambienteBuscado%'";
-    $resAmb = mysqli_query($conexion, $sqlAmb);
+    $resAmb     = mysqli_query($conexion, $sqlAmb);
     $ambienteInfo = mysqli_fetch_assoc($resAmb);
-    
+
     if($ambienteInfo){
         $id_ambiente = $ambienteInfo['id'];
         $sqlHist = "SELECT 
@@ -55,10 +52,8 @@ if ($ambienteBuscado) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultar Ambiente - Subdirección</title>
-    
-    
     <link rel="stylesheet" href="../css/consultar.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
@@ -77,15 +72,14 @@ if ($ambienteBuscado) {
 
 <div class="consultar-container">
 
-    <!-- BUSCAR -->
     <div class="search-section">
         <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Ambiente</h3>
         <form method="GET" class="search-form">
-            <input 
-                type="text" 
-                name="ambiente" 
-                placeholder="Ej: 308, Laboratorio de Química, Sala 101..." 
-                value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>" 
+            <input
+                type="text"
+                name="ambiente"
+                placeholder="Ej: 308, Laboratorio de Química, Sala 101..."
+                value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>"
                 required
             >
             <button type="submit">
@@ -94,14 +88,12 @@ if ($ambienteBuscado) {
         </form>
     </div>
 
-    <!-- RESULTADO -->
     <?php if ($ambienteBuscado && $ambienteInfo): ?>
         <div class="ambiente-result">
             <div class="result-title-row">
                 <h3><i class="fa-solid fa-door-open" style="color:#355d91;"></i> Información del Ambiente</h3>
             </div>
-            
-            <!-- GRID DE DATOS BÁSICOS -->
+
             <div class="info-grid">
                 <div class="info-item">
                     <label>Nombre</label>
@@ -123,7 +115,6 @@ if ($ambienteBuscado) {
                 </div>
             </div>
 
-            <!-- ===== INSTRUCTOR DE HORARIO FIJO ===== -->
             <?php if($ambienteInfo['nombre_instructor_fijo']): ?>
             <div class="instructor-fijo-card">
                 <div class="instructor-fijo-header">
@@ -157,8 +148,7 @@ if ($ambienteBuscado) {
                 <span>Este ambiente no tiene instructor de horario fijo asignado</span>
             </div>
             <?php endif; ?>
-            
-            <!-- DESCRIPCIÓN -->
+
             <?php if($ambienteInfo['descripcion_general']): ?>
             <div class="descripcion-ambiente">
                 <strong>Descripción:</strong>
@@ -166,9 +156,8 @@ if ($ambienteBuscado) {
             </div>
             <?php endif; ?>
 
-            <!-- BOTONES DE ACCIÓN -->
             <?php if($ambienteInfo['estado'] == 'Habilitado'): ?>
-                <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
+                <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso" style="margin-top:20px; display:inline-flex;">
                     <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
                 </a>
             <?php else: ?>
@@ -179,12 +168,11 @@ if ($ambienteBuscado) {
             <?php endif; ?>
         </div>
 
-        <!-- HISTORIAL -->
         <?php if($historialAmbiente && mysqli_num_rows($historialAmbiente) > 0): ?>
         <div class="table-container">
             <div class="table-header">
                 <h3>
-                    <i class="fa-solid fa-clock-rotate-left"></i> 
+                    <i class="fa-solid fa-clock-rotate-left"></i>
                     Historial de "<?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?>"
                 </h3>
             </div>
@@ -202,45 +190,43 @@ if ($ambienteBuscado) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($row = mysqli_fetch_assoc($historialAmbiente)): 
+                        <?php while($row = mysqli_fetch_assoc($historialAmbiente)):
                             $estadoActual = 'desocupado';
-                            $textoEstado = 'Desocupado';
-                            $iconoEstado = '<i class="fa-solid fa-circle"></i>';
-                            
+                            $textoEstado  = 'Desocupado';
+                            $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
+
                             if($row['estado'] == 'Aprobado') {
                                 if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
                                     if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
                                         $estadoActual = 'ocupado-ahora';
-                                        $textoEstado = 'Ocupado Ahora';
-                                        $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
+                                        $textoEstado  = 'Ocupado Ahora';
+                                        $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
                                     } else {
                                         $estadoActual = 'programado';
-                                        $textoEstado = 'Programado ('.date('h:i A', strtotime($row['hora_inicio'])).' - '.date('h:i A', strtotime($row['hora_final'])).')';
-                                        $iconoEstado = '<i class="fa-regular fa-clock"></i>';
+                                        $textoEstado  = 'Programado ('.date('h:i A', strtotime($row['hora_inicio'])).' - '.date('h:i A', strtotime($row['hora_final'])).')';
+                                        $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
                                     }
                                 }
                             } elseif($row['estado'] == 'Pendiente') {
                                 $estadoActual = 'pendiente';
-                                $textoEstado = 'Pendiente';
-                                $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
+                                $textoEstado  = 'Pendiente';
+                                $iconoEstado  = '<i class="fa-solid fa-hourglass-half"></i>';
                             } elseif($row['estado'] == 'Rechazado') {
                                 $estadoActual = 'rechazado';
-                                $textoEstado = 'Rechazado';
-                                $iconoEstado = '<i class="fa-solid fa-ban"></i>';
+                                $textoEstado  = 'Rechazado';
+                                $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                             }
 
-                            /* Marcar si esta fila es del instructor fijo */
                             $esFijo = ($ambienteInfo['instructor_id'] && $row['id_instructor'] == $ambienteInfo['instructor_id']);
-                            
-                            /* EXTRAER FECHA/HORA DE NOVEDAD SI EXISTE */
+
+                            /* Extraer fecha/hora de novedad si existe */
                             $novedad_texto = $row['novedades'];
                             $fecha_novedad = '';
-                            
                             if($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
                                 $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
                                 $novedad_texto = $matches[2];
                             } elseif($novedad_texto) {
-                                $fecha_novedad = date('d/m/Y h:i A', strtotime($row['fecha_registro']));
+                                $fecha_novedad = '';
                             }
                         ?>
                         <tr <?= $esFijo ? 'class="row-instructor-fijo"' : '' ?>>
@@ -253,11 +239,23 @@ if ($ambienteBuscado) {
                                     </span>
                                 <?php endif; ?>
                             </td>
-                            <td><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
-                            <td><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
                             <td>
-                                <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
-                                <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                <span class="cell-fecha">
+                                    <i class="fa-regular fa-calendar"></i>
+                                    <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="cell-fecha">
+                                    <i class="fa-regular fa-calendar"></i>
+                                    <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="cell-horario">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <?= date('h:i A', strtotime($row['hora_inicio'])) ?> &mdash; <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                </span>
                             </td>
                             <td>
                                 <span class="estado-badge estado-<?= $estadoActual ?>">
@@ -272,11 +270,21 @@ if ($ambienteBuscado) {
                                     </button>
                                     <div class="novedades-modal" style="display:none;">
                                         <div class="modal-header">
-                                            <strong>Novedades reportadas por:</strong>
-                                            <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
-                                            <div style="font-size: 0.85rem; color: #f57c00; margin-top: 4px;">
-                                                <i class="fa-regular fa-clock"></i> <?= $fecha_novedad ?>
+                                            <div class="modal-instructor-row">
+                                                <div class="modal-avatar">
+                                                    <?= strtoupper(substr($row['nombre_instructor'], 0, 1)) ?>
+                                                </div>
+                                                <div>
+                                                    <div class="modal-label">Novedad reportada por</div>
+                                                    <div class="modal-instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></div>
+                                                </div>
                                             </div>
+                                            <?php if($fecha_novedad): ?>
+                                            <div class="modal-fecha-badge">
+                                                <i class="fa-regular fa-calendar-check"></i>
+                                                <?= $fecha_novedad ?>
+                                            </div>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="modal-content">
                                             <pre><?= htmlspecialchars($novedad_texto) ?></pre>
@@ -317,62 +325,40 @@ if ($ambienteBuscado) {
 
 </div>
 
-<!-- OVERLAY OSCURO -->
 <div class="novedades-overlay" id="modalOverlay"></div>
 
 <script>
 function mostrarModal(btn) {
-    const modal = btn.nextElementSibling;
+    const modal   = btn.nextElementSibling;
     const overlay = document.getElementById('modalOverlay');
-    
-    // Verificar si está abierto (el modal está visible)
-    const estaAbierto = modal.style.display === 'block';
-    
-    if(estaAbierto) {
-        // CERRAR
+    const abierto = modal.style.display === 'block';
+
+    if(abierto) {
         overlay.style.display = 'none';
-        modal.style.display = 'none';
+        modal.style.display   = 'none';
         btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
     } else {
-        // Primero cerrar todos los demás
         cerrarTodosModales();
-        
-        // ABRIR este
         overlay.style.display = 'block';
-        modal.style.display = 'block';
+        modal.style.display   = 'block';
         btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar';
     }
 }
 
 function cerrarTodosModales() {
-    const overlay = document.getElementById('modalOverlay');
-    if(overlay) {
-        overlay.style.display = 'none';
-    }
-    
-    // Cerrar todos los modales
-    document.querySelectorAll('.novedades-modal').forEach(function(modal) {
-        modal.style.display = 'none';
-    });
-    
-    // Resetear todos los botones
-    document.querySelectorAll('.btn-ver-novedades').forEach(function(btn) {
-        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+    document.getElementById('modalOverlay').style.display = 'none';
+    document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
+    document.querySelectorAll('.btn-ver-novedades').forEach(b => {
+        b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
     });
 }
 
-// Cerrar al hacer click en el overlay
-document.addEventListener('click', function(e) {
-    if(e.target && e.target.id === 'modalOverlay') {
-        cerrarTodosModales();
-    }
+document.addEventListener('click', e => {
+    if(e.target && e.target.id === 'modalOverlay') cerrarTodosModales();
 });
 
-// Cerrar con tecla ESC
-document.addEventListener('keydown', function(e) {
-    if(e.key === 'Escape') {
-        cerrarTodosModales();
-    }
+document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') cerrarTodosModales();
 });
 </script>
 

@@ -144,7 +144,6 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
                 <li><a href="consultar.php">Consultar Ambiente</a></li>
                 <li><a href="historial.php">Historial Autorizaciones</a></li>
                 <li><a href="registro.php">Crear Registros</a></li>
-                <li><a href="#">Panel de Administración</a></li>
             </ul>
         </div>
 
