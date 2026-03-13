@@ -98,12 +98,9 @@ if ($ambienteBuscado) {
     <?php if ($ambienteBuscado && $ambienteInfo): ?>
         <div class="ambiente-result">
 
-            <!-- Título + botón Editar (solo admin) -->
+            <!-- Título -->
             <div class="result-title-row">
                 <h3><i class="fa-solid fa-door-open" style="color:#355d91;"></i> Información del Ambiente</h3>
-                <a href="editar_ambiente.php?id=<?= $ambienteInfo['id'] ?>" class="btn-action-edit">
-                    <i class="fa-solid fa-pen-to-square"></i> Editar
-                </a>
             </div>
 
             <!-- GRID DE DATOS BÁSICOS -->
@@ -160,7 +157,7 @@ if ($ambienteBuscado) {
             <div class="instructor-fijo-card sin-instructor">
                 <i class="fa-solid fa-user-slash"></i>
                 <span>Este ambiente no tiene instructor de horario fijo asignado</span>
-                
+               
             </div>
             <?php endif; ?>
 
@@ -184,6 +181,9 @@ if ($ambienteBuscado) {
                         <p>Este ambiente está <strong><?= htmlspecialchars($ambienteInfo['estado']) ?></strong></p>
                     </div>
                 <?php endif; ?>
+                <a href="editar_ambiente.php?id=<?= $ambienteInfo['id'] ?>" class="btn-action-edit">
+                    <i class="fa-solid fa-pen-to-square"></i> Editar
+                </a>
             </div>
         </div>
 

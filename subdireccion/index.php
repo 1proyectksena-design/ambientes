@@ -77,8 +77,9 @@ $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
         </div>
     </div>
     <div class="header-user">
+         Salir
         <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
-            <i class="fa-solid fa-right-from-bracket"></i>
+        <i class="fa-solid fa-right-from-bracket"></i>
         </a>
     </div>
 </div>

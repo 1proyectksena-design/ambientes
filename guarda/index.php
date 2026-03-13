@@ -133,7 +133,7 @@ include("../includes/conexion.php");
             <ul>
                 <li>
                     <span class="footer-icon">&#9679;</span>
-                    Centro de Industria y Comercio<br>Villavicencio, Meta — Colombia
+                    Centro de Industria y Servicios del Meta<br>Villavicencio, Meta — Colombia
                 </li>
                 <li>
                     <span class="footer-icon">&#9711;</span>

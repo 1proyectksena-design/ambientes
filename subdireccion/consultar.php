@@ -156,16 +156,21 @@ if ($ambienteBuscado) {
             </div>
             <?php endif; ?>
 
-            <?php if($ambienteInfo['estado'] == 'Habilitado'): ?>
-                <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso" style="margin-top:20px; display:inline-flex;">
-                    <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
+            <div class="action-buttons">
+                <?php if($ambienteInfo['estado'] == 'Habilitado'): ?>
+                    <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
+                        <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
+                    </a>
+                <?php else: ?>
+                    <div class="alert-disabled">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <p>Este ambiente está <strong><?= htmlspecialchars($ambienteInfo['estado']) ?></strong></p>
+                    </div>
+                <?php endif; ?>
+                <a href="editar_ambiente.php?id=<?= $ambienteInfo['id'] ?>" class="btn-action-edit">
+                    <i class="fa-solid fa-pen-to-square"></i> Editar
                 </a>
-            <?php else: ?>
-                <div class="alert-disabled">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <p>Este ambiente está <strong><?= htmlspecialchars($ambienteInfo['estado']) ?></strong></p>
-                </div>
-            <?php endif; ?>
+            </div>
         </div>
 
         <?php if($historialAmbiente && mysqli_num_rows($historialAmbiente) > 0): ?>

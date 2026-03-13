@@ -384,29 +384,58 @@ tbody tr:hover { background-color: #f8f9ff; }
     display: none;
 }
 
+/* ---- Header del modal ---- */
 .modal-header {
     background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-    padding: 12px 15px;
+    padding: 15px 18px;
     border-bottom: 2px solid #fb8c00;
     border-radius: 10px 10px 0 0;
 }
 
-.modal-header strong {
-    display: block;
+/* Fila avatar + nombre */
+.modal-instructor-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Círculo naranja con la inicial */
+.modal-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #fb8c00;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(251,140,0,0.4);
+}
+
+/* Etiqueta pequeña "NOVEDAD REPORTADA POR" */
+.modal-label {
+    font-size: 0.72rem;
+    font-weight: 700;
     color: #e65100;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
 }
 
-.instructor-name {
+/* Nombre del instructor en negrita */
+.modal-instructor-name {
+    font-size: 1rem;
+    font-weight: 700;
     color: #333;
-    font-weight: 600;
-    font-size: 1.05rem;
 }
 
+/* ---- Contenido del modal ---- */
 .modal-content {
     padding: 15px;
-    max-height: calc(80vh - 100px);
+    max-height: calc(80vh - 90px);
     overflow-y: auto;
 }
 
