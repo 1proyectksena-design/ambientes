@@ -14,7 +14,9 @@ $hora_actual  = date('H:i:s');
 
 $ambienteBuscado   = $_GET['ambiente'] ?? null;
 $ambienteInfo      = null;
-$historialAmbiente = null;
+$usoActual         = null;
+$proximosUsos      = null;
+$historialReciente = null;
 
 if ($ambienteBuscado) {
     $ambienteBuscado = mysqli_real_escape_string($conexion, $ambienteBuscado);
@@ -26,22 +28,71 @@ if ($ambienteBuscado) {
                FROM ambientes a
                LEFT JOIN instructores i ON a.instructor_id = i.id
                WHERE a.nombre_ambiente LIKE '%$ambienteBuscado%'";
-    $resAmb     = mysqli_query($conexion, $sqlAmb);
+    $resAmb       = mysqli_query($conexion, $sqlAmb);
     $ambienteInfo = mysqli_fetch_assoc($resAmb);
 
     if($ambienteInfo){
         $id_ambiente = $ambienteInfo['id'];
-        $sqlHist = "SELECT 
-                        au.*,
-                        i.nombre AS nombre_instructor,
-                        a.nombre_ambiente
-                    FROM autorizaciones_ambientes au
-                    JOIN instructores i ON au.id_instructor = i.id
-                    JOIN ambientes a ON au.id_ambiente = a.id
-                    WHERE au.id_ambiente = '$id_ambiente'
-                    ORDER BY au.fecha_inicio DESC, au.hora_inicio DESC
-                    LIMIT 50";
-        $historialAmbiente = mysqli_query($conexion, $sqlHist);
+
+        /* ==========================================
+           1. CONSULTAR USO ACTUAL (EN USO / LIBRE)
+           ========================================== */
+        $sqlUsoActual = "SELECT au.*, i.nombre AS nombre_instructor
+                         FROM autorizaciones_ambientes au
+                         JOIN instructores i ON au.id_instructor = i.id
+                         WHERE au.id_ambiente = '$id_ambiente'
+                           AND au.fecha_inicio = '$fecha_actual'
+                           AND '$hora_actual' BETWEEN au.hora_inicio AND au.hora_final
+                           AND au.estado = 'Aprobado'
+                         LIMIT 1";
+        $resUsoActual = mysqli_query($conexion, $sqlUsoActual);
+        $usoActual    = mysqli_fetch_assoc($resUsoActual);
+
+        /* ==========================================
+           2. CONSULTAR PRÓXIMOS USOS (agrupados)
+           ========================================== */
+        $sqlProximosUsos = "SELECT 
+                                MIN(au.fecha_inicio)  AS fecha_inicio,
+                                MAX(au.fecha_inicio)  AS fecha_fin,
+                                au.hora_inicio,
+                                au.hora_final,
+                                au.id_instructor,
+                                i.nombre              AS nombre_instructor,
+                                au.observaciones,
+                                GROUP_CONCAT(
+                                    DISTINCT DAYOFWEEK(au.fecha_inicio)
+                                    ORDER BY DAYOFWEEK(au.fecha_inicio)
+                                )                     AS dias_semana
+                            FROM autorizaciones_ambientes au
+                            JOIN instructores i ON au.id_instructor = i.id
+                            WHERE au.id_ambiente = '$id_ambiente'
+                              AND (
+                                (au.fecha_inicio > '$fecha_actual')
+                                OR
+                                (au.fecha_inicio = '$fecha_actual' AND au.hora_inicio > '$hora_actual')
+                              )
+                              AND au.estado = 'Aprobado'
+                            GROUP BY au.id_instructor, au.hora_inicio, au.hora_final, au.observaciones
+                            ORDER BY MIN(au.fecha_inicio) ASC
+                            LIMIT 10";
+        $proximosUsos = mysqli_query($conexion, $sqlProximosUsos);
+
+        /* ==========================================
+           3. CONSULTAR HISTORIAL RECIENTE
+           ========================================== */
+        $sqlHistorialReciente = "SELECT au.*, i.nombre AS nombre_instructor
+                                 FROM autorizaciones_ambientes au
+                                 JOIN instructores i ON au.id_instructor = i.id
+                                 WHERE au.id_ambiente = '$id_ambiente'
+                                   AND (
+                                     (au.fecha_inicio < '$fecha_actual')
+                                     OR
+                                     (au.fecha_inicio = '$fecha_actual' AND au.hora_final < '$hora_actual')
+                                   )
+                                   AND au.estado = 'Aprobado'
+                                 ORDER BY au.fecha_inicio DESC, au.hora_inicio DESC
+                                 LIMIT 5";
+        $historialReciente = mysqli_query($conexion, $sqlHistorialReciente);
     }
 }
 ?>
@@ -57,6 +108,7 @@ if ($ambienteBuscado) {
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
     <div class="header-left">
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
@@ -72,6 +124,7 @@ if ($ambienteBuscado) {
 
 <div class="consultar-container">
 
+    <!-- BUSCAR AMBIENTE -->
     <div class="search-section">
         <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Ambiente</h3>
         <form method="GET" class="search-form">
@@ -88,12 +141,15 @@ if ($ambienteBuscado) {
         </form>
     </div>
 
+    <!-- RESULTADO DE BÚSQUEDA -->
     <?php if ($ambienteBuscado && $ambienteInfo): ?>
         <div class="ambiente-result">
+
             <div class="result-title-row">
                 <h3><i class="fa-solid fa-door-open" style="color:#355d91;"></i> Información del Ambiente</h3>
             </div>
 
+            <!-- GRID DE DATOS BÁSICOS -->
             <div class="info-grid">
                 <div class="info-item">
                     <label>Nombre</label>
@@ -115,6 +171,69 @@ if ($ambienteBuscado) {
                 </div>
             </div>
 
+            <!-- ESTADO ACTUAL: EN USO / LIBRE -->
+            <div class="estado-uso-card">
+                <?php if($usoActual): ?>
+                    <div class="estado-header en-uso">
+                        <div class="estado-icon"><i class="fa-solid fa-circle-dot"></i></div>
+                        <div>
+                            <h3>EN USO AHORA</h3>
+                            <p>Este ambiente está siendo utilizado en este momento</p>
+                        </div>
+                    </div>
+                    <div class="estado-body">
+                        <div class="uso-actual-info">
+                            <div class="uso-item">
+                                <i class="fa-solid fa-user"></i>
+                                <div>
+                                    <label>Instructor</label>
+                                    <strong><?= htmlspecialchars($usoActual['nombre_instructor']) ?></strong>
+                                </div>
+                            </div>
+                            <div class="uso-item">
+                                <i class="fa-regular fa-clock"></i>
+                                <div>
+                                    <label>Horario</label>
+                                    <strong>
+                                        <?= date('h:i A', strtotime($usoActual['hora_inicio'])) ?> 
+                                        - 
+                                        <?= date('h:i A', strtotime($usoActual['hora_final'])) ?>
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="estado-header libre">
+                        <div class="estado-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <div>
+                            <h3>LIBRE</h3>
+                            <p>El ambiente está disponible en este momento</p>
+                        </div>
+                    </div>
+                    <?php
+                    $proximoInmediato = $proximosUsos ? mysqli_fetch_assoc($proximosUsos) : null;
+                    if($proximoInmediato):
+                        mysqli_data_seek($proximosUsos, 0);
+                    ?>
+                    <div class="estado-body">
+                        <div class="proximo-uso-rapido">
+                            <i class="fa-regular fa-calendar-check"></i>
+                            <span>
+                                Próximo uso: 
+                                <strong>
+                                    <?= date('d/m/Y', strtotime($proximoInmediato['fecha_inicio'])) ?> 
+                                    a las 
+                                    <?= date('h:i A', strtotime($proximoInmediato['hora_inicio'])) ?>
+                                </strong>
+                            </span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+
+            <!-- INSTRUCTOR DE HORARIO FIJO -->
             <?php if($ambienteInfo['nombre_instructor_fijo']): ?>
             <div class="instructor-fijo-card">
                 <div class="instructor-fijo-header">
@@ -149,6 +268,7 @@ if ($ambienteBuscado) {
             </div>
             <?php endif; ?>
 
+            <!-- DESCRIPCIÓN -->
             <?php if($ambienteInfo['descripcion_general']): ?>
             <div class="descripcion-ambiente">
                 <strong>Descripción:</strong>
@@ -156,6 +276,7 @@ if ($ambienteBuscado) {
             </div>
             <?php endif; ?>
 
+            <!-- BOTONES DE ACCIÓN -->
             <div class="action-buttons">
                 <?php if($ambienteInfo['estado'] == 'Habilitado'): ?>
                     <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
@@ -173,103 +294,142 @@ if ($ambienteBuscado) {
             </div>
         </div>
 
-        <?php if($historialAmbiente && mysqli_num_rows($historialAmbiente) > 0): ?>
+        <!-- ==========================================
+             PRÓXIMOS USOS (agrupados en una sola fila)
+             ========================================== -->
+        <?php if($proximosUsos && mysqli_num_rows($proximosUsos) > 0): ?>
         <div class="table-container">
             <div class="table-header">
                 <h3>
-                    <i class="fa-solid fa-clock-rotate-left"></i>
-                    Historial de "<?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?>"
+                    <i class="fa-solid fa-calendar-days"></i>
+                    Próximos Usos de "<?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?>"
                 </h3>
             </div>
             <div class="table-scroll-wrapper">
                 <table>
                     <thead>
                         <tr>
-                            <th>Instructor</th>
                             <th>Fecha Inicio</th>
                             <th>Fecha Fin</th>
                             <th>Horario</th>
-                            <th>Estado Actual</th>
-                            <th>Autorizado Por</th>
-                            <th>Novedades</th>
+                            <th>Días</th>
+                            <th>Instructor</th>
+                            <th>Observaciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($row = mysqli_fetch_assoc($historialAmbiente)):
-                            $estadoActual = 'desocupado';
-                            $textoEstado  = 'Desocupado';
-                            $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
-
-                            if($row['estado'] == 'Aprobado') {
-                                if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
-                                    if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
-                                        $estadoActual = 'ocupado-ahora';
-                                        $textoEstado  = 'Ocupado Ahora';
-                                        $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
-                                    } else {
-                                        $estadoActual = 'programado';
-                                        $textoEstado  = 'Programado ('.date('h:i A', strtotime($row['hora_inicio'])).' - '.date('h:i A', strtotime($row['hora_final'])).')';
-                                        $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
-                                    }
+                        <?php
+                        /* DAYOFWEEK MySQL: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb */
+                        $abrevDias = [
+                            1 => 'Dom',
+                            2 => 'Lun',
+                            3 => 'Mar',
+                            4 => 'Mié',
+                            5 => 'Jue',
+                            6 => 'Vie',
+                            7 => 'Sáb',
+                        ];
+                        while($prox = mysqli_fetch_assoc($proximosUsos)):
+                            $diasNums = ($prox['dias_semana'] !== null && $prox['dias_semana'] !== '')
+                                        ? explode(',', $prox['dias_semana'])
+                                        : [];
+                            $diasHtml = '';
+                            if(count($diasNums) > 0){
+                                foreach($diasNums as $dn){
+                                    $dn = (int)$dn;
+                                    $abrev = $abrevDias[$dn] ?? '?';
+                                    $diasHtml .= '<span class="dia-badge">' . $abrev . '</span>';
                                 }
-                            } elseif($row['estado'] == 'Pendiente') {
-                                $estadoActual = 'pendiente';
-                                $textoEstado  = 'Pendiente';
-                                $iconoEstado  = '<i class="fa-solid fa-hourglass-half"></i>';
-                            } elseif($row['estado'] == 'Rechazado') {
-                                $estadoActual = 'rechazado';
-                                $textoEstado  = 'Rechazado';
-                                $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
-                            }
-
-                            $esFijo = ($ambienteInfo['instructor_id'] && $row['id_instructor'] == $ambienteInfo['instructor_id']);
-
-                            /* Extraer fecha/hora de novedad si existe */
-                            $novedad_texto = $row['novedades'];
-                            $fecha_novedad = '';
-                            if($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
-                                $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
-                                $novedad_texto = $matches[2];
-                            } elseif($novedad_texto) {
-                                $fecha_novedad = '';
+                            } else {
+                                $diasHtml = '<span style="color:#999;">—</span>';
                             }
                         ?>
-                        <tr <?= $esFijo ? 'class="row-instructor-fijo"' : '' ?>>
-                            <td>
-                                <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
-                                <?= htmlspecialchars($row['nombre_instructor']) ?>
-                                <?php if($esFijo): ?>
-                                    <span class="badge-fijo" title="Instructor de horario fijo">
-                                        <i class="fa-solid fa-star"></i> Fijo
-                                    </span>
-                                <?php endif; ?>
-                            </td>
+                        <tr>
                             <td>
                                 <span class="cell-fecha">
                                     <i class="fa-regular fa-calendar"></i>
-                                    <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?>
+                                    <?= date('d/m/Y', strtotime($prox['fecha_inicio'])) ?>
                                 </span>
                             </td>
                             <td>
                                 <span class="cell-fecha">
-                                    <i class="fa-regular fa-calendar"></i>
-                                    <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
+                                    <i class="fa-regular fa-calendar-check"></i>
+                                    <?= date('d/m/Y', strtotime($prox['fecha_fin'])) ?>
                                 </span>
                             </td>
                             <td>
                                 <span class="cell-horario">
                                     <i class="fa-regular fa-clock"></i>
-                                    <?= date('h:i A', strtotime($row['hora_inicio'])) ?> &mdash; <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                    <?= date('h:i A', strtotime($prox['hora_inicio'])) ?>
+                                    &mdash;
+                                    <?= date('h:i A', strtotime($prox['hora_final'])) ?>
+                                </span>
+                            </td>
+                            <td><?= $diasHtml ?></td>
+                            <td>
+                                <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
+                                <?= htmlspecialchars($prox['nombre_instructor']) ?>
+                            </td>
+                            <td><?= htmlspecialchars($prox['observaciones'] ?: '—') ?></td>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- ==========================================
+             HISTORIAL RECIENTE
+             ========================================== -->
+        <?php if($historialReciente && mysqli_num_rows($historialReciente) > 0): ?>
+        <div class="table-container">
+            <div class="table-header">
+                <h3>
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    Historial Reciente de "<?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?>"
+                </h3>
+            </div>
+            <div class="table-scroll-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Horario</th>
+                            <th>Instructor</th>
+                            <th>Novedades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while($hist = mysqli_fetch_assoc($historialReciente)): 
+                            $novedad_texto = $hist['novedades'];
+                            $fecha_novedad = '';
+                            if($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
+                                $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
+                                $novedad_texto = $matches[2];
+                            }
+                        ?>
+                        <tr>
+                            <td>
+                                <span class="cell-fecha">
+                                    <i class="fa-regular fa-calendar"></i>
+                                    <?= date('d/m/Y', strtotime($hist['fecha_inicio'])) ?>
                                 </span>
                             </td>
                             <td>
-                                <span class="estado-badge estado-<?= $estadoActual ?>">
-                                    <?= $iconoEstado ?> <?= $textoEstado ?>
+                                <span class="cell-horario">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <?= date('h:i A', strtotime($hist['hora_inicio'])) ?> 
+                                    &mdash; 
+                                    <?= date('h:i A', strtotime($hist['hora_final'])) ?>
                                 </span>
                             </td>
-                            <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
                             <td>
-                                <?php if($row['novedades']): ?>
+                                <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
+                                <?= htmlspecialchars($hist['nombre_instructor']) ?>
+                            </td>
+                            <td>
+                                <?php if($hist['novedades']): ?>
                                     <button onclick="mostrarModal(this)" class="btn-ver-novedades">
                                         <i class="fa-solid fa-eye"></i> Ver
                                     </button>
@@ -277,11 +437,11 @@ if ($ambienteBuscado) {
                                         <div class="modal-header">
                                             <div class="modal-instructor-row">
                                                 <div class="modal-avatar">
-                                                    <?= strtoupper(substr($row['nombre_instructor'], 0, 1)) ?>
+                                                    <?= strtoupper(substr($hist['nombre_instructor'], 0, 1)) ?>
                                                 </div>
                                                 <div>
                                                     <div class="modal-label">Novedad reportada por</div>
-                                                    <div class="modal-instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></div>
+                                                    <div class="modal-instructor-name"><?= htmlspecialchars($hist['nombre_instructor']) ?></div>
                                                 </div>
                                             </div>
                                             <?php if($fecha_novedad): ?>
@@ -305,13 +465,6 @@ if ($ambienteBuscado) {
                 </table>
             </div>
         </div>
-        <?php else: ?>
-        <div class="table-container">
-            <div class="no-results">
-                <i class="fa-solid fa-inbox"></i>
-                <p>Este ambiente no tiene historial de autorizaciones</p>
-            </div>
-        </div>
         <?php endif; ?>
 
     <?php elseif ($ambienteBuscado && !$ambienteInfo): ?>
@@ -330,6 +483,7 @@ if ($ambienteBuscado) {
 
 </div>
 
+<!-- OVERLAY OSCURO -->
 <div class="novedades-overlay" id="modalOverlay"></div>
 
 <script>

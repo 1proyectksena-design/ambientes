@@ -233,7 +233,7 @@ body {
 }
 
 .instructor-fijo-header {
-    background:  #172f63;
+    background: #172f63;
     color: white;
     padding: 10px 18px;
     display: flex;
@@ -255,7 +255,7 @@ body {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background:  #172f63;
+    background: #172f63;
     color: white;
     font-size: 1.4rem;
     font-weight: 800;
@@ -484,7 +484,7 @@ body {
 .alert-horario-disponible p:first-child { color: #14532d; font-size: 0.95rem; font-weight: 600; }
 .alert-horario-disponible p:last-child  { margin: 0; }
 
-/* ================= TABLA DE HISTORIAL ================= */
+/* ================= TABLA ================= */
 .table-container {
     background: white;
     border-radius: 16px;
@@ -543,7 +543,6 @@ td {
 tr { transition: background-color 0.2s ease; }
 tbody tr:hover { background-color: #f8f9ff; }
 
-/* Fila del instructor fijo */
 tr.row-instructor-fijo td { background: #f5f3ff; }
 tr.row-instructor-fijo:hover td { background: #ede9fe; }
 
@@ -558,7 +557,10 @@ tr.row-instructor-fijo:hover td { background: #ede9fe; }
     white-space: nowrap;
 }
 
-.cell-fecha i { display: none; }
+.cell-fecha i {
+    color: #355d91;
+    font-size: 13px;
+}
 
 .cell-horario {
     display: inline-flex;
@@ -571,6 +573,23 @@ tr.row-instructor-fijo:hover td { background: #ede9fe; }
 }
 
 .cell-horario i { color: #3b82f6; font-size: 11px; }
+
+/* ================= BADGES DE DÍAS ================= */
+.dia-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e8eef7;
+    color: #172f63;
+    border: 1px solid #b0c4de;
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    margin: 2px 2px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
 
 /* ================= BADGES DE ESTADO ================= */
 .estado-badge {
@@ -619,9 +638,8 @@ tr.row-instructor-fijo:hover td { background: #ede9fe; }
     border: 2px solid #e0e0e0;
 }
 
-/* Badge "Fijo" */
 .badge-fijo {
-    color:  #172f63;
+    color: #172f63;
     font-size: 0.72rem;
     font-weight: 700;
     padding: 2px 8px;
@@ -773,6 +791,116 @@ tr.row-instructor-fijo:hover td { background: #ede9fe; }
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+/* ==========================================
+   ESTADO EN USO / LIBRE
+   ========================================== */
+.estado-uso-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin: 20px 0;
+    border: 2px solid #e0e0e0;
+}
+
+.estado-header {
+    padding: 20px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+}
+
+.estado-header.en-uso {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    border-bottom: 3px solid #e53935;
+}
+
+.estado-header.libre {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-bottom: 3px solid #43a047;
+}
+
+.estado-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.estado-header.en-uso .estado-icon {
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+    color: white;
+    animation: pulse-red 2s infinite;
+}
+
+.estado-header.libre .estado-icon {
+    background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+    color: white;
+}
+
+@keyframes pulse-red {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%       { transform: scale(1.05); opacity: 0.9; }
+}
+
+.estado-header h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.estado-header.en-uso h3 { color: #c62828; }
+.estado-header.libre h3  { color: #2e7d32; }
+
+.estado-header p {
+    margin: 5px 0 0 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.estado-body { padding: 20px 25px; }
+
+.uso-actual-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.uso-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid #355d91;
+}
+
+.uso-item i        { font-size: 24px; color: #355d91; }
+.uso-item label    { display: block; font-size: 12px; color: #999; margin-bottom: 4px; }
+.uso-item strong   { display: block; font-size: 16px; color: #333; font-weight: 700; }
+
+.proximo-uso-rapido {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: #fff3e0;
+    border-radius: 8px;
+    border-left: 4px solid #fb8c00;
+    font-size: 14px;
+    color: #e65100;
+}
+
+.proximo-uso-rapido i      { font-size: 20px; }
+.proximo-uso-rapido strong { color: #bf360c; font-weight: 700; }
+
+/* ================= STATS NUM/LABEL ================= */
 .stat-mini .num { font-size: 32px; font-weight: 800; margin-bottom: 5px; }
 .stat-mini .lbl { font-size: 12px; color: #666; text-transform: uppercase; font-weight: 600; }
 
@@ -806,6 +934,11 @@ tr.row-instructor-fijo:hover td { background: #ede9fe; }
     .instructor-fijo-card.sin-instructor { flex-wrap: wrap; }
     .btn-asignar-link { margin-left: 0; }
     .instr-avatar { width: 42px; height: 42px; font-size: 1.1rem; }
+    .estado-header { flex-direction: column; text-align: center; }
+    .estado-icon { width: 50px; height: 50px; font-size: 24px; }
+    .estado-header h3 { font-size: 20px; }
+    .uso-actual-info { grid-template-columns: 1fr; }
+    .uso-item { flex-direction: column; text-align: center; }
 }
 
 @media (max-width: 480px) {
