@@ -28,6 +28,7 @@ $usuario = $_SESSION['usuario'] ?? 'Instructor';
         </div>
     </div>
     <div class="header-user">
+        Salir
         <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
             <i class="fa-solid fa-right-from-bracket"></i>
         </a>

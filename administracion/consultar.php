@@ -372,7 +372,7 @@ if ($ambienteBuscado) {
                             <td><i class="fa-solid fa-user" style="color:#355d91;margin-right:5px;"></i><?= htmlspecialchars($hist['nombre_instructor']) ?></td>
                             <td>
                                 <?php if ($hist['novedades']): ?>
-                                    <!-- ✅ Solo el botón con data-attributes -->
+                                    <!--  Solo el botón con data-attributes -->
                                     <button
                                         class="btn-ver-novedades"
                                         onclick="abrirModal(this)"
@@ -410,7 +410,7 @@ if ($ambienteBuscado) {
 
 </div>
 
-<!-- ✅ OVERLAY Y MODAL GLOBAL: directamente en body -->
+<!--  OVERLAY Y MODAL GLOBAL: directamente en body -->
 <div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
 
 <div class="novedades-modal" id="modalNovedades">
