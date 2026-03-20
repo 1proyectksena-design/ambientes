@@ -361,62 +361,75 @@ tbody tr:hover { background-color: #f8f9ff; }
 .novedades-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.65);
     z-index: 9998;
     display: none;
     backdrop-filter: blur(3px);
+    animation: fadeIn 0.2s ease;
 }
 
-/* ================= MODAL DE NOVEDADES ================= */
+/* ================= MODAL DE NOVEDADES (GLOBAL) ================= */
 .novedades-modal {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(0.95);
     background: white;
     border: 2px solid #fb8c00;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 0;
     width: 90%;
-    max-width: 450px;
+    max-width: 460px;
     max-height: 80vh;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.25);
     z-index: 9999;
     display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Estado visible con animación */
+.novedades-modal.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
 }
 
 /* ---- Header del modal ---- */
 .modal-header {
     background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-    padding: 15px 18px;
+    padding: 16px 18px;
     border-bottom: 2px solid #fb8c00;
-    border-radius: 10px 10px 0 0;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-/* Fila avatar + nombre */
 .modal-instructor-row {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
+    min-width: 0;
 }
 
 /* Círculo naranja con la inicial */
 .modal-avatar {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: #fb8c00;
     color: white;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(251,140,0,0.4);
+    box-shadow: 0 2px 8px rgba(251,140,0,0.4);
 }
 
-/* Etiqueta pequeña "NOVEDAD REPORTADA POR" */
 .modal-label {
     font-size: 0.72rem;
     font-weight: 700;
@@ -426,17 +439,37 @@ tbody tr:hover { background-color: #f8f9ff; }
     margin-bottom: 2px;
 }
 
-/* Nombre del instructor en negrita */
 .modal-instructor-name {
     font-size: 1rem;
     font-weight: 700;
     color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Botón cerrar (X) en la esquina del header */
+.modal-btn-cerrar {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #e65100;
+    font-size: 1.1rem;
+    padding: 4px 6px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.modal-btn-cerrar:hover {
+    background: rgba(251,140,0,0.15);
 }
 
 /* ---- Contenido del modal ---- */
 .modal-content {
-    padding: 15px;
-    max-height: calc(80vh - 90px);
+    padding: 18px;
+    max-height: calc(80vh - 100px);
     overflow-y: auto;
 }
 
@@ -444,11 +477,13 @@ tbody tr:hover { background-color: #f8f9ff; }
     margin: 0;
     white-space: pre-wrap;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 400;
     color: #333;
-    line-height: 1.6;
+    line-height: 1.7;
 }
+
+/* ================= DÍA BADGE ================= */
 .dia-badge {
     display: inline-block;
     padding: 3px 8px;
@@ -459,32 +494,37 @@ tbody tr:hover { background-color: #f8f9ff; }
     font-weight: 600;
     white-space: nowrap;
 }
-/* ================= BOTÓN VER NOVEDADES (CON TOGGLE) ================= */
+
+/* ================= BOTÓN VER NOVEDADES ================= */
 .btn-ver-novedades {
     background: #fb8c00;
     color: white;
     border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     font-weight: 600;
     white-space: nowrap;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .btn-ver-novedades:hover {
     background: #f57c00;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(251,140,0,0.35);
 }
 
-/* Botón cuando el modal está abierto (rojo) */
-.btn-ver-novedades[data-abierto="true"] {
-    background: #e53935;
-}
-
-.btn-ver-novedades[data-abierto="true"]:hover {
-    background: #c62828;
+/* Celdas con icono + fecha / horario */
+.cell-fecha,
+.cell-horario {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -535,13 +575,10 @@ tbody tr:hover { background-color: #f8f9ff; }
     .novedades-modal {
         width: 95%;
         max-height: 90vh;
-        border-radius: 8px;
+        border-radius: 10px;
     }
-    .modal-header { padding: 10px 12px; }
-    .modal-content {
-        padding: 12px;
-        font-size: 0.85rem;
-    }
+    .modal-header { padding: 12px 14px; }
+    .modal-content { padding: 14px; font-size: 0.85rem; }
 }
 
 @media (max-width: 360px) {

@@ -15,17 +15,14 @@ $historial       = null;
 $fecha_actual    = date('Y-m-d');
 $hora_actual     = date('H:i:s');
 
-if($nombre_ambiente){
+if ($nombre_ambiente) {
     $nombre_ambiente = mysqli_real_escape_string($conexion, $nombre_ambiente);
 
     $sqlAmb      = "SELECT * FROM ambientes WHERE nombre_ambiente LIKE '%$nombre_ambiente%' LIMIT 1";
     $resAmb      = mysqli_query($conexion, $sqlAmb);
     $ambiente_info = mysqli_fetch_assoc($resAmb);
 
-    if($ambiente_info){
-        /* ==========================================
-           HISTORIAL AGRUPADO (una fila por rango)
-           ========================================== */
+    if ($ambiente_info) {
         $sqlHist = "SELECT 
                         MIN(au.fecha_inicio)  AS fecha_inicio,
                         MAX(au.fecha_inicio)  AS fecha_fin,
@@ -41,11 +38,11 @@ if($nombre_ambiente){
                         GROUP_CONCAT(
                             DISTINCT DAYOFWEEK(au.fecha_inicio)
                             ORDER BY DAYOFWEEK(au.fecha_inicio)
-                        )                     AS dias_semana
+                        ) AS dias_semana
                     FROM autorizaciones_ambientes au
                     JOIN instructores i ON au.id_instructor = i.id
                     JOIN ambientes a ON au.id_ambiente = a.id
-                    WHERE au.id_ambiente = '".$ambiente_info['id']."'
+                    WHERE au.id_ambiente = '" . $ambiente_info['id'] . "'
                     GROUP BY au.id_instructor, au.hora_inicio, au.hora_final, au.estado, au.rol_autorizado, au.observaciones, au.novedades
                     ORDER BY MIN(au.fecha_inicio) DESC
                     LIMIT 50";
@@ -55,13 +52,8 @@ if($nombre_ambiente){
 
 /* DAYOFWEEK MySQL: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb */
 $abrevDias = [
-    1 => 'Dom',
-    2 => 'Lun',
-    3 => 'Mar',
-    4 => 'Mié',
-    5 => 'Jue',
-    6 => 'Vie',
-    7 => 'Sáb',
+    1 => 'Dom', 2 => 'Lun', 3 => 'Mar',
+    4 => 'Mié', 5 => 'Jue', 6 => 'Vie', 7 => 'Sáb',
 ];
 ?>
 <!DOCTYPE html>
@@ -101,7 +93,7 @@ $abrevDias = [
         </form>
     </div>
 
-    <?php if($nombre_ambiente && $ambiente_info): ?>
+    <?php if ($nombre_ambiente && $ambiente_info): ?>
         <div class="ambiente-result">
             <h3 style="margin:0 0 20px 0; color:#333;">
                 <i class="fa-solid fa-door-open" style="color:#355d91;"></i> Información del Ambiente
@@ -136,7 +128,7 @@ $abrevDias = [
                 </h3>
             </div>
 
-            <?php if($historial && mysqli_num_rows($historial) > 0): ?>
+            <?php if ($historial && mysqli_num_rows($historial) > 0): ?>
             <div class="table-scroll-wrapper">
                 <table>
                     <thead>
@@ -153,30 +145,30 @@ $abrevDias = [
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($row = mysqli_fetch_assoc($historial)):
+                        <?php while ($row = mysqli_fetch_assoc($historial)):
 
-                            /* --- Calcular estado visual --- */
+                            /* --- Estado visual --- */
                             $estadoActual = 'desocupado';
                             $textoEstado  = 'Desocupado';
                             $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
 
-                            if($row['estado'] == 'Aprobado') {
-                                if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
-                                    if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
+                            if ($row['estado'] == 'Aprobado') {
+                                if ($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
+                                    if ($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
                                         $estadoActual = 'ocupado-ahora';
                                         $textoEstado  = 'Ocupado Ahora';
                                         $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
                                     } else {
                                         $estadoActual = 'programado';
-                                        $textoEstado  = 'Programado ('.date('h:i A', strtotime($row['hora_inicio'])).' - '.date('h:i A', strtotime($row['hora_final'])).')';
+                                        $textoEstado  = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
                                         $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
                                     }
                                 }
-                            } elseif($row['estado'] == 'Pendiente') {
+                            } elseif ($row['estado'] == 'Pendiente') {
                                 $estadoActual = 'pendiente';
                                 $textoEstado  = 'Pendiente';
                                 $iconoEstado  = '<i class="fa-solid fa-hourglass-half"></i>';
-                            } elseif($row['estado'] == 'Rechazado') {
+                            } elseif ($row['estado'] == 'Rechazado') {
                                 $estadoActual = 'rechazado';
                                 $textoEstado  = 'Rechazado';
                                 $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
@@ -184,12 +176,11 @@ $abrevDias = [
 
                             /* --- Días de la semana --- */
                             $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
-                                        ? explode(',', $row['dias_semana'])
-                                        : [];
+                                        ? explode(',', $row['dias_semana']) : [];
                             $diasHtml = '';
-                            if(count($diasNums) > 0){
+                            if (count($diasNums) > 0) {
                                 $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">';
-                                foreach($diasNums as $dn){
+                                foreach ($diasNums as $dn) {
                                     $dn    = (int)$dn;
                                     $abrev = $abrevDias[$dn] ?? '?';
                                     $diasHtml .= '<span class="dia-badge">' . $abrev . '</span>';
@@ -199,7 +190,9 @@ $abrevDias = [
                                 $diasHtml = '<span style="color:#999;">—</span>';
                             }
 
-                            $novedad_texto = $row['novedades'];
+                            $instructor_js = htmlspecialchars($row['nombre_instructor'], ENT_QUOTES);
+                            $novedad_js    = htmlspecialchars($row['novedades'],         ENT_QUOTES);
+                            $inicial       = strtoupper(substr($row['nombre_instructor'], 0, 1));
                         ?>
                         <tr>
                             <td>
@@ -235,26 +228,15 @@ $abrevDias = [
                             <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
                             <td><?= htmlspecialchars($row['observaciones'] ?: '—') ?></td>
                             <td>
-                                <?php if($row['novedades']): ?>
-                                    <button onclick="mostrarModal(this)" class="btn-ver-novedades">
+                                <?php if ($row['novedades']): ?>
+                                    <button
+                                        class="btn-ver-novedades"
+                                        onclick="abrirModal(this)"
+                                        data-instructor="<?= $instructor_js ?>"
+                                        data-inicial="<?= $inicial ?>"
+                                        data-novedad="<?= $novedad_js ?>">
                                         <i class="fa-solid fa-eye"></i> Ver
                                     </button>
-                                    <div class="novedades-modal" style="display:none;">
-                                        <div class="modal-header">
-                                            <div class="modal-instructor-row">
-                                                <div class="modal-avatar">
-                                                    <?= strtoupper(substr($row['nombre_instructor'], 0, 1)) ?>
-                                                </div>
-                                                <div>
-                                                    <div class="modal-label">Novedad reportada por</div>
-                                                    <div class="modal-instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-content">
-                                            <pre><?= htmlspecialchars($novedad_texto) ?></pre>
-                                        </div>
-                                    </div>
                                 <?php else: ?>
                                     <span style="color:#999;">Sin novedades</span>
                                 <?php endif; ?>
@@ -272,7 +254,7 @@ $abrevDias = [
             <?php endif; ?>
         </div>
 
-    <?php elseif($nombre_ambiente && !$ambiente_info): ?>
+    <?php elseif ($nombre_ambiente && !$ambiente_info): ?>
         <div class="ambiente-result">
             <div class="no-results">
                 <i class="fa-solid fa-building-slash"></i>
@@ -287,31 +269,49 @@ $abrevDias = [
     </a>
 </div>
 
-<div class="novedades-overlay" id="modalOverlay"></div>
+<!-- ✅ OVERLAY Y MODAL GLOBAL: fuera de la tabla, directamente en body -->
+<div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
+
+<div class="novedades-modal" id="modalNovedades">
+    <div class="modal-header">
+        <div class="modal-instructor-row">
+            <div class="modal-avatar" id="modalAvatar">A</div>
+            <div style="min-width:0;">
+                <div class="modal-label">Novedad reportada por</div>
+                <div class="modal-instructor-name" id="modalNombre"></div>
+            </div>
+        </div>
+        <button class="modal-btn-cerrar" onclick="cerrarModal()" title="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div class="modal-content">
+        <pre id="modalTexto"></pre>
+    </div>
+</div>
 
 <script>
-function mostrarModal(btn) {
-    const modal   = btn.nextElementSibling;
-    const overlay = document.getElementById('modalOverlay');
-    const abierto = modal.style.display === 'block';
-    if(abierto) {
-        overlay.style.display = 'none';
-        modal.style.display   = 'none';
-        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-    } else {
-        cerrarTodosModales();
-        overlay.style.display = 'block';
-        modal.style.display   = 'block';
-        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar';
-    }
+function abrirModal(btn) {
+    document.getElementById('modalAvatar').textContent = btn.dataset.inicial;
+    document.getElementById('modalNombre').textContent = btn.dataset.instructor;
+    document.getElementById('modalTexto').textContent  = btn.dataset.novedad;
+
+    document.getElementById('modalOverlay').style.display = 'block';
+    const modal = document.getElementById('modalNovedades');
+    modal.style.display = 'block';
+    requestAnimationFrame(() => modal.classList.add('visible'));
 }
-function cerrarTodosModales() {
-    document.getElementById('modalOverlay').style.display = 'none';
-    document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
-    document.querySelectorAll('.btn-ver-novedades').forEach(b => b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver');
+
+function cerrarModal() {
+    const modal = document.getElementById('modalNovedades');
+    modal.classList.remove('visible');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        document.getElementById('modalOverlay').style.display = 'none';
+    }, 200);
 }
-document.addEventListener('click', e => { if(e.target?.id === 'modalOverlay') cerrarTodosModales(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarTodosModales(); });
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
 </script>
 </body>
 </html>

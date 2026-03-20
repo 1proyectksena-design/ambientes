@@ -12,9 +12,6 @@ include("../includes/conexion.php");
 $fecha_actual = date('Y-m-d');
 $hora_actual  = date('H:i:s');
 
-/* =========================
-   BUSCAR AMBIENTE
-   ========================= */
 $ambienteBuscado   = $_GET['ambiente'] ?? null;
 $ambienteInfo      = null;
 $usoActual         = null;
@@ -34,12 +31,9 @@ if ($ambienteBuscado) {
     $resAmb       = mysqli_query($conexion, $sqlAmb);
     $ambienteInfo = mysqli_fetch_assoc($resAmb);
 
-    if($ambienteInfo){
+    if ($ambienteInfo) {
         $id_ambiente = $ambienteInfo['id'];
 
-        /* ==========================================
-           1. CONSULTAR USO ACTUAL (EN USO / LIBRE)
-           ========================================== */
         $sqlUsoActual = "SELECT au.*, i.nombre AS nombre_instructor
                          FROM autorizaciones_ambientes au
                          JOIN instructores i ON au.id_instructor = i.id
@@ -49,11 +43,8 @@ if ($ambienteBuscado) {
                            AND au.estado = 'Aprobado'
                          LIMIT 1";
         $resUsoActual = mysqli_query($conexion, $sqlUsoActual);
-        $usoActual = mysqli_fetch_assoc($resUsoActual);
+        $usoActual    = mysqli_fetch_assoc($resUsoActual);
 
-        /* ==========================================
-           2. CONSULTAR PRÓXIMOS USOS (agrupados)
-           ========================================== */
         $sqlProximosUsos = "SELECT 
                                 MIN(au.fecha_inicio)  AS fecha_inicio,
                                 MAX(au.fecha_inicio)  AS fecha_fin,
@@ -65,14 +56,13 @@ if ($ambienteBuscado) {
                                 GROUP_CONCAT(
                                     DISTINCT DAYOFWEEK(au.fecha_inicio)
                                     ORDER BY DAYOFWEEK(au.fecha_inicio)
-                                )                     AS dias_semana
+                                ) AS dias_semana
                             FROM autorizaciones_ambientes au
                             JOIN instructores i ON au.id_instructor = i.id
                             WHERE au.id_ambiente = '$id_ambiente'
                               AND (
                                 (au.fecha_inicio > '$fecha_actual')
-                                OR
-                                (au.fecha_inicio = '$fecha_actual' AND au.hora_inicio > '$hora_actual')
+                                OR (au.fecha_inicio = '$fecha_actual' AND au.hora_inicio > '$hora_actual')
                               )
                               AND au.estado = 'Aprobado'
                             GROUP BY au.id_instructor, au.hora_inicio, au.hora_final, au.observaciones
@@ -80,17 +70,13 @@ if ($ambienteBuscado) {
                             LIMIT 10";
         $proximosUsos = mysqli_query($conexion, $sqlProximosUsos);
 
-        /* ==========================================
-           3. CONSULTAR HISTORIAL RECIENTE
-           ========================================== */
         $sqlHistorialReciente = "SELECT au.*, i.nombre AS nombre_instructor
                                  FROM autorizaciones_ambientes au
                                  JOIN instructores i ON au.id_instructor = i.id
                                  WHERE au.id_ambiente = '$id_ambiente'
                                    AND (
                                      (au.fecha_inicio < '$fecha_actual')
-                                     OR
-                                     (au.fecha_inicio = '$fecha_actual' AND au.hora_final < '$hora_actual')
+                                     OR (au.fecha_inicio = '$fecha_actual' AND au.hora_final < '$hora_actual')
                                    )
                                    AND au.estado = 'Aprobado'
                                  ORDER BY au.fecha_inicio DESC, au.hora_inicio DESC
@@ -99,7 +85,6 @@ if ($ambienteBuscado) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -111,7 +96,6 @@ if ($ambienteBuscado) {
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header">
     <div class="header-left">
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
@@ -127,24 +111,17 @@ if ($ambienteBuscado) {
 
 <div class="consultar-container">
 
-    <!-- BUSCAR AMBIENTE -->
     <div class="search-section">
         <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Ambiente</h3>
         <form method="GET" class="search-form">
-            <input
-                type="text"
-                name="ambiente"
+            <input type="text" name="ambiente"
                 placeholder="Ej: 308, Laboratorio de Química, Sala 101..."
                 value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>"
-                required
-            >
-            <button type="submit">
-                <i class="fa-solid fa-search"></i> Buscar
-            </button>
+                required>
+            <button type="submit"><i class="fa-solid fa-search"></i> Buscar</button>
         </form>
     </div>
 
-    <!-- RESULTADO DE BÚSQUEDA -->
     <?php if ($ambienteBuscado && $ambienteInfo): ?>
         <div class="ambiente-result">
 
@@ -152,7 +129,6 @@ if ($ambienteBuscado) {
                 <h3><i class="fa-solid fa-door-open" style="color:#355d91;"></i> Información del Ambiente</h3>
             </div>
 
-            <!-- GRID DE DATOS BÁSICOS -->
             <div class="info-grid">
                 <div class="info-item">
                     <label>Nombre</label>
@@ -174,12 +150,10 @@ if ($ambienteBuscado) {
                 </div>
             </div>
 
-            <!-- ESTADO + INSTRUCTOR: fila lado a lado -->
             <div class="estado-instructor-row">
 
-                <!-- ESTADO ACTUAL: EN USO / LIBRE -->
                 <div class="estado-uso-card">
-                    <?php if($usoActual): ?>
+                    <?php if ($usoActual): ?>
                         <div class="estado-header en-uso">
                             <div class="estado-icon"><i class="fa-solid fa-circle-dot"></i></div>
                             <div>
@@ -201,8 +175,8 @@ if ($ambienteBuscado) {
                                     <div>
                                         <label>Horario</label>
                                         <strong>
-                                            <?= date('h:i A', strtotime($usoActual['hora_inicio'])) ?> 
-                                            — 
+                                            <?= date('h:i A', strtotime($usoActual['hora_inicio'])) ?>
+                                            —
                                             <?= date('h:i A', strtotime($usoActual['hora_final'])) ?>
                                         </strong>
                                     </div>
@@ -219,17 +193,14 @@ if ($ambienteBuscado) {
                         </div>
                         <?php
                         $proximoInmediato = $proximosUsos ? mysqli_fetch_assoc($proximosUsos) : null;
-                        if($proximoInmediato):
-                            mysqli_data_seek($proximosUsos, 0);
-                        ?>
+                        if ($proximoInmediato): mysqli_data_seek($proximosUsos, 0); ?>
                         <div class="estado-body">
                             <div class="proximo-uso-rapido">
                                 <i class="fa-regular fa-calendar-check"></i>
-                                <span>
-                                    Próximo uso: 
+                                <span>Próximo uso:
                                     <strong>
-                                        <?= date('d/m/Y', strtotime($proximoInmediato['fecha_inicio'])) ?> 
-                                        a las 
+                                        <?= date('d/m/Y', strtotime($proximoInmediato['fecha_inicio'])) ?>
+                                        a las
                                         <?= date('h:i A', strtotime($proximoInmediato['hora_inicio'])) ?>
                                     </strong>
                                 </span>
@@ -239,8 +210,7 @@ if ($ambienteBuscado) {
                     <?php endif; ?>
                 </div>
 
-                <!-- INSTRUCTOR DE HORARIO FIJO -->
-                <?php if($ambienteInfo['nombre_instructor_fijo']): ?>
+                <?php if ($ambienteInfo['nombre_instructor_fijo']): ?>
                 <div class="instructor-fijo-card">
                     <div class="instructor-fijo-header">
                         <i class="fa-solid fa-chalkboard-user"></i>
@@ -257,7 +227,7 @@ if ($ambienteBuscado) {
                                     <i class="fa-solid fa-id-card"></i>
                                     <?= htmlspecialchars($ambienteInfo['doc_instructor_fijo']) ?>
                                 </p>
-                                <?php if($ambienteInfo['novedades_instructor_fijo']): ?>
+                                <?php if ($ambienteInfo['novedades_instructor_fijo']): ?>
                                 <p class="instr-novedad">
                                     <i class="fa-solid fa-circle-exclamation"></i>
                                     <?= htmlspecialchars($ambienteInfo['novedades_instructor_fijo']) ?>
@@ -274,19 +244,17 @@ if ($ambienteBuscado) {
                 </div>
                 <?php endif; ?>
 
-            </div><!-- /estado-instructor-row -->
+            </div>
 
-            <!-- DESCRIPCIÓN -->
-            <?php if($ambienteInfo['descripcion_general']): ?>
+            <?php if ($ambienteInfo['descripcion_general']): ?>
             <div class="descripcion-ambiente">
                 <strong>Descripción:</strong>
                 <p><?= htmlspecialchars($ambienteInfo['descripcion_general']) ?></p>
             </div>
             <?php endif; ?>
 
-            <!-- BOTONES DE ACCIÓN -->
             <div class="action-buttons">
-                <?php if($ambienteInfo['estado'] == 'Habilitado'): ?>
+                <?php if ($ambienteInfo['estado'] == 'Habilitado'): ?>
                     <a href="permisos.php?id_ambiente=<?= $ambienteInfo['id'] ?>" class="btn-permiso">
                         <i class="fa-solid fa-circle-check"></i> Autorizar Ambiente
                     </a>
@@ -302,10 +270,8 @@ if ($ambienteBuscado) {
             </div>
         </div>
 
-        <!-- ==========================================
-             PRÓXIMOS USOS (agrupados en una sola fila)
-             ========================================== -->
-        <?php if($proximosUsos && mysqli_num_rows($proximosUsos) > 0): ?>
+        <!-- PRÓXIMOS USOS -->
+        <?php if ($proximosUsos && mysqli_num_rows($proximosUsos) > 0): ?>
         <div class="table-container">
             <div class="table-header">
                 <h3>
@@ -327,17 +293,14 @@ if ($ambienteBuscado) {
                     </thead>
                     <tbody>
                         <?php
-                        $abrevDias = [
-                            1 => 'Dom', 2 => 'Lun', 3 => 'Mar',
-                            4 => 'Mié', 5 => 'Jue', 6 => 'Vie', 7 => 'Sáb',
-                        ];
-                        while($prox = mysqli_fetch_assoc($proximosUsos)):
+                        $abrevDias = [1=>'Dom',2=>'Lun',3=>'Mar',4=>'Mié',5=>'Jue',6=>'Vie',7=>'Sáb'];
+                        while ($prox = mysqli_fetch_assoc($proximosUsos)):
                             $diasNums = ($prox['dias_semana'] !== null && $prox['dias_semana'] !== '')
                                         ? explode(',', $prox['dias_semana']) : [];
                             $diasHtml = '';
-                            if(count($diasNums) > 0){
+                            if (count($diasNums) > 0) {
                                 $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">';
-                                foreach($diasNums as $dn){
+                                foreach ($diasNums as $dn) {
                                     $dn = (int)$dn;
                                     $diasHtml .= '<span class="dia-badge">' . ($abrevDias[$dn] ?? '?') . '</span>';
                                 }
@@ -347,31 +310,16 @@ if ($ambienteBuscado) {
                             }
                         ?>
                         <tr>
-                            <td>
-                                <span class="cell-fecha">
-                                    <i class="fa-regular fa-calendar"></i>
-                                    <?= date('d/m/Y', strtotime($prox['fecha_inicio'])) ?>
-                                </span>
-                            </td>
-                            <td>
-                                <span class="cell-fecha">
-                                    <i class="fa-regular fa-calendar-check"></i>
-                                    <?= date('d/m/Y', strtotime($prox['fecha_fin'])) ?>
-                                </span>
-                            </td>
+                            <td><span class="cell-fecha"><i class="fa-regular fa-calendar"></i><?= date('d/m/Y', strtotime($prox['fecha_inicio'])) ?></span></td>
+                            <td><span class="cell-fecha"><i class="fa-regular fa-calendar-check"></i><?= date('d/m/Y', strtotime($prox['fecha_fin'])) ?></span></td>
                             <td>
                                 <span class="cell-horario">
                                     <i class="fa-regular fa-clock"></i>
-                                    <?= date('h:i A', strtotime($prox['hora_inicio'])) ?>
-                                    &mdash;
-                                    <?= date('h:i A', strtotime($prox['hora_final'])) ?>
+                                    <?= date('h:i A', strtotime($prox['hora_inicio'])) ?> &mdash; <?= date('h:i A', strtotime($prox['hora_final'])) ?>
                                 </span>
                             </td>
                             <td><?= $diasHtml ?></td>
-                            <td>
-                                <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
-                                <?= htmlspecialchars($prox['nombre_instructor']) ?>
-                            </td>
+                            <td><i class="fa-solid fa-user" style="color:#355d91;margin-right:5px;"></i><?= htmlspecialchars($prox['nombre_instructor']) ?></td>
                             <td><?= htmlspecialchars($prox['observaciones'] ?: '—') ?></td>
                         </tr>
                         <?php endwhile; ?>
@@ -381,10 +329,8 @@ if ($ambienteBuscado) {
         </div>
         <?php endif; ?>
 
-        <!-- ==========================================
-             HISTORIAL RECIENTE
-             ========================================== -->
-        <?php if($historialReciente && mysqli_num_rows($historialReciente) > 0): ?>
+        <!-- HISTORIAL RECIENTE -->
+        <?php if ($historialReciente && mysqli_num_rows($historialReciente) > 0): ?>
         <div class="table-container">
             <div class="table-header">
                 <h3>
@@ -403,60 +349,39 @@ if ($ambienteBuscado) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($hist = mysqli_fetch_assoc($historialReciente)): 
+                        <?php while ($hist = mysqli_fetch_assoc($historialReciente)):
                             $novedad_texto = $hist['novedades'];
                             $fecha_novedad = '';
-                            if($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
+                            if ($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)) {
                                 $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
                                 $novedad_texto = $matches[2];
                             }
+                            $instructor_js = htmlspecialchars($hist['nombre_instructor'], ENT_QUOTES);
+                            $novedad_js    = htmlspecialchars($novedad_texto,             ENT_QUOTES);
+                            $fecha_js      = htmlspecialchars($fecha_novedad,             ENT_QUOTES);
+                            $inicial       = strtoupper(substr($hist['nombre_instructor'], 0, 1));
                         ?>
                         <tr>
-                            <td>
-                                <span class="cell-fecha">
-                                    <i class="fa-regular fa-calendar"></i>
-                                    <?= date('d/m/Y', strtotime($hist['fecha_inicio'])) ?>
-                                </span>
-                            </td>
+                            <td><span class="cell-fecha"><i class="fa-regular fa-calendar"></i><?= date('d/m/Y', strtotime($hist['fecha_inicio'])) ?></span></td>
                             <td>
                                 <span class="cell-horario">
                                     <i class="fa-regular fa-clock"></i>
-                                    <?= date('h:i A', strtotime($hist['hora_inicio'])) ?> 
-                                    &mdash; 
-                                    <?= date('h:i A', strtotime($hist['hora_final'])) ?>
+                                    <?= date('h:i A', strtotime($hist['hora_inicio'])) ?> &mdash; <?= date('h:i A', strtotime($hist['hora_final'])) ?>
                                 </span>
                             </td>
+                            <td><i class="fa-solid fa-user" style="color:#355d91;margin-right:5px;"></i><?= htmlspecialchars($hist['nombre_instructor']) ?></td>
                             <td>
-                                <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
-                                <?= htmlspecialchars($hist['nombre_instructor']) ?>
-                            </td>
-                            <td>
-                                <?php if($hist['novedades']): ?>
-                                    <button onclick="mostrarModal(this)" class="btn-ver-novedades">
+                                <?php if ($hist['novedades']): ?>
+                                    <!-- ✅ Solo el botón con data-attributes -->
+                                    <button
+                                        class="btn-ver-novedades"
+                                        onclick="abrirModal(this)"
+                                        data-instructor="<?= $instructor_js ?>"
+                                        data-inicial="<?= $inicial ?>"
+                                        data-novedad="<?= $novedad_js ?>"
+                                        data-fecha="<?= $fecha_js ?>">
                                         <i class="fa-solid fa-eye"></i> Ver
                                     </button>
-                                    <div class="novedades-modal" style="display:none;">
-                                        <div class="modal-header">
-                                            <div class="modal-instructor-row">
-                                                <div class="modal-avatar">
-                                                    <?= strtoupper(substr($hist['nombre_instructor'], 0, 1)) ?>
-                                                </div>
-                                                <div>
-                                                    <div class="modal-label">Novedad reportada por</div>
-                                                    <div class="modal-instructor-name"><?= htmlspecialchars($hist['nombre_instructor']) ?></div>
-                                                </div>
-                                            </div>
-                                            <?php if($fecha_novedad): ?>
-                                            <div class="modal-fecha-badge">
-                                                <i class="fa-regular fa-calendar-check"></i>
-                                                <?= $fecha_novedad ?>
-                                            </div>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="modal-content">
-                                            <pre><?= htmlspecialchars($novedad_texto) ?></pre>
-                                        </div>
-                                    </div>
                                 <?php else: ?>
                                     <span style="color:#999;">—</span>
                                 <?php endif; ?>
@@ -485,39 +410,63 @@ if ($ambienteBuscado) {
 
 </div>
 
-<!-- OVERLAY OSCURO -->
-<div class="novedades-overlay" id="modalOverlay"></div>
+<!-- ✅ OVERLAY Y MODAL GLOBAL: directamente en body -->
+<div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
+
+<div class="novedades-modal" id="modalNovedades">
+    <div class="modal-header">
+        <div class="modal-instructor-row">
+            <div class="modal-avatar" id="modalAvatar">A</div>
+            <div style="min-width:0;">
+                <div class="modal-label">Novedad reportada por</div>
+                <div class="modal-instructor-name" id="modalNombre"></div>
+            </div>
+        </div>
+        <button class="modal-btn-cerrar" onclick="cerrarModal()" title="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <!-- Badge de fecha (se muestra solo si tiene fecha) -->
+    <div id="modalFechaBadge" class="modal-fecha-badge" style="display:none; margin: 0 18px 12px;">
+        <i class="fa-regular fa-calendar-check"></i>
+        <span id="modalFechaTexto"></span>
+    </div>
+    <div class="modal-content">
+        <pre id="modalTexto"></pre>
+    </div>
+</div>
 
 <script>
-function mostrarModal(btn) {
-    const modal   = btn.nextElementSibling;
-    const overlay = document.getElementById('modalOverlay');
-    const abierto = modal.style.display === 'block';
-    if(abierto) {
-        overlay.style.display = 'none';
-        modal.style.display   = 'none';
-        btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-    } else {
-        cerrarTodosModales();
-        overlay.style.display = 'block';
-        modal.style.display   = 'block';
-        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar';
-    }
-}
-function cerrarTodosModales() {
-    document.getElementById('modalOverlay').style.display = 'none';
-    document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
-    document.querySelectorAll('.btn-ver-novedades').forEach(b => {
-        b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
-    });
-}
-document.addEventListener('click', e => {
-    if(e.target && e.target.id === 'modalOverlay') cerrarTodosModales();
-});
-document.addEventListener('keydown', e => {
-    if(e.key === 'Escape') cerrarTodosModales();
-});
-</script>
+function abrirModal(btn) {
+    document.getElementById('modalAvatar').textContent = btn.dataset.inicial;
+    document.getElementById('modalNombre').textContent = btn.dataset.instructor;
+    document.getElementById('modalTexto').textContent  = btn.dataset.novedad;
 
+    const fechaBadge = document.getElementById('modalFechaBadge');
+    const fechaTexto = document.getElementById('modalFechaTexto');
+    if (btn.dataset.fecha) {
+        fechaTexto.textContent  = btn.dataset.fecha;
+        fechaBadge.style.display = 'inline-flex';
+    } else {
+        fechaBadge.style.display = 'none';
+    }
+
+    document.getElementById('modalOverlay').style.display = 'block';
+    const modal = document.getElementById('modalNovedades');
+    modal.style.display = 'block';
+    requestAnimationFrame(() => modal.classList.add('visible'));
+}
+
+function cerrarModal() {
+    const modal = document.getElementById('modalNovedades');
+    modal.classList.remove('visible');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        document.getElementById('modalOverlay').style.display = 'none';
+    }, 200);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+</script>
 </body>
 </html>
