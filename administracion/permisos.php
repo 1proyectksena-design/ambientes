@@ -72,7 +72,6 @@ if(isset($_POST['autorizar'])){
     $obs          = mysqli_real_escape_string($conexion, $_POST['observaciones']);
     $novedades    = mysqli_real_escape_string($conexion, $_POST['novedades']);
     
-    // NUEVO: Modo único o recurrente
     $modo = $_POST['modo'] ?? 'unico';
     $dias_seleccionados = isset($_POST['dias']) ? $_POST['dias'] : [];
 
@@ -86,7 +85,6 @@ if(isset($_POST['autorizar'])){
     }
 
     /* NOTA: El horario fijo es solo informativo, NO bloquea */
-    // Se puede autorizar sobre el horario fijo sin problemas
 
     /* VALIDAR QUE ESTÉ DENTRO DEL HORARIO DISPONIBLE */
     $horario_disponible = $ambienteData['horario_disponible'];
@@ -95,7 +93,7 @@ if(isset($_POST['autorizar'])){
     if($rangoDisponible){
         if($hora_inicio < $rangoDisponible['inicio'] || $hora_fin > $rangoDisponible['fin']){
             echo "<script>
-                alert('Horario fuera del rango permitido.\\nEste ambiente solo está disponible de " . addslashes($horario_disponible) . "\\nIngresaste: $hora_inicio - $hora_fin');
+                alert(' Horario fuera del rango permitido.\\nEste ambiente solo está disponible de " . addslashes($horario_disponible) . "\\nIngresaste: $hora_inicio - $hora_fin');
                 window.history.back();
             </script>";
             exit;
@@ -133,20 +131,16 @@ if(isset($_POST['autorizar'])){
     $fechas_a_autorizar = [];
     
     if($modo == 'unico'){
-        // MODO ÚNICO: Solo una fecha (o rango continuo)
         $fechas_a_autorizar[] = [
             'fecha_inicio' => $fecha_inicio,
             'fecha_fin'    => $fecha_fin
         ];
     } else {
-        // MODO RECURRENTE: Generar fechas individuales según días seleccionados
-        
         if(empty($dias_seleccionados)){
             echo "<script>alert(' Debes seleccionar al menos un día de la semana'); window.history.back();</script>";
             exit;
         }
         
-        // Mapeo de días en español a números (0=Domingo, 1=Lunes, ..., 6=Sábado)
         $mapa_dias = [
             'lunes'     => 1,
             'martes'    => 2,
@@ -168,14 +162,12 @@ if(isset($_POST['autorizar'])){
             exit;
         }
         
-        // Recorrer cada día del rango
         $fecha_actual_loop = new DateTime($fecha_inicio);
         $fecha_fin_obj = new DateTime($fecha_fin);
         
         while($fecha_actual_loop <= $fecha_fin_obj){
-            $dia_semana = (int)$fecha_actual_loop->format('N'); // 1=Lunes, 7=Domingo
+            $dia_semana = (int)$fecha_actual_loop->format('N');
             
-            // Si este día está seleccionado, agregar a la lista
             if(in_array($dia_semana, $numeros_dias)){
                 $fechas_a_autorizar[] = [
                     'fecha_inicio' => $fecha_actual_loop->format('Y-m-d'),
@@ -193,7 +185,7 @@ if(isset($_POST['autorizar'])){
     }
     
     /* ========================================
-       INSERTAR AUTORIZACIONES
+       INSERTAR AUTORIZACIONES CON REPORTE DETALLADO
        ======================================== */
     
     $insertados = 0;
@@ -203,16 +195,34 @@ if(isset($_POST['autorizar'])){
         $f_inicio = $fecha_item['fecha_inicio'];
         $f_fin    = $fecha_item['fecha_fin'];
         
-        // VALIDAR CHOQUE CON OTRAS AUTORIZACIONES (por cada día)
-        $sqlChoque = "SELECT * FROM autorizaciones_ambientes
-                      WHERE id_ambiente = '$ambiente'
-                      AND estado = 'Aprobado'
-                      AND fecha_inicio = '$f_inicio'
-                      AND (hora_inicio < '$hora_fin' AND hora_final > '$hora_inicio')";
+        // VALIDAR CHOQUE (con datos del instructor que ya tiene el horario)
+        $sqlChoque = "SELECT au.*, i.nombre AS nombre_instructor
+                      FROM autorizaciones_ambientes au
+                      JOIN instructores i ON au.id_instructor = i.id
+                      WHERE au.id_ambiente = '$ambiente'
+                      AND au.estado = 'Aprobado'
+                      AND au.fecha_inicio = '$f_inicio'
+                      AND (au.hora_inicio < '$hora_fin' AND au.hora_final > '$hora_inicio')";
         $resChoque = mysqli_query($conexion, $sqlChoque);
         
         if(mysqli_num_rows($resChoque) > 0){
-            $errores[] = "Choque en $f_inicio con horario $hora_inicio - $hora_fin";
+            $choqueData = mysqli_fetch_assoc($resChoque);
+            $nombreDia = date('l', strtotime($f_inicio));
+            $diasSemana = [
+                'Monday' => 'Lunes',
+                'Tuesday' => 'Martes',
+                'Wednesday' => 'Miércoles',
+                'Thursday' => 'Jueves',
+                'Friday' => 'Viernes',
+                'Saturday' => 'Sábado',
+                'Sunday' => 'Domingo'
+            ];
+            $diaEspanol = $diasSemana[$nombreDia] ?? $nombreDia;
+            
+            $errores[] = " $diaEspanol " . date('d/m/Y', strtotime($f_inicio)) . 
+                         " - Ya ocupado por " . $choqueData['nombre_instructor'] . 
+                         " (" . date('h:i A', strtotime($choqueData['hora_inicio'])) . 
+                         " - " . date('h:i A', strtotime($choqueData['hora_final'])) . ")";
             continue; // Saltar este día
         }
         
@@ -227,21 +237,25 @@ if(isset($_POST['autorizar'])){
         if(mysqli_query($conexion, $sqlInsert)){
             $insertados++;
         } else {
-            $errores[] = "Error en $f_inicio: " . mysqli_error($conexion);
+            $errores[] = " Error en $f_inicio: " . mysqli_error($conexion);
         }
     }
     
-    // RESULTADO FINAL
+    // RESULTADO FINAL CON REPORTE DETALLADO
     if($insertados > 0 && empty($errores)){
-        echo "<script>alert(' Se autorizaron $insertados días correctamente'); window.location.href='index.php';</script>";
+        echo "<script>alert('Se autorizaron $insertados días correctamente'); window.location.href='index.php';</script>";
         exit;
     } elseif($insertados > 0 && !empty($errores)){
         $msg_errores = implode("\\n", $errores);
-        echo "<script>alert(' Se autorizaron $insertados días correctamente\\n\\nErrores en algunos días:\\n$msg_errores'); window.location.href='index.php';</script>";
+        $mensajeFinal = " AUTORIZACIONES COMPLETADAS\\n\\n" .
+                        " Días autorizados: $insertados\\n\\n" .
+                        " DÍAS NO AUTORIZADOS (choques detectados):\\n" . 
+                        $msg_errores;
+        echo "<script>alert('$mensajeFinal'); window.location.href='index.php';</script>";
         exit;
     } else {
         $msg_errores = implode("\\n", $errores);
-        echo "<script>alert(' No se pudo autorizar ningún día:\\n$msg_errores'); window.history.back();</script>";
+        echo "<script>alert('❌ No se pudo autorizar ningún día:\\n\\n$msg_errores'); window.history.back();</script>";
         exit;
     }
 }
@@ -260,7 +274,6 @@ mysqli_data_seek($instructores, 0);
     <title>Autorizar Ambiente - Administración</title>
     <link rel="stylesheet" href="../css/permisos.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
 </head>
 <body>
 
@@ -374,7 +387,7 @@ mysqli_data_seek($instructores, 0);
                     <?php if(!empty($ambiente_unico['horario_fijo'])): ?>
                         <div class="horario-fijo-badge">
                             <i class="fa-solid fa-info-circle"></i>
-                            <span>Instructor fijo asignado: <strong><?= htmlspecialchars($ambiente_unico['horario_fijo']) ?></strong> </span>
+                            <span>Instructor fijo asignado: <strong><?= htmlspecialchars($ambiente_unico['horario_fijo']) ?></strong> (informativo)</span>
                         </div>
                     <?php endif; ?>
 
@@ -403,7 +416,7 @@ mysqli_data_seek($instructores, 0);
 
                     <div class="horario-fijo-badge" id="horario-fijo-box" style="display:none;">
                         <i class="fa-solid fa-info-circle"></i>
-                        <span>Instructor fijo asignado: <strong id="horario-fijo-texto"></strong> </span>
+                        <span>Instructor fijo asignado: <strong id="horario-fijo-texto"></strong> (informativo)</span>
                     </div>
 
                     <div class="horario-info" id="horario-info-box" style="display:none;">
@@ -418,7 +431,7 @@ mysqli_data_seek($instructores, 0);
 
             <!-- INSTRUCTOR -->
             <div class="form-group">
-                <label><i class="fa-solid fa-user"></i> Instructor  <small>(Solo activos)</small></label>
+                <label><i class="fa-solid fa-user"></i> Instructor * <small>(Solo activos)</small></label>
                 <select name="instructor" required>
                     <option value="">-- Seleccione un instructor --</option>
                     <?php while($i = mysqli_fetch_assoc($instructores)): ?>
@@ -485,9 +498,6 @@ mysqli_data_seek($instructores, 0);
 </div>
 
 <script>
-/* ===========================
-   CAMBIAR MODO ÚNICO/RECURRENTE
-   =========================== */
 function cambiarModo() {
     const modoRecurrente = document.getElementById('modo-recurrente').checked;
     const diasSelector = document.getElementById('dias-selector');
@@ -505,9 +515,6 @@ function cambiarModo() {
     }
 }
 
-/* ===========================
-   SINCRONIZAR FECHAS EN MODO ÚNICO
-   =========================== */
 document.getElementById('fecha-inicio')?.addEventListener('change', function(){
     const modoUnico = document.getElementById('modo-unico').checked;
     if(modoUnico){
@@ -515,9 +522,6 @@ document.getElementById('fecha-inicio')?.addEventListener('change', function(){
     }
 });
 
-/* ===========================
-   MOSTRAR HORARIO DEL AMBIENTE
-   =========================== */
 function mostrarHorario(sel) {
     const opcion   = sel.options[sel.selectedIndex];
     const horario  = opcion.getAttribute('data-horario');
@@ -533,16 +537,12 @@ function mostrarHorario(sel) {
     if(horario){ infoTxt.textContent = horario; infoBox.style.display = 'inline-flex'; hidDis.value = horario; }
     else        { infoBox.style.display = 'none'; hidDis.value = ''; }
 
-    // HORARIO FIJO: Solo informativo, no bloquea
     if(fijo){ fijoTxt.textContent = fijo; fijoBox.style.display = 'inline-flex'; hidFijo.value = fijo; }
     else     { fijoBox.style.display = 'none'; hidFijo.value = ''; }
 
     validarHoraEnCliente();
 }
 
-/* ===========================
-   PARSER HORA AM/PM
-   =========================== */
 function parsearHoraJS(txt) {
     txt = txt.trim().toUpperCase().replace(/\s+/g, '');
     let m = txt.match(/^(\d{1,2}):(\d{2})$/);
@@ -564,12 +564,7 @@ function parsearHoraJS(txt) {
     return null;
 }
 
-/* ===========================
-   VALIDAR HORARIOS EN CLIENTE
-   (HORARIO FIJO YA NO BLOQUEA)
-   =========================== */
 function validarHoraEnCliente() {
-    // Ya no validamos horario fijo
     const disTxt   = document.getElementById('horario_disponible_txt')?.value || '';
     const hi       = document.getElementById('hora_inicio')?.value;
     const hf       = document.getElementById('hora_fin')?.value;
@@ -578,14 +573,13 @@ function validarHoraEnCliente() {
 
     if(!hi || !hf){ aviso.style.display='none'; return; }
 
-    // Solo validar horario disponible
     if(disTxt){
         const pd = disTxt.split(/\s*-\s*/);
         if(pd.length >= 2){
             const rd0 = parsearHoraJS(pd[0]);
             const rd1 = parsearHoraJS(pd[1]);
             if(rd0 && rd1 && (hi < rd0 || hf > rd1)){
-                avisoTxt.innerHTML = `⚠️ Las horas deben estar dentro del horario disponible <strong>${disTxt}</strong>. Estás ingresando ${hi} - ${hf}.`;
+                avisoTxt.innerHTML = ` Las horas deben estar dentro del horario disponible <strong>${disTxt}</strong>. Estás ingresando ${hi} - ${hf}.`;
                 aviso.style.display = 'block';
                 aviso.style.background = '#fff3cd';
                 aviso.style.color = '#856404';
@@ -598,14 +592,11 @@ function validarHoraEnCliente() {
     aviso.style.display = 'none';
 }
 
-/* ===========================
-   BLOQUEAR ENVÍO SI HAY AVISO
-   =========================== */
 document.getElementById('form-autorizacion')?.addEventListener('submit', function(e){
     const aviso = document.getElementById('aviso-horario');
     if(aviso && aviso.style.display === 'block'){
         e.preventDefault();
-        alert('⚠️ Corrige el horario antes de continuar.');
+        alert(' Corrige el horario antes de continuar.');
     }
 });
 </script>

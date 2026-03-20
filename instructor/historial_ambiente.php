@@ -23,16 +23,46 @@ if($nombre_ambiente){
     $ambiente_info = mysqli_fetch_assoc($resAmb);
 
     if($ambiente_info){
-        $sqlHist = "SELECT au.*, i.nombre AS nombre_instructor, a.nombre_ambiente
+        /* ==========================================
+           HISTORIAL AGRUPADO (una fila por rango)
+           ========================================== */
+        $sqlHist = "SELECT 
+                        MIN(au.fecha_inicio)  AS fecha_inicio,
+                        MAX(au.fecha_inicio)  AS fecha_fin,
+                        au.hora_inicio,
+                        au.hora_final,
+                        au.id_instructor,
+                        i.nombre              AS nombre_instructor,
+                        a.nombre_ambiente,
+                        au.estado,
+                        au.rol_autorizado,
+                        au.observaciones,
+                        au.novedades,
+                        GROUP_CONCAT(
+                            DISTINCT DAYOFWEEK(au.fecha_inicio)
+                            ORDER BY DAYOFWEEK(au.fecha_inicio)
+                        )                     AS dias_semana
                     FROM autorizaciones_ambientes au
                     JOIN instructores i ON au.id_instructor = i.id
                     JOIN ambientes a ON au.id_ambiente = a.id
                     WHERE au.id_ambiente = '".$ambiente_info['id']."'
-                    ORDER BY au.fecha_inicio DESC, au.hora_inicio DESC
+                    GROUP BY au.id_instructor, au.hora_inicio, au.hora_final, au.estado, au.rol_autorizado, au.observaciones, au.novedades
+                    ORDER BY MIN(au.fecha_inicio) DESC
                     LIMIT 50";
         $historial = mysqli_query($conexion, $sqlHist);
     }
 }
+
+/* DAYOFWEEK MySQL: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb */
+$abrevDias = [
+    1 => 'Dom',
+    2 => 'Lun',
+    3 => 'Mar',
+    4 => 'Mié',
+    5 => 'Jue',
+    6 => 'Vie',
+    7 => 'Sáb',
+];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -112,9 +142,11 @@ if($nombre_ambiente){
                     <thead>
                         <tr>
                             <th>Instructor</th>
-                            <th>Período</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
                             <th>Horario</th>
-                            <th>Estado Actual</th>
+                            <th>Días</th>
+                            <th>Estado</th>
                             <th>Autorizado Por</th>
                             <th>Observaciones</th>
                             <th>Novedades</th>
@@ -122,13 +154,17 @@ if($nombre_ambiente){
                     </thead>
                     <tbody>
                         <?php while($row = mysqli_fetch_assoc($historial)):
-                            $estadoActual = 'desocupado'; $textoEstado = 'Desocupado';
+
+                            /* --- Calcular estado visual --- */
+                            $estadoActual = 'desocupado';
+                            $textoEstado  = 'Desocupado';
                             $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
 
                             if($row['estado'] == 'Aprobado') {
                                 if($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
                                     if($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
-                                        $estadoActual = 'ocupado-ahora'; $textoEstado = 'Ocupado Ahora';
+                                        $estadoActual = 'ocupado-ahora';
+                                        $textoEstado  = 'Ocupado Ahora';
                                         $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
                                     } else {
                                         $estadoActual = 'programado';
@@ -137,14 +173,32 @@ if($nombre_ambiente){
                                     }
                                 }
                             } elseif($row['estado'] == 'Pendiente') {
-                                $estadoActual = 'pendiente'; $textoEstado = 'Pendiente';
+                                $estadoActual = 'pendiente';
+                                $textoEstado  = 'Pendiente';
                                 $iconoEstado  = '<i class="fa-solid fa-hourglass-half"></i>';
                             } elseif($row['estado'] == 'Rechazado') {
-                                $estadoActual = 'rechazado'; $textoEstado = 'Rechazado';
+                                $estadoActual = 'rechazado';
+                                $textoEstado  = 'Rechazado';
                                 $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                             }
 
-                            // No procesamos fecha_novedad: ya viene dentro del texto [YYYY-MM-DD HH:MM]
+                            /* --- Días de la semana --- */
+                            $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
+                                        ? explode(',', $row['dias_semana'])
+                                        : [];
+                            $diasHtml = '';
+                            if(count($diasNums) > 0){
+                                $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">';
+                                foreach($diasNums as $dn){
+                                    $dn    = (int)$dn;
+                                    $abrev = $abrevDias[$dn] ?? '?';
+                                    $diasHtml .= '<span class="dia-badge">' . $abrev . '</span>';
+                                }
+                                $diasHtml .= '</div>';
+                            } else {
+                                $diasHtml = '<span style="color:#999;">—</span>';
+                            }
+
                             $novedad_texto = $row['novedades'];
                         ?>
                         <tr>
@@ -153,13 +207,26 @@ if($nombre_ambiente){
                                 <?= htmlspecialchars($row['nombre_instructor']) ?>
                             </td>
                             <td>
-                                <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?><br>
-                                <small style="color:#999;">al <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></small>
+                                <span class="cell-fecha">
+                                    <i class="fa-regular fa-calendar"></i>
+                                    <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?>
+                                </span>
                             </td>
                             <td>
-                                <?= date('h:i A', strtotime($row['hora_inicio'])) ?> -<br>
-                                <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                <span class="cell-fecha">
+                                    <i class="fa-regular fa-calendar-check"></i>
+                                    <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
+                                </span>
                             </td>
+                            <td>
+                                <span class="cell-horario">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <?= date('h:i A', strtotime($row['hora_inicio'])) ?>
+                                    &mdash;
+                                    <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                </span>
+                            </td>
+                            <td><?= $diasHtml ?></td>
                             <td>
                                 <span class="estado-badge estado-<?= $estadoActual ?>">
                                     <?= $iconoEstado ?> <?= $textoEstado ?>
@@ -183,7 +250,6 @@ if($nombre_ambiente){
                                                     <div class="modal-instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></div>
                                                 </div>
                                             </div>
-                                            <!-- FECHA ELIMINADA DEL HEADER: ya viene dentro del texto [YYYY-MM-DD HH:MM] -->
                                         </div>
                                         <div class="modal-content">
                                             <pre><?= htmlspecialchars($novedad_texto) ?></pre>

@@ -361,9 +361,10 @@ tbody tr:hover { background-color: #f8f9ff; }
 .novedades-overlay {
     position: fixed;
     inset: 0;
+    background: rgba(0,0,0,0.7);
     z-index: 9998;
     display: none;
-    cursor: pointer;
+    backdrop-filter: blur(3px);
 }
 
 /* ================= MODAL DE NOVEDADES ================= */
@@ -448,7 +449,16 @@ tbody tr:hover { background-color: #f8f9ff; }
     color: #333;
     line-height: 1.6;
 }
-
+.dia-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #e8eef7;
+    color: #355d91;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
 /* ================= BOTÓN VER NOVEDADES (CON TOGGLE) ================= */
 .btn-ver-novedades {
     background: #fb8c00;

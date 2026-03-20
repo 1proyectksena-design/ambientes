@@ -15,6 +15,12 @@ $meses_espanol = [
     '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
 ];
 
+/* DAYOFWEEK MySQL: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb */
+$abrevDias = [
+    1 => 'Dom', 2 => 'Lun', 3 => 'Mar',
+    4 => 'Mié', 5 => 'Jue', 6 => 'Vie', 7 => 'Sáb',
+];
+
 $filtro_mes  = $_GET['mes']  ?? date('m');
 $filtro_anio = $_GET['anio'] ?? date('Y');
 
@@ -23,12 +29,31 @@ $whereMain[] = "MONTH(au.fecha_inicio) = '$filtro_mes'";
 $whereMain[] = "YEAR(au.fecha_inicio) = '$filtro_anio'";
 $whereSQLMain = implode(' AND ', $whereMain);
 
-$sql = "SELECT au.*, a.nombre_ambiente, i.nombre AS nombre_instructor
+/* ==========================================
+   QUERY AGRUPADA (una fila por rango)
+   ========================================== */
+$sql = "SELECT 
+            MIN(au.fecha_inicio)  AS fecha_inicio,
+            MAX(au.fecha_inicio)  AS fecha_fin,
+            au.hora_inicio,
+            au.hora_final,
+            au.id_instructor,
+            i.nombre              AS nombre_instructor,
+            a.nombre_ambiente,
+            au.estado,
+            au.rol_autorizado,
+            au.observaciones,
+            au.novedades,
+            GROUP_CONCAT(
+                DISTINCT DAYOFWEEK(au.fecha_inicio)
+                ORDER BY DAYOFWEEK(au.fecha_inicio)
+            )                     AS dias_semana
         FROM autorizaciones_ambientes au
         JOIN ambientes a ON au.id_ambiente = a.id
         JOIN instructores i ON au.id_instructor = i.id
         WHERE $whereSQLMain
-        ORDER BY au.fecha_inicio DESC, au.hora_inicio DESC";
+        GROUP BY au.id_instructor, au.id_ambiente, au.hora_inicio, au.hora_final, au.estado, au.rol_autorizado, au.observaciones, au.novedades
+        ORDER BY MIN(au.fecha_inicio) DESC";
 
 $resultado = mysqli_query($conexion, $sql);
 if(!$resultado) die("Error en consulta: " . mysqli_error($conexion));
@@ -98,6 +123,7 @@ $hora_actual  = date('H:i:s');
                         <th>Fecha Inicio</th>
                         <th>Fecha Fin</th>
                         <th>Horario</th>
+                        <th>Días</th>
                         <th>Estado Actual</th>
                         <th>Autorizado Por</th>
                         <th>Novedades</th>
@@ -105,6 +131,8 @@ $hora_actual  = date('H:i:s');
                 </thead>
                 <tbody>
                     <?php while($row = mysqli_fetch_assoc($resultado)):
+
+                        /* --- Estado visual --- */
                         $estadoActual = 'desocupado'; $textoEstado = 'Desocupado';
                         $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
 
@@ -127,7 +155,23 @@ $hora_actual  = date('H:i:s');
                             $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                         }
 
-                        // No procesamos fecha_novedad: ya viene dentro del texto [YYYY-MM-DD HH:MM]
+                        /* --- Días de la semana --- */
+                        $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
+                                    ? explode(',', $row['dias_semana'])
+                                    : [];
+                        $diasHtml = '';
+                        if(count($diasNums) > 0){
+                            $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">';
+                            foreach($diasNums as $dn){
+                                $dn    = (int)$dn;
+                                $abrev = $abrevDias[$dn] ?? '?';
+                                $diasHtml .= '<span class="dia-badge">' . $abrev . '</span>';
+                            }
+                            $diasHtml .= '</div>';
+                        } else {
+                            $diasHtml = '<span style="color:#999;">—</span>';
+                        }
+
                         $novedad_texto = $row['novedades'];
                     ?>
                     <tr>
@@ -136,9 +180,27 @@ $hora_actual  = date('H:i:s');
                             <i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i>
                             <?= htmlspecialchars($row['nombre_instructor']) ?>
                         </td>
-                        <td><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
-                        <td><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
-                        <td><?= date('h:i A', strtotime($row['hora_inicio'])) ?> - <?= date('h:i A', strtotime($row['hora_final'])) ?></td>
+                        <td>
+                            <span class="cell-fecha">
+                                <i class="fa-regular fa-calendar"></i>
+                                <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="cell-fecha">
+                                <i class="fa-regular fa-calendar-check"></i>
+                                <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="cell-horario">
+                                <i class="fa-regular fa-clock"></i>
+                                <?= date('h:i A', strtotime($row['hora_inicio'])) ?>
+                                &mdash;
+                                <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                            </span>
+                        </td>
+                        <td><?= $diasHtml ?></td>
                         <td>
                             <span class="estado-badge estado-<?= $estadoActual ?>">
                                 <?= $iconoEstado ?> <?= $textoEstado ?>
@@ -161,7 +223,6 @@ $hora_actual  = date('H:i:s');
                                                 <div class="modal-instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></div>
                                             </div>
                                         </div>
-                                        <!-- FECHA ELIMINADA DEL HEADER: ya viene dentro del texto [YYYY-MM-DD HH:MM] -->
                                     </div>
                                     <div class="modal-content">
                                         <pre><?= htmlspecialchars($novedad_texto) ?></pre>

@@ -2,7 +2,7 @@
 session_start();
 date_default_timezone_set('America/Bogota');
 
-if ($_SESSION['rol'] != 'subdireccion') {
+if ($_SESSION['rol'] != 'administracion') {
     header("Location: ../login.php");
     exit;
 }
@@ -12,6 +12,9 @@ include("../includes/conexion.php");
 $fecha_actual = date('Y-m-d');
 $hora_actual  = date('H:i:s');
 
+/* =========================
+   BUSCAR AMBIENTE
+   ========================= */
 $ambienteBuscado   = $_GET['ambiente'] ?? null;
 $ambienteInfo      = null;
 $usoActual         = null;
@@ -33,7 +36,7 @@ if ($ambienteBuscado) {
 
     if($ambienteInfo){
         $id_ambiente = $ambienteInfo['id'];
-        
+
         /* ==========================================
            1. CONSULTAR USO ACTUAL (EN USO / LIBRE)
            ========================================== */
@@ -102,7 +105,7 @@ if ($ambienteBuscado) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consultar Ambiente - Subdirección</title>
+    <title>Consultar Ambiente - Administración</title>
     <link rel="stylesheet" href="../css/consultar.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -118,7 +121,7 @@ if ($ambienteBuscado) {
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Subdirección
+        <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
 
@@ -145,7 +148,6 @@ if ($ambienteBuscado) {
     <?php if ($ambienteBuscado && $ambienteInfo): ?>
         <div class="ambiente-result">
 
-            <!-- Título -->
             <div class="result-title-row">
                 <h3><i class="fa-solid fa-door-open" style="color:#355d91;"></i> Información del Ambiente</h3>
             </div>
@@ -172,110 +174,107 @@ if ($ambienteBuscado) {
                 </div>
             </div>
 
-            <!-- ==========================================
-                 ESTADO ACTUAL: EN USO / LIBRE
-                 ========================================== -->
-            <div class="estado-uso-card">
-                <?php if($usoActual): ?>
-                    <!-- EN USO -->
-                    <div class="estado-header en-uso">
-                        <div class="estado-icon">
-                            <i class="fa-solid fa-circle-dot"></i>
-                        </div>
-                        <div>
-                            <h3>EN USO AHORA</h3>
-                            <p>Este ambiente está siendo utilizado en este momento</p>
-                        </div>
-                    </div>
-                    <div class="estado-body">
-                        <div class="uso-actual-info">
-                            <div class="uso-item">
-                                <i class="fa-solid fa-user"></i>
-                                <div>
-                                    <label>Instructor</label>
-                                    <strong><?= htmlspecialchars($usoActual['nombre_instructor']) ?></strong>
-                                </div>
-                            </div>
-                            <div class="uso-item">
-                                <i class="fa-regular fa-clock"></i>
-                                <div>
-                                    <label>Horario</label>
-                                    <strong>
-                                        <?= date('h:i A', strtotime($usoActual['hora_inicio'])) ?> 
-                                        - 
-                                        <?= date('h:i A', strtotime($usoActual['hora_final'])) ?>
-                                    </strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php else: ?>
-                    <!-- LIBRE -->
-                    <div class="estado-header libre">
-                        <div class="estado-icon">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
-                        <div>
-                            <h3>LIBRE</h3>
-                            <p>El ambiente está disponible en este momento</p>
-                        </div>
-                    </div>
-                    <?php
-                    $proximoInmediato = $proximosUsos ? mysqli_fetch_assoc($proximosUsos) : null;
-                    if($proximoInmediato):
-                        mysqli_data_seek($proximosUsos, 0);
-                    ?>
-                    <div class="estado-body">
-                        <div class="proximo-uso-rapido">
-                            <i class="fa-regular fa-calendar-check"></i>
-                            <span>
-                                Próximo uso: 
-                                <strong>
-                                    <?= date('d/m/Y', strtotime($proximoInmediato['fecha_inicio'])) ?> 
-                                    a las 
-                                    <?= date('h:i A', strtotime($proximoInmediato['hora_inicio'])) ?>
-                                </strong>
-                            </span>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                <?php endif; ?>
-            </div>
+            <!-- ESTADO + INSTRUCTOR: fila lado a lado -->
+            <div class="estado-instructor-row">
 
-            <!-- INSTRUCTOR DE HORARIO FIJO -->
-            <?php if($ambienteInfo['nombre_instructor_fijo']): ?>
-            <div class="instructor-fijo-card">
-                <div class="instructor-fijo-header">
-                    <i class="fa-solid fa-chalkboard-user"></i>
-                    <strong>Instructor de Horario Fijo</strong>
-                </div>
-                <div class="instructor-fijo-body">
-                    <div class="instructor-fijo-info">
-                        <div class="instr-avatar">
-                            <?= strtoupper(substr($ambienteInfo['nombre_instructor_fijo'], 0, 1)) ?>
+                <!-- ESTADO ACTUAL: EN USO / LIBRE -->
+                <div class="estado-uso-card">
+                    <?php if($usoActual): ?>
+                        <div class="estado-header en-uso">
+                            <div class="estado-icon"><i class="fa-solid fa-circle-dot"></i></div>
+                            <div>
+                                <h3>EN USO AHORA</h3>
+                                <p>Siendo utilizado en este momento</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="instr-nombre"><?= htmlspecialchars($ambienteInfo['nombre_instructor_fijo']) ?></p>
-                            <p class="instr-doc">
-                                <i class="fa-solid fa-id-card"></i>
-                                <?= htmlspecialchars($ambienteInfo['doc_instructor_fijo']) ?>
-                            </p>
-                            <?php if($ambienteInfo['novedades_instructor_fijo']): ?>
-                            <p class="instr-novedad">
-                                <i class="fa-solid fa-circle-exclamation"></i>
-                                <?= htmlspecialchars($ambienteInfo['novedades_instructor_fijo']) ?>
-                            </p>
-                            <?php endif; ?>
+                        <div class="estado-body">
+                            <div class="uso-actual-info">
+                                <div class="uso-item">
+                                    <i class="fa-solid fa-user"></i>
+                                    <div>
+                                        <label>Instructor</label>
+                                        <strong><?= htmlspecialchars($usoActual['nombre_instructor']) ?></strong>
+                                    </div>
+                                </div>
+                                <div class="uso-item">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <div>
+                                        <label>Horario</label>
+                                        <strong>
+                                            <?= date('h:i A', strtotime($usoActual['hora_inicio'])) ?> 
+                                            — 
+                                            <?= date('h:i A', strtotime($usoActual['hora_final'])) ?>
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="estado-header libre">
+                            <div class="estado-icon"><i class="fa-solid fa-circle-check"></i></div>
+                            <div>
+                                <h3>LIBRE</h3>
+                                <p>Disponible en este momento</p>
+                            </div>
+                        </div>
+                        <?php
+                        $proximoInmediato = $proximosUsos ? mysqli_fetch_assoc($proximosUsos) : null;
+                        if($proximoInmediato):
+                            mysqli_data_seek($proximosUsos, 0);
+                        ?>
+                        <div class="estado-body">
+                            <div class="proximo-uso-rapido">
+                                <i class="fa-regular fa-calendar-check"></i>
+                                <span>
+                                    Próximo uso: 
+                                    <strong>
+                                        <?= date('d/m/Y', strtotime($proximoInmediato['fecha_inicio'])) ?> 
+                                        a las 
+                                        <?= date('h:i A', strtotime($proximoInmediato['hora_inicio'])) ?>
+                                    </strong>
+                                </span>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+
+                <!-- INSTRUCTOR DE HORARIO FIJO -->
+                <?php if($ambienteInfo['nombre_instructor_fijo']): ?>
+                <div class="instructor-fijo-card">
+                    <div class="instructor-fijo-header">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                        <strong>Instructor de Horario Fijo</strong>
+                    </div>
+                    <div class="instructor-fijo-body">
+                        <div class="instructor-fijo-info">
+                            <div class="instr-avatar">
+                                <?= strtoupper(substr($ambienteInfo['nombre_instructor_fijo'], 0, 1)) ?>
+                            </div>
+                            <div>
+                                <p class="instr-nombre"><?= htmlspecialchars($ambienteInfo['nombre_instructor_fijo']) ?></p>
+                                <p class="instr-doc">
+                                    <i class="fa-solid fa-id-card"></i>
+                                    <?= htmlspecialchars($ambienteInfo['doc_instructor_fijo']) ?>
+                                </p>
+                                <?php if($ambienteInfo['novedades_instructor_fijo']): ?>
+                                <p class="instr-novedad">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <?= htmlspecialchars($ambienteInfo['novedades_instructor_fijo']) ?>
+                                </p>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <?php else: ?>
-            <div class="instructor-fijo-card sin-instructor">
-                <i class="fa-solid fa-user-slash"></i>
-                <span>Este ambiente no tiene instructor de horario fijo asignado</span>
-            </div>
-            <?php endif; ?>
+                <?php else: ?>
+                <div class="instructor-fijo-card sin-instructor">
+                    <i class="fa-solid fa-user-slash"></i>
+                    <span>Sin instructor de horario fijo asignado</span>
+                </div>
+                <?php endif; ?>
+
+            </div><!-- /estado-instructor-row -->
 
             <!-- DESCRIPCIÓN -->
             <?php if($ambienteInfo['descripcion_general']): ?>
@@ -328,27 +327,21 @@ if ($ambienteBuscado) {
                     </thead>
                     <tbody>
                         <?php
-                        /* DAYOFWEEK MySQL: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb */
                         $abrevDias = [
-                            1 => 'Dom',
-                            2 => 'Lun',
-                            3 => 'Mar',
-                            4 => 'Mié',
-                            5 => 'Jue',
-                            6 => 'Vie',
-                            7 => 'Sáb',
+                            1 => 'Dom', 2 => 'Lun', 3 => 'Mar',
+                            4 => 'Mié', 5 => 'Jue', 6 => 'Vie', 7 => 'Sáb',
                         ];
                         while($prox = mysqli_fetch_assoc($proximosUsos)):
                             $diasNums = ($prox['dias_semana'] !== null && $prox['dias_semana'] !== '')
-                                        ? explode(',', $prox['dias_semana'])
-                                        : [];
+                                        ? explode(',', $prox['dias_semana']) : [];
                             $diasHtml = '';
                             if(count($diasNums) > 0){
+                                $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">';
                                 foreach($diasNums as $dn){
                                     $dn = (int)$dn;
-                                    $abrev = $abrevDias[$dn] ?? '?';
-                                    $diasHtml .= '<span class="dia-badge">' . $abrev . '</span>';
+                                    $diasHtml .= '<span class="dia-badge">' . ($abrevDias[$dn] ?? '?') . '</span>';
                                 }
+                                $diasHtml .= '</div>';
                             } else {
                                 $diasHtml = '<span style="color:#999;">—</span>';
                             }
@@ -500,7 +493,6 @@ function mostrarModal(btn) {
     const modal   = btn.nextElementSibling;
     const overlay = document.getElementById('modalOverlay');
     const abierto = modal.style.display === 'block';
-
     if(abierto) {
         overlay.style.display = 'none';
         modal.style.display   = 'none';
@@ -512,7 +504,6 @@ function mostrarModal(btn) {
         btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar';
     }
 }
-
 function cerrarTodosModales() {
     document.getElementById('modalOverlay').style.display = 'none';
     document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
@@ -520,11 +511,9 @@ function cerrarTodosModales() {
         b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
     });
 }
-
 document.addEventListener('click', e => {
     if(e.target && e.target.id === 'modalOverlay') cerrarTodosModales();
 });
-
 document.addEventListener('keydown', e => {
     if(e.key === 'Escape') cerrarTodosModales();
 });
