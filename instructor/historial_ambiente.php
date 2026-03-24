@@ -269,7 +269,7 @@ $abrevDias = [
     </a>
 </div>
 
-<!-- ✅ OVERLAY Y MODAL GLOBAL: fuera de la tabla, directamente en body -->
+<!--  OVERLAY Y MODAL GLOBAL: fuera de la tabla, directamente en body -->
 <div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
 
 <div class="novedades-modal" id="modalNovedades">

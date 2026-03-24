@@ -24,7 +24,7 @@ body {
 
 /* ================= HEADER ================= */
 .header {
-    background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
+    background: #0b2449;
     padding: 20px 30px;
     display: flex;
     justify-content: space-between;
