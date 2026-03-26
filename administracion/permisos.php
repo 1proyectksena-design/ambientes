@@ -255,7 +255,7 @@ if(isset($_POST['autorizar'])){
         exit;
     } else {
         $msg_errores = implode("\\n", $errores);
-        echo "<script>alert('❌ No se pudo autorizar ningún día:\\n\\n$msg_errores'); window.history.back();</script>";
+        echo "<script>alert(' No se pudo autorizar ningún día:\\n\\n$msg_errores'); window.history.back();</script>";
         exit;
     }
 }

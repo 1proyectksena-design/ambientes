@@ -231,15 +231,6 @@ body {
     font-weight: 700;
 }
 
-/* ================= FILA ESTADO + INSTRUCTOR ================= */
-.estado-instructor-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin: 20px 0;
-    align-items: stretch;
-}
-
 /* ================= ESTADO LIBRE / EN USO ================= */
 .estado-uso-card {
     border-radius: var(--radius-sm);
@@ -248,12 +239,13 @@ body {
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.3s;
+    margin-bottom: 20px;
 }
 
 .estado-uso-card:hover { box-shadow: var(--shadow-md); }
 
 .estado-header {
-    padding: 16px 20px;
+    padding: 20px 24px;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -262,13 +254,11 @@ body {
 .estado-header.libre {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border-bottom: 3px solid #66bb6a;
-    padding: 20px 24px;
 }
 
 .estado-header.en-uso {
     background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
     border-bottom: 3px solid #e57373;
-    padding: 20px 24px;
 }
 
 .estado-icon {
@@ -358,6 +348,7 @@ body {
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.3s;
+    margin-bottom: 20px;
 }
 
 .instructor-fijo-card:hover { box-shadow: var(--shadow-md); }
@@ -454,7 +445,7 @@ body {
     background: #f9fafc;
     padding: 14px 18px;
     border-radius: var(--radius-sm);
-    margin-top: 16px;
+    margin-bottom: 20px;
     border: 2px solid var(--gray-200);
 }
 
@@ -585,7 +576,7 @@ body {
 
 .table-scroll-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-table { width: 100%; min-width: 700px; border-collapse: collapse; }
+table { width: 100%; min-width: 800px; border-collapse: collapse; }
 
 th {
     background: #0b2449;
@@ -618,6 +609,7 @@ tbody tr:hover { background: #f0f4f8; }
     gap: 6px;
     color: var(--gray-800);
     font-size: 13px;
+    font-weight: 500;
     white-space: nowrap;
 }
 
@@ -629,6 +621,7 @@ tbody tr:hover { background: #f0f4f8; }
     gap: 6px;
     color: #1e40af;
     font-size: 13px;
+    font-weight: 600;
     white-space: nowrap;
 }
 
@@ -638,6 +631,7 @@ tbody tr:hover { background: #f0f4f8; }
 .dia-badge {
     display: inline-block;
     padding: 3px 10px;
+    margin: 2px;
     background: var(--navy-light);
     color: #2c5282;
     border-radius: 20px;
@@ -667,9 +661,14 @@ tbody tr:hover { background: #f0f4f8; }
 .estado-pendiente     { background: #fff8e1; color: #f57c00; border: 1.5px solid #ffcc02; }
 .estado-aprobado      { background: var(--green-light); color: var(--green); }
 .estado-rechazado     { background: var(--danger-light); color: var(--danger); border: 1.5px solid #e57373; }
-.estado-ocupado-ahora { background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%); color: white; box-shadow: 0 2px 8px rgba(67,160,71,0.35); }
+.estado-ocupado-ahora { background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%); color: white; box-shadow: 0 2px 8px rgba(67,160,71,0.35); animation: pulse-green 2s infinite; }
 .estado-programado    { background: var(--orange-light); color: var(--orange); border: 1.5px solid #ffcc80; }
 .estado-desocupado    { background: #f5f5f5; color: #9e9e9e; border: 1.5px solid #e0e0e0; }
+
+@keyframes pulse-green {
+    0%, 100% { box-shadow: 0 2px 8px rgba(67,160,71,0.35); }
+    50%       { box-shadow: 0 4px 16px rgba(67,160,71,0.5); }
+}
 
 /* ================= BOTÓN VER NOVEDADES ================= */
 .btn-ver-novedades {
@@ -724,7 +723,6 @@ tbody tr:hover { background: #f0f4f8; }
     overflow: hidden;
 }
 
-/* Clase que activa la animación de entrada */
 .novedades-modal.visible {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
@@ -782,7 +780,6 @@ tbody tr:hover { background: #f0f4f8; }
     text-overflow: ellipsis;
 }
 
-/* Botón ✕ cerrar en el header */
 .modal-btn-cerrar {
     background: none;
     border: none;
@@ -800,7 +797,6 @@ tbody tr:hover { background: #f0f4f8; }
     background: rgba(251,140,0,0.15);
 }
 
-/* Badge de fecha dentro del modal */
 .modal-fecha-badge {
     display: inline-flex;
     align-items: center;
@@ -817,7 +813,6 @@ tbody tr:hover { background: #f0f4f8; }
     justify-content: center;
 }
 
-/* ---- Contenido del modal ---- */
 .modal-content {
     padding: 16px;
     max-height: calc(80vh - 110px);
@@ -840,10 +835,6 @@ tbody tr:hover { background: #f0f4f8; }
 .no-results small { font-size: 13px; }
 
 /* ================= RESPONSIVE ================= */
-@media (max-width: 900px) {
-    .estado-instructor-row { grid-template-columns: 1fr; }
-}
-
 @media (max-width: 768px) {
     .header { padding: 20px; }
     .consultar-container { padding: 0 15px; margin: 20px auto; }
@@ -866,4 +857,29 @@ tbody tr:hover { background: #f0f4f8; }
     .novedades-modal { width: 95%; max-height: 90vh; }
     .modal-header { padding: 12px 14px; }
     .modal-content { padding: 14px; }
+}
+
+/* ================= BOTÓN EXPORTAR EXCEL ================= */
+.btn-exportar-excel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 26px;
+    background: linear-gradient(135deg, #1D6F42 0%, #155230 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(29,111,66,0.3);
+}
+
+.btn-exportar-excel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(29,111,66,0.4);
+}
+
+.btn-exportar-excel i {
+    font-size: 16px;
 }

@@ -1,5 +1,7 @@
 <?php
 session_start();
+date_default_timezone_set('America/Bogota');
+
 if ($_SESSION['rol'] != 'subdireccion') {
     header("Location: ../login.php");
     exit;
@@ -32,9 +34,23 @@ $resultado = mysqli_query($conexion, $sql);
 $total = mysqli_num_rows($resultado);
 
 /* Stats */
-$pendiente = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM autorizaciones_ambientes WHERE MONTH(fecha_inicio)='$mes' AND YEAR(fecha_inicio)='$anio' AND estado='Pendiente'"))[0];
-$aprobado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM autorizaciones_ambientes WHERE MONTH(fecha_inicio)='$mes' AND YEAR(fecha_inicio)='$anio' AND estado='Aprobado'"))[0];
-$rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM autorizaciones_ambientes WHERE MONTH(fecha_inicio)='$mes' AND YEAR(fecha_inicio)='$anio' AND estado='Rechazado'"))[0];
+$pendiente = mysqli_fetch_row(mysqli_query($conexion,
+"SELECT COUNT(*) FROM autorizaciones_ambientes 
+ WHERE MONTH(fecha_inicio)='$mes'
+ AND YEAR(fecha_inicio)='$anio'
+ AND estado='Pendiente'"))[0];
+
+$aprobado = mysqli_fetch_row(mysqli_query($conexion,
+"SELECT COUNT(*) FROM autorizaciones_ambientes 
+ WHERE MONTH(fecha_inicio)='$mes'
+ AND YEAR(fecha_inicio)='$anio'
+ AND estado='Aprobado'"))[0];
+
+$rechazado = mysqli_fetch_row(mysqli_query($conexion,
+"SELECT COUNT(*) FROM autorizaciones_ambientes 
+ WHERE MONTH(fecha_inicio)='$mes'
+ AND YEAR(fecha_inicio)='$anio'
+ AND estado='Rechazado'"))[0];
 ?>
 
 <!DOCTYPE html>
@@ -57,27 +73,11 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Subdirección
+        <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
 
 <div class="consultar-container">
-
-    <!-- STATS -->
-    <div class="stats-mini">
-        <div class="stat-mini pendiente">
-            <div class="num"><?= $pendiente ?></div>
-            <div class="lbl">Pendientes</div>
-        </div>
-        <div class="stat-mini aprobado">
-            <div class="num"><?= $aprobado ?></div>
-            <div class="lbl">Aprobados</div>
-        </div>
-        <div class="stat-mini rechazado">
-            <div class="num"><?= $rechazado ?></div>
-            <div class="lbl">Rechazados</div>
-        </div>
-    </div>
 
     <!-- SELECTOR DE MES -->
     <div class="search-section">
@@ -144,6 +144,7 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
                 </tbody>
             </table>
         </div>
+
         <?php else: ?>
         <div class="no-results">
             <i class="fa-solid fa-inbox"></i>
@@ -152,40 +153,19 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
         <?php endif; ?>
     </div>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
+    <!-- BOTONES -->
+    <div class="btn-group">
+        <a href="exportar.php?mes=<?= $mes ?>&anio=<?= $anio ?>" class="btn-exportar">
+            <i class="fa-solid fa-file-excel"></i> Exportar Excel
+        </a>
+        <a href="index.php" class="btn-volver">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
+    </div>
 
 </div>
 
 <style>
-.stats-mini { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
-    gap: 15px; 
-    margin-bottom: 25px; 
-}
-.stat-mini { 
-    background: white; 
-    padding: 20px; 
-    border-radius: 12px; 
-    text-align: center; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
-}
-.stat-mini .num { 
-    font-size: 32px; 
-    font-weight: 800; 
-    margin-bottom: 5px; 
-}
-.stat-mini .lbl { 
-    font-size: 12px; 
-    color: #666; 
-    text-transform: uppercase; 
-    font-weight: 600; 
-}
-.stat-mini.pendiente .num { color: #fb8c00; }
-.stat-mini.aprobado .num { color: #43a047; }
-.stat-mini.rechazado .num { color: #e53935; }
 .search-form select { 
     padding: 14px 20px; 
     border: 2px solid #e0e0e0; 
@@ -197,6 +177,35 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM auto
 .search-form select:focus { 
     outline: none; 
     border-color: #667eea; 
+}
+
+.btn-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn-exportar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: #1D6F42;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(29,111,66,0.3);
+}
+.btn-exportar:hover {
+    background: #155230;
+    transform: translateY(-1px);
+}
+.btn-exportar i {
+    font-size: 16px;
 }
 </style>
 

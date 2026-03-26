@@ -1,5 +1,7 @@
 <?php
 session_start();
+date_default_timezone_set('America/Bogota');
+
 if ($_SESSION['rol'] != 'administracion') {
     header("Location: ../login.php");
     exit;
@@ -151,9 +153,15 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion,
         <?php endif; ?>
     </div>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
+    <!-- BOTONES -->
+    <div class="btn-group">
+        <a href="exportar.php?mes=<?= $mes ?>&anio=<?= $anio ?>" class="btn-exportar">
+            <i class="fa-solid fa-file-excel"></i> Exportar Excel
+        </a>
+        <a href="index.php" class="btn-volver">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
+    </div>
 
 </div>
 
@@ -169,6 +177,35 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion,
 .search-form select:focus { 
     outline: none; 
     border-color: #667eea; 
+}
+
+.btn-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn-exportar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: #1D6F42;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(29,111,66,0.3);
+}
+.btn-exportar:hover {
+    background: #155230;
+    transform: translateY(-1px);
+}
+.btn-exportar i {
+    font-size: 16px;
 }
 </style>
 
