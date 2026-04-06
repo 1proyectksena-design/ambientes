@@ -301,7 +301,6 @@ form {
 .form-group input[type="time"],
 .form-group select,
 .form-group textarea {
-    padding: 13px 18px;
     border: 2px solid var(--gray-200);
     border-radius: var(--radius-sm);
     font-size: 14px;

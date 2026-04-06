@@ -16,10 +16,9 @@ if(isset($_POST['crear_ambiente'])){
     $horario_disponible = mysqli_real_escape_string($conexion, $_POST['horario_disponible']);
     $instructor_id = !empty($_POST['instructor_id']) ? mysqli_real_escape_string($conexion, $_POST['instructor_id']) : NULL;
     
-    // VALIDAR SI YA EXISTE UN AMBIENTE CON ESE NOMBRE
     $checkNombre = mysqli_query($conexion, "SELECT id FROM ambientes WHERE nombre_ambiente = '$nombre'");
     if(mysqli_num_rows($checkNombre) > 0){
-        echo "<script>alert(' Ya existe un ambiente con el nombre \"$nombre\"\\n\\nPor favor, elige otro nombre o verifica si el ambiente ya está registrado.'); window.history.back();</script>";
+        echo "<script>alert('Ya existe un ambiente con el nombre \"$nombre\"\\n\\nPor favor, elige otro nombre o verifica si el ambiente ya está registrado.'); window.history.back();</script>";
         exit;
     }
     
@@ -29,21 +28,19 @@ if(isset($_POST['crear_ambiente'])){
     if(mysqli_query($conexion, $sql)){
         $id_ambiente = mysqli_insert_id($conexion);
         
-        // ============ GENERAR QR CON MANEJO DE ERRORES ============
         $qr_msg = "Ambiente creado correctamente";
         try {
             include_once("../includes/generar_qr.php");
             generarQR($id_ambiente, $nombre);
         } catch (Exception $e) {
-            $qr_msg = " Ambiente creado. QR no generado: " . $e->getMessage();
+            $qr_msg = "Ambiente creado. QR no generado: " . $e->getMessage();
         } catch (Error $e) {
-            $qr_msg = " Ambiente creado. Error en QR: " . $e->getMessage();
+            $qr_msg = "Ambiente creado. Error en QR: " . $e->getMessage();
         }
-        // ==========================================================
 
         echo "<script>alert('$qr_msg'); window.location.href='registro.php';</script>";
     } else {
-        echo "<script>alert(' Error al crear ambiente: ".mysqli_error($conexion)."');</script>";
+        echo "<script>alert('Error al crear ambiente: ".mysqli_error($conexion)."');</script>";
     }
 }
 
@@ -55,10 +52,9 @@ if(isset($_POST['crear_instructor'])){
     $fecha_fin = mysqli_real_escape_string($conexion, $_POST['fecha_fin']);
     $novedades = mysqli_real_escape_string($conexion, $_POST['novedades']);
     
-    // VALIDAR SI YA EXISTE UN INSTRUCTOR CON ESA IDENTIFICACIÓN
     $checkDoc = mysqli_query($conexion, "SELECT id FROM instructores WHERE identificacion = '$identificacion'");
     if(mysqli_num_rows($checkDoc) > 0){
-        echo "<script>alert(' Ya existe un instructor con la identificación \"$identificacion\"\\n\\nPor favor, verifica el número de documento.'); window.history.back();</script>";
+        echo "<script>alert('Ya existe un instructor con la identificación \"$identificacion\"\\n\\nPor favor, verifica el número de documento.'); window.history.back();</script>";
         exit;
     }
     
@@ -66,10 +62,33 @@ if(isset($_POST['crear_instructor'])){
             VALUES ('$nombre', '$identificacion', '$fecha_inicio', ".($fecha_fin ? "'$fecha_fin'" : "NULL").", '$novedades')";
     
     if(mysqli_query($conexion, $sql)){
-        echo "<script>alert(' Instructor creado correctamente'); window.location.href='registro.php';</script>";
+        echo "<script>alert('Instructor creado correctamente'); window.location.href='registro.php';</script>";
     } else {
-        echo "<script>alert(' Error al crear instructor: ".mysqli_error($conexion)."');</script>";
+        echo "<script>alert('Error al crear instructor: ".mysqli_error($conexion)."');</script>";
     }
+}
+
+/* ===== BUSCAR AMBIENTE POR AJAX ===== */
+if(isset($_GET['buscar_qr'])){
+    $termino = mysqli_real_escape_string($conexion, $_GET['buscar_qr']);
+    $resultados = [];
+    
+    $res = mysqli_query($conexion, "SELECT id, nombre_ambiente FROM ambientes WHERE nombre_ambiente LIKE '%$termino%' ORDER BY nombre_ambiente ASC LIMIT 10");
+    while($row = mysqli_fetch_assoc($res)){
+        $nombre_limpio = preg_replace('/[^A-Za-z0-9_\-]/', '_', $row['nombre_ambiente']);
+        $nombre_limpio = preg_replace('/_+/', '_', $nombre_limpio);
+        $nombre_limpio = trim($nombre_limpio, '_');
+        $qr_path = "../qrs/" . $nombre_limpio . "_" . $row['id'] . ".png";
+        $resultados[] = [
+            'id'     => $row['id'],
+            'nombre' => $row['nombre_ambiente'],
+            'qr'     => $qr_path
+        ];
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($resultados);
+    exit;
 }
 ?>
 
@@ -106,6 +125,9 @@ if(isset($_POST['crear_instructor'])){
         </button>
         <button class="toggle-btn" onclick="showForm('instructor')">
             <i class="fa-solid fa-chalkboard-user"></i> Crear Instructor
+        </button>
+        <button class="toggle-btn" onclick="showForm('buscar')">
+            <i class="fa-solid fa-qrcode"></i> Buscar QR
         </button>
     </div>
 
@@ -153,13 +175,10 @@ if(isset($_POST['crear_instructor'])){
                 <div class="form-group">
                     <label>Horario Fijo (informativo)</label>
                     <input type="text" name="horario_fijo" placeholder="Ej: 7AM - 12PM">
-                  
                 </div>
-                
                 <div class="form-group">
                     <label>Horario Disponible</label>
                     <input type="text" name="horario_disponible" placeholder="Ej: 1PM - 6PM">
-                  
                 </div>
             </div>
             
@@ -192,7 +211,6 @@ if(isset($_POST['crear_instructor'])){
                     <label>Fecha Inicio *</label>
                     <input type="date" name="fecha_inicio" required>
                 </div>
-                
                 <div class="form-group">
                     <label>Fecha Fin</label>
                     <input type="date" name="fecha_fin">
@@ -210,6 +228,46 @@ if(isset($_POST['crear_instructor'])){
         </form>
     </div>
 
+    <!-- ===== SECCIÓN BUSCAR QR ===== -->
+    <div class="form-card" id="form-buscar" style="display:none;">
+        <div class="form-header">
+            <h2><i class="fa-solid fa-qrcode"></i> Buscar QR de Ambiente</h2>
+            <p>Escribe el nombre o número del ambiente para encontrar su QR</p>
+        </div>
+
+        <div class="form-group search-wrapper">
+            <label>Buscar Ambiente</label>
+            <div class="search-input-group">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input
+                    type="text"
+                    id="inputBuscarQR"
+                    placeholder="Ej: 108, Laboratorio, Sistemas..."
+                    autocomplete="off"
+                    oninput="buscarQR(this.value)"
+                >
+                <button type="button" class="btn-clear" id="btnLimpiar" onclick="limpiarBusqueda()" style="display:none;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Estado de carga -->
+        <div id="qr-loading" style="display:none;" class="qr-loading">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...
+        </div>
+
+        <!-- Sin resultados -->
+        <div id="qr-empty" style="display:none;" class="qr-empty">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <p>No se encontró ningún ambiente con ese nombre.</p>
+        </div>
+
+        <!-- Resultados -->
+        <div id="qr-resultados" class="qr-resultados"></div>
+    </div>
+    <!-- ============================= -->
+
     <a href="index.php" class="btn-volver">
         <i class="fa-solid fa-arrow-left"></i> Volver al Panel
     </a>
@@ -217,9 +275,10 @@ if(isset($_POST['crear_instructor'])){
 </div>
 
 <style>
+/* ===== TOGGLE FORMS (ahora 3 columnas) ===== */
 .toggle-forms {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 15px;
     margin-bottom: 25px;
 }
@@ -229,7 +288,7 @@ if(isset($_POST['crear_instructor'])){
     border: 2px solid #e5e7eb;
     padding: 15px 20px;
     border-radius: 12px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: #666;
     cursor: pointer;
@@ -255,30 +314,258 @@ if(isset($_POST['crear_instructor'])){
     font-size: 1.2rem;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
     .toggle-forms {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== BUSCADOR QR ===== */
+.search-wrapper { position: relative; }
+
+.search-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input-group input {
+    width: 100%;
+    padding: 12px 45px 12px 42px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.search-input-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    color: #9ca3af;
+    font-size: 15px;
+    pointer-events: none;
+}
+
+.btn-clear {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.btn-clear:hover { color: #ef4444; }
+
+/* Loading y empty */
+.qr-loading, .qr-empty {
+    text-align: center;
+    padding: 30px 0;
+    color: #9ca3af;
+    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.qr-loading i, .qr-empty i {
+    font-size: 2rem;
+    color: #667eea;
+}
+
+.qr-empty i { color: #f59e0b; }
+
+/* Grid de resultados */
+.qr-resultados {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 10px;
+}
+
+/* Tarjeta individual */
+.qr-card {
+    background: #f8f9fc;
+    border: 2px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.25s ease;
+    animation: fadeInCard 0.3s ease;
+}
+
+.qr-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 6px 20px rgba(102,126,234,0.15);
+    transform: translateY(-3px);
+}
+
+@keyframes fadeInCard {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.qr-card-nombre {
+    font-weight: 700;
+    font-size: 15px;
+    color: #24315e;
+    text-align: center;
+    word-break: break-word;
+}
+
+.qr-card img {
+    width: 140px;
+    height: 140px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    object-fit: contain;
+    background: white;
+}
+
+.qr-card-noimg {
+    width: 140px;
+    height: 140px;
+    border-radius: 8px;
+    border: 2px dashed #d1d5db;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 13px;
+    gap: 8px;
+    text-align: center;
+}
+
+.qr-card-noimg i { font-size: 2rem; }
+
+/* Botón descargar */
+.btn-descargar-qr {
+    background: linear-gradient(135deg, #24315e 0%, #6177a0 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: opacity 0.2s;
+    text-decoration: none;
+}
+
+.btn-descargar-qr:hover { opacity: 0.85; }
 </style>
 
 <script>
+/* ===== TOGGLE FORMULARIOS ===== */
 function showForm(tipo) {
-    const formAmbiente = document.getElementById('form-ambiente');
-    const formInstructor = document.getElementById('form-instructor');
-    const btns = document.querySelectorAll('.toggle-btn');
-    
-    btns.forEach(b => b.classList.remove('active'));
-    
-    if(tipo === 'ambiente'){
-        formAmbiente.style.display = 'block';
-        formInstructor.style.display = 'none';
-        btns[0].classList.add('active');
-    } else {
-        formAmbiente.style.display = 'none';
-        formInstructor.style.display = 'block';
-        btns[1].classList.add('active');
+    document.getElementById('form-ambiente').style.display  = 'none';
+    document.getElementById('form-instructor').style.display = 'none';
+    document.getElementById('form-buscar').style.display    = 'none';
+
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+
+    const map = { ambiente: 0, instructor: 1, buscar: 2 };
+    document.querySelectorAll('.toggle-btn')[map[tipo]].classList.add('active');
+    document.getElementById('form-' + tipo).style.display = 'block';
+
+    if(tipo === 'buscar'){
+        document.getElementById('inputBuscarQR').focus();
     }
+}
+
+/* ===== BÚSQUEDA QR ===== */
+let debounceTimer = null;
+
+function buscarQR(termino) {
+    const btnLimpiar  = document.getElementById('btnLimpiar');
+    const loading     = document.getElementById('qr-loading');
+    const empty       = document.getElementById('qr-empty');
+    const resultados  = document.getElementById('qr-resultados');
+
+    btnLimpiar.style.display = termino.length > 0 ? 'flex' : 'none';
+
+    clearTimeout(debounceTimer);
+
+    if(termino.trim().length === 0){
+        loading.style.display    = 'none';
+        empty.style.display      = 'none';
+        resultados.innerHTML     = '';
+        return;
+    }
+
+    loading.style.display   = 'flex';
+    empty.style.display     = 'none';
+    resultados.innerHTML    = '';
+
+    debounceTimer = setTimeout(() => {
+        fetch('registro.php?buscar_qr=' + encodeURIComponent(termino.trim()))
+            .then(r => r.json())
+            .then(data => {
+                loading.style.display = 'none';
+
+                if(data.length === 0){
+                    empty.style.display = 'flex';
+                    return;
+                }
+
+                resultados.innerHTML = data.map(item => {
+                    const imgHtml = `
+                        <img
+                            src="${item.qr}"
+                            alt="QR ${item.nombre}"
+                            onerror="this.parentElement.innerHTML = sinQrHtml()"
+                        >`;
+
+                    return `
+                    <div class="qr-card">
+                        <div class="qr-card-nombre">
+                            <i class="fa-solid fa-building" style="color:#6177a0;margin-right:5px;"></i>
+                            ${item.nombre}
+                        </div>
+                        ${imgHtml}
+                        <a class="btn-descargar-qr" href="${item.qr}" download="QR_${item.nombre}.png">
+                            <i class="fa-solid fa-download"></i> Descargar
+                        </a>
+                    </div>`;
+                }).join('');
+            })
+            .catch(() => {
+                loading.style.display = 'none';
+                empty.style.display   = 'flex';
+            });
+    }, 350); // espera 350ms después de que el usuario deja de escribir
+}
+
+function sinQrHtml(){
+    return `<div class="qr-card-noimg">
+        <i class="fa-solid fa-qrcode"></i>
+        <span>QR no<br>disponible</span>
+    </div>`;
+}
+
+function limpiarBusqueda(){
+    const input = document.getElementById('inputBuscarQR');
+    input.value = '';
+    buscarQR('');
+    input.focus();
 }
 </script>
 
