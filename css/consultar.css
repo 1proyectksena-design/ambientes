@@ -231,6 +231,18 @@ body {
     font-weight: 700;
 }
 
+/* ================= FILA HORIZONTAL: ESTADO + INSTRUCTOR ================= */
+.estado-instructor-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    align-items: stretch;
+}
+
+/* Estado ocupa 55% y el instructor 45% */
+.estado-instructor-row .estado-uso-card      { flex: 55; margin-bottom: 0; }
+.estado-instructor-row .instructor-fijo-card { flex: 45; margin-bottom: 0; }
+
 /* ================= ESTADO LIBRE / EN USO ================= */
 .estado-uso-card {
     border-radius: var(--radius-sm);
@@ -245,7 +257,7 @@ body {
 .estado-uso-card:hover { box-shadow: var(--shadow-md); }
 
 .estado-header {
-    padding: 20px 24px;
+    padding: 16px 20px;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -262,13 +274,13 @@ body {
 }
 
 .estado-icon {
-    width: 52px;
-    height: 52px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 22px;
     flex-shrink: 0;
 }
 
@@ -292,7 +304,7 @@ body {
 
 .estado-header h3 {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 800;
     letter-spacing: 0.5px;
 }
@@ -301,34 +313,34 @@ body {
 .estado-header.en-uso h3 { color: #c62828; }
 
 .estado-header p {
-    margin: 4px 0 0 0;
-    font-size: 13px;
+    margin: 3px 0 0 0;
+    font-size: 12px;
     color: var(--gray-600);
 }
 
-.estado-body { padding: 14px 20px; background: white; flex: 1; }
+.estado-body { padding: 12px 16px; background: white; flex: 1; }
 
-.uso-actual-info { display: flex; flex-direction: column; gap: 8px; }
+.uso-actual-info { display: flex; flex-direction: column; gap: 7px; }
 
 .uso-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 11px 14px;
+    gap: 10px;
+    padding: 9px 12px;
     background: #f9fafc;
     border-radius: 8px;
     border: 2px solid var(--gray-200);
 }
 
-.uso-item i      { font-size: 20px; color: var(--navy-mid); flex-shrink: 0; }
+.uso-item i      { font-size: 18px; color: var(--navy-mid); flex-shrink: 0; }
 .uso-item label  { display: block; font-size: 10px; color: var(--gray-400); font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-.uso-item strong { display: block; font-size: 14px; color: var(--gray-800); font-weight: 700; }
+.uso-item strong { display: block; font-size: 13px; color: var(--gray-800); font-weight: 700; }
 
 .proximo-uso-rapido {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 11px 14px;
+    padding: 9px 12px;
     background: #fff8f0;
     border-radius: 8px;
     border: 2px solid #ffcc80;
@@ -336,7 +348,7 @@ body {
     color: var(--orange);
 }
 
-.proximo-uso-rapido i      { font-size: 18px; flex-shrink: 0; }
+.proximo-uso-rapido i      { font-size: 16px; flex-shrink: 0; }
 .proximo-uso-rapido strong { color: #bf360c; font-weight: 700; }
 
 /* ================= INSTRUCTOR FIJO ================= */
@@ -356,7 +368,7 @@ body {
 .instructor-fijo-header {
     background: linear-gradient(135deg, #0b2449 0%, #355d91 100%);
     color: white;
-    padding: 12px 18px;
+    padding: 11px 16px;
     display: flex;
     align-items: center;
     gap: 9px;
@@ -366,7 +378,7 @@ body {
 }
 
 .instructor-fijo-body {
-    padding: 16px 18px;
+    padding: 14px 16px;
     flex: 1;
     display: flex;
     align-items: center;
@@ -375,17 +387,17 @@ body {
 .instructor-fijo-info {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     width: 100%;
 }
 
 .instr-avatar {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
     color: white;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 800;
     display: flex;
     align-items: center;
@@ -395,7 +407,7 @@ body {
 }
 
 .instr-nombre {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: #1f2937;
     margin: 0 0 4px;
@@ -703,7 +715,7 @@ tbody tr:hover { background: #f0f4f8; }
     backdrop-filter: blur(3px);
 }
 
-/* ================= MODAL GLOBAL ================= */
+/* ================= MODAL ================= */
 .novedades-modal {
     position: fixed;
     top: 50%;
@@ -719,7 +731,7 @@ tbody tr:hover { background: #f0f4f8; }
     z-index: 9999;
     display: none;
     opacity: 0;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.22s ease, transform 0.22s ease;
     overflow: hidden;
 }
 
@@ -728,7 +740,6 @@ tbody tr:hover { background: #f0f4f8; }
     transform: translate(-50%, -50%) scale(1);
 }
 
-/* ---- Header del modal ---- */
 .modal-header {
     background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
     padding: 16px 18px;
@@ -737,6 +748,7 @@ tbody tr:hover { background: #f0f4f8; }
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 .modal-instructor-row {
@@ -791,14 +803,13 @@ tbody tr:hover { background: #f0f4f8; }
     line-height: 1;
     transition: background 0.2s;
     flex-shrink: 0;
+    align-self: flex-start;
 }
 
-.modal-btn-cerrar:hover {
-    background: rgba(251,140,0,0.15);
-}
+.modal-btn-cerrar:hover { background: rgba(251,140,0,0.15); }
 
 .modal-fecha-badge {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 6px;
     background: white;
@@ -808,20 +819,20 @@ tbody tr:hover { background: #f0f4f8; }
     padding: 5px 12px;
     font-size: 12px;
     font-weight: 600;
-    margin-top: 10px;
-    width: 100%;
+    margin: 10px 18px 0;
     justify-content: center;
 }
 
 .modal-content {
     padding: 16px;
-    max-height: calc(80vh - 110px);
+    max-height: calc(80vh - 120px);
     overflow-y: auto;
 }
 
 .modal-content pre {
     margin: 0;
     white-space: pre-wrap;
+    word-break: break-word;
     font-family: inherit;
     font-size: 13px;
     color: #374151;
@@ -844,6 +855,15 @@ tbody tr:hover { background: #f0f4f8; }
     .info-grid { grid-template-columns: 1fr 1fr; }
     .btn-volver { width: 100%; justify-content: center; }
     .novedades-modal { width: 95%; }
+
+    /* En móvil los dos bloques vuelven a apilarse */
+    .estado-instructor-row {
+        flex-direction: column;
+    }
+    .estado-instructor-row .estado-uso-card,
+    .estado-instructor-row .instructor-fijo-card {
+        flex: unset;
+    }
 }
 
 @media (max-width: 480px) {
@@ -880,6 +900,4 @@ tbody tr:hover { background: #f0f4f8; }
     box-shadow: 0 8px 20px rgba(29,111,66,0.4);
 }
 
-.btn-exportar-excel i {
-    font-size: 16px;
-}
+.btn-exportar-excel i { font-size: 16px; }

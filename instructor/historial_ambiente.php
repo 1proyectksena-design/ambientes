@@ -15,6 +15,13 @@ $historial       = null;
 $fecha_actual    = date('Y-m-d');
 $hora_actual     = date('H:i:s');
 
+/*
+ * PHP date('w') → 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+ * MySQL DAYOFWEEK → 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb
+ * Conversión: $dia_mysql = date('w') + 1
+ */
+$dia_actual_mysql = (int)date('w') + 1;   // día de hoy en formato DAYOFWEEK de MySQL
+
 if ($nombre_ambiente) {
     $nombre_ambiente = mysqli_real_escape_string($conexion, $nombre_ambiente);
 
@@ -23,9 +30,10 @@ if ($nombre_ambiente) {
     $ambiente_info = mysqli_fetch_assoc($resAmb);
 
     if ($ambiente_info) {
+        // ── FIX 1: MAX(au.fecha_fin) para el extremo final del rango ──────────
         $sqlHist = "SELECT 
                         MIN(au.fecha_inicio)  AS fecha_inicio,
-                        MAX(au.fecha_inicio)  AS fecha_fin,
+                        MAX(au.fecha_fin)     AS fecha_fin,
                         au.hora_inicio,
                         au.hora_final,
                         au.id_instructor,
@@ -43,7 +51,8 @@ if ($nombre_ambiente) {
                     JOIN instructores i ON au.id_instructor = i.id
                     JOIN ambientes a ON au.id_ambiente = a.id
                     WHERE au.id_ambiente = '" . $ambiente_info['id'] . "'
-                    GROUP BY au.id_instructor, au.hora_inicio, au.hora_final, au.estado, au.rol_autorizado, au.observaciones, au.novedades
+                    GROUP BY au.id_instructor, au.hora_inicio, au.hora_final,
+                             au.estado, au.rol_autorizado, au.observaciones, au.novedades
                     ORDER BY MIN(au.fecha_inicio) DESC
                     LIMIT 50";
         $historial = mysqli_query($conexion, $sqlHist);
@@ -147,43 +156,71 @@ $abrevDias = [
                     <tbody>
                         <?php while ($row = mysqli_fetch_assoc($historial)):
 
-                            /* --- Estado visual --- */
+                            // ── Construir array de días registrados (formato DAYOFWEEK MySQL) ──
+                            $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
+                                        ? array_map('intval', explode(',', $row['dias_semana']))
+                                        : [];
+
+                            // ── FIX 2: validar fecha + hora + DÍA DE LA SEMANA ────────────────
                             $estadoActual = 'desocupado';
                             $textoEstado  = 'Desocupado';
                             $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
 
-                            if ($row['estado'] == 'Aprobado') {
-                                if ($fecha_actual >= $row['fecha_inicio'] && $fecha_actual <= $row['fecha_fin']) {
-                                    if ($hora_actual >= $row['hora_inicio'] && $hora_actual <= $row['hora_final']) {
-                                        $estadoActual = 'ocupado-ahora';
-                                        $textoEstado  = 'Ocupado Ahora';
-                                        $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
-                                    } else {
-                                        $estadoActual = 'programado';
-                                        $textoEstado  = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
-                                        $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
-                                    }
+                            if ($row['estado'] === 'Aprobado') {
+
+                                $enRangoFecha = ($fecha_actual >= $row['fecha_inicio'])
+                                             && ($fecha_actual <= $row['fecha_fin']);
+
+                                $enRangoHora  = ($hora_actual >= $row['hora_inicio'])
+                                             && ($hora_actual <= $row['hora_final']);
+
+                                // ¿El día de hoy (en formato DAYOFWEEK) está entre los días registrados?
+                                $diaCoincide  = in_array($dia_actual_mysql, $diasNums);
+
+                                if ($enRangoFecha && $enRangoHora && $diaCoincide) {
+                                    // Fecha ✓  Hora ✓  Día ✓  → ocupado en este momento
+                                    $estadoActual = 'ocupado-ahora';
+                                    $textoEstado  = 'Ocupado Ahora';
+                                    $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
+
+                                } elseif ($enRangoFecha && $diaCoincide) {
+                                    // Fecha ✓  Día ✓  pero fuera del horario → programado para hoy
+                                    $estadoActual = 'programado';
+                                    $textoEstado  = 'Programado ('
+                                        . date('h:i A', strtotime($row['hora_inicio']))
+                                        . ' - '
+                                        . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                    $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
+
+                                } elseif ($enRangoFecha) {
+                                    // Dentro del rango de fechas pero no es el día de la semana
+                                    $estadoActual = 'programado';
+                                    $textoEstado  = 'Programado';
+                                    $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
                                 }
-                            } elseif ($row['estado'] == 'Pendiente') {
+
+                            } elseif ($row['estado'] === 'Pendiente') {
                                 $estadoActual = 'pendiente';
                                 $textoEstado  = 'Pendiente';
                                 $iconoEstado  = '<i class="fa-solid fa-hourglass-half"></i>';
-                            } elseif ($row['estado'] == 'Rechazado') {
+
+                            } elseif ($row['estado'] === 'Rechazado') {
                                 $estadoActual = 'rechazado';
                                 $textoEstado  = 'Rechazado';
                                 $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                             }
 
-                            /* --- Días de la semana --- */
-                            $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
-                                        ? explode(',', $row['dias_semana']) : [];
+                            // ── Badges de días de la semana ───────────────────────────────────
                             $diasHtml = '';
                             if (count($diasNums) > 0) {
                                 $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">';
                                 foreach ($diasNums as $dn) {
-                                    $dn    = (int)$dn;
-                                    $abrev = $abrevDias[$dn] ?? '?';
-                                    $diasHtml .= '<span class="dia-badge">' . $abrev . '</span>';
+                                    $abrev     = $abrevDias[$dn] ?? '?';
+                                    // Resaltar el día actual
+                                    $highlight = ($dn === $dia_actual_mysql)
+                                                 ? ' style="background:#172f63;color:white;border-color:#172f63;"'
+                                                 : '';
+                                    $diasHtml .= '<span class="dia-badge"' . $highlight . '>' . $abrev . '</span>';
                                 }
                                 $diasHtml .= '</div>';
                             } else {
@@ -269,7 +306,6 @@ $abrevDias = [
     </a>
 </div>
 
-<!--  OVERLAY Y MODAL GLOBAL: fuera de la tabla, directamente en body -->
 <div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
 
 <div class="novedades-modal" id="modalNovedades">

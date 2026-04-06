@@ -73,7 +73,7 @@ if ($ambienteBuscado) {
                             LIMIT 10";
         $proximosUsos = mysqli_query($conexion, $sqlProximosUsos);
 
-        /* HISTORIAL RECIENTE (formato completo como historial.php) */
+        /* HISTORIAL RECIENTE */
         $sqlHistorialReciente = "SELECT au.*, 
                                         a.nombre_ambiente,
                                         i.nombre AS nombre_instructor
@@ -98,7 +98,7 @@ if ($ambienteBuscado) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consultar Ambiente - Subdirección</title>
+    <title>Consultar Ambiente - Administración</title>
     <link rel="stylesheet" href="../css/consultar.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -108,12 +108,12 @@ if ($ambienteBuscado) {
     <div class="header-left">
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
         <div class="header-title">
-            <h1>Consult ar Ambiente</h1>
+            <h1>Consultar Ambiente</h1>
             <span>Buscar y gestionar permisos</span>
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Subdirección
+        <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
 
@@ -122,7 +122,8 @@ if ($ambienteBuscado) {
     <div class="search-section">
         <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Ambiente</h3>
         <form method="GET" class="search-form">
-            <input type="text" name="ambiente" placeholder="Ej: 308, Laboratorio de Química, Sala 101..." value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>" required>
+            <input type="text" name="ambiente" placeholder="Ej: 308, Laboratorio de Química, Sala 101..."
+                   value="<?= htmlspecialchars($ambienteBuscado ?? '') ?>" required>
             <button type="submit"><i class="fa-solid fa-search"></i> Buscar</button>
         </form>
     </div>
@@ -253,7 +254,7 @@ if ($ambienteBuscado) {
         </div>
         <?php endif; ?>
 
-        <!-- HISTORIAL RECIENTE (formato completo como historial.php) -->
+        <!-- HISTORIAL RECIENTE -->
         <?php if($historialReciente && mysqli_num_rows($historialReciente) > 0): ?>
         <div class="table-container">
             <div class="table-header"><h3><i class="fa-solid fa-clock-rotate-left"></i> Historial Reciente de "<?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?>"</h3></div>
@@ -272,67 +273,76 @@ if ($ambienteBuscado) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($hist = mysqli_fetch_assoc($historialReciente)): 
+                        <?php 
+                        $modalCounter = 0; // Contador único para cada modal
+                        while($hist = mysqli_fetch_assoc($historialReciente)): 
                             // CALCULAR ESTADO ACTUAL
                             $estadoActual = 'desocupado';
-                            $textoEstado = 'Desocupado';
-                            $iconoEstado = '<i class="fa-solid fa-circle"></i>';
+                            $textoEstado  = 'Desocupado';
+                            $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
 
                             if($hist['estado'] == 'Aprobado') {
                                 if($fecha_actual >= $hist['fecha_inicio'] && $fecha_actual <= $hist['fecha_fin']) {
                                     if($hora_actual >= $hist['hora_inicio'] && $hora_actual <= $hist['hora_final']) {
                                         $estadoActual = 'ocupado-ahora';
-                                        $textoEstado = 'Ocupado Ahora';
-                                        $iconoEstado = '<i class="fa-solid fa-circle-dot"></i>';
+                                        $textoEstado  = 'Ocupado Ahora';
+                                        $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
                                     } else {
                                         $estadoActual = 'programado';
-                                        $textoEstado = 'Programado';
-                                        $iconoEstado = '<i class="fa-regular fa-clock"></i>';
+                                        $textoEstado  = 'Programado';
+                                        $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
                                     }
                                 }
                             } elseif($hist['estado'] == 'Pendiente') {
                                 $estadoActual = 'pendiente';
-                                $textoEstado = 'Pendiente';
-                                $iconoEstado = '<i class="fa-solid fa-hourglass-half"></i>';
+                                $textoEstado  = 'Pendiente';
+                                $iconoEstado  = '<i class="fa-solid fa-hourglass-half"></i>';
                             } elseif($hist['estado'] == 'Rechazado') {
                                 $estadoActual = 'rechazado';
-                                $textoEstado = 'Rechazado';
-                                $iconoEstado = '<i class="fa-solid fa-ban"></i>';
+                                $textoEstado  = 'Rechazado';
+                                $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                             }
 
-                            // EXTRAER FECHA DE NOVEDAD
-                            $novedad_texto = $hist['novedades'];
-                            $fecha_novedad = '';
-                            if($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)){
-                                $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
-                                $novedad_texto = $matches[2];
-                            } elseif($novedad_texto && !empty($hist['fecha_registro'])) {
-                                $fecha_novedad = date('d/m/Y h:i A', strtotime($hist['fecha_registro']));
+                            // PARSEAR NOVEDAD — con o sin prefijo de fecha
+                            $novedad_raw    = trim($hist['novedades'] ?? '');
+                            $novedad_texto  = '';
+                            $fecha_novedad  = '';
+
+                            if ($novedad_raw !== '') {
+                                if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*([\s\S]*)$/u', $novedad_raw, $matches)) {
+                                    // Formato con prefijo: [YYYY-MM-DD HH:MM] texto
+                                    $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
+                                    $novedad_texto = trim($matches[2]);
+                                } else {
+                                    // Sin prefijo: mostrar tal cual
+                                    $novedad_texto = $novedad_raw;
+                                    if (!empty($hist['fecha_registro'])) {
+                                        $fecha_novedad = date('d/m/Y h:i A', strtotime($hist['fecha_registro']));
+                                    }
+                                }
                             }
+
+                            // ID único para este modal
+                            $modalId = 'modal-nov-' . $modalCounter++;
                         ?>
                         <tr>
                             <td><strong><?= htmlspecialchars($hist['nombre_ambiente']) ?></strong></td>
                             <td><i class="fa-solid fa-user" style="color:#355d91; margin-right:5px;"></i><?= htmlspecialchars($hist['nombre_instructor']) ?></td>
                             <td><?= date('d/m/Y', strtotime($hist['fecha_inicio'])) ?></td>
                             <td><?= date('d/m/Y', strtotime($hist['fecha_fin'])) ?></td>
-                            <td><strong><?= date('h:i A', strtotime($hist['hora_inicio'])) ?> - <?= date('h:i A', strtotime($hist['hora_final'])) ?></strong></td>
+                            <td><?= date('h:i A', strtotime($hist['hora_inicio'])) ?> - <?= date('h:i A', strtotime($hist['hora_final'])) ?></td>
                             <td><span class="estado-badge estado-<?= $estadoActual ?>"><?= $iconoEstado ?> <?= $textoEstado ?></span></td>
-                            <td><span style="text-transform: capitalize; color:#666;"><?= htmlspecialchars($hist['rol_autorizado']) ?></span></td>
+                            <td><span style="text-transform:capitalize; color:#666;"><?= htmlspecialchars($hist['rol_autorizado']) ?></span></td>
                             <td>
-                                <?php if($hist['novedades']): ?>
-                                    <button onclick="mostrarModal(this)" class="btn-ver-novedades"><i class="fa-solid fa-eye"></i> Ver</button>
-                                    <div class="novedades-modal" style="display:none;">
-                                        <div class="modal-header">
-                                            <div class="modal-instructor-row">
-                                                <div class="modal-avatar"><?= strtoupper(substr($hist['nombre_instructor'], 0, 1)) ?></div>
-                                                <div><div class="modal-label">Novedad reportada por</div><div class="modal-instructor-name"><?= htmlspecialchars($hist['nombre_instructor']) ?></div></div>
-                                            </div>
-                                            <?php if($fecha_novedad): ?>
-                                            <div class="modal-fecha-badge"><i class="fa-regular fa-calendar-check"></i> <?= $fecha_novedad ?></div>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="modal-content"><pre><?= htmlspecialchars($novedad_texto) ?></pre></div>
-                                    </div>
+                                <?php if($novedad_texto !== ''): ?>
+                                    <!-- El botón referencia al modal por ID, eliminando la dependencia de nextElementSibling -->
+                                    <button
+                                        type="button"
+                                        class="btn-ver-novedades"
+                                        data-modal="<?= $modalId ?>"
+                                        onclick="mostrarModal(this)">
+                                        <i class="fa-solid fa-eye"></i> Ver
+                                    </button>
                                 <?php else: ?>
                                     <span style="color:#999;">—</span>
                                 <?php endif; ?>
@@ -343,31 +353,148 @@ if ($ambienteBuscado) {
                 </table>
             </div>
         </div>
+
+        <!-- =====================================================
+             MODALES FUERA DE LA TABLA — evita problemas de DOM,
+             z-index y overflow dentro de <td>
+        ====================================================== -->
+        <?php
+        // Reiniciamos el result para recorrer de nuevo y generar los modales
+        mysqli_data_seek($historialReciente, 0);
+        $modalCounter = 0;
+        while($hist = mysqli_fetch_assoc($historialReciente)):
+            $novedad_raw   = trim($hist['novedades'] ?? '');
+            $novedad_texto = '';
+            $fecha_novedad = '';
+
+            if ($novedad_raw !== '') {
+                if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*([\s\S]*)$/u', $novedad_raw, $matches)) {
+                    $fecha_novedad = date('d/m/Y h:i A', strtotime($matches[1]));
+                    $novedad_texto = trim($matches[2]);
+                } else {
+                    $novedad_texto = $novedad_raw;
+                    if (!empty($hist['fecha_registro'])) {
+                        $fecha_novedad = date('d/m/Y h:i A', strtotime($hist['fecha_registro']));
+                    }
+                }
+            }
+
+            if ($novedad_texto === '') { $modalCounter++; continue; }
+            $modalId = 'modal-nov-' . $modalCounter++;
+        ?>
+        <div class="novedades-modal" id="<?= $modalId ?>" role="dialog" aria-modal="true" aria-label="Novedad">
+            <div class="modal-header">
+                <div class="modal-instructor-row">
+                    <div class="modal-avatar"><?= strtoupper(substr($hist['nombre_instructor'], 0, 1)) ?></div>
+                    <div>
+                        <div class="modal-label">Novedad reportada por</div>
+                        <div class="modal-instructor-name"><?= htmlspecialchars($hist['nombre_instructor']) ?></div>
+                    </div>
+                </div>
+                <!-- Botón X para cerrar -->
+                <button type="button" class="modal-btn-cerrar" onclick="cerrarModal('<?= $modalId ?>')" aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <?php if($fecha_novedad): ?>
+            <div style="padding: 0 18px;">
+                <div class="modal-fecha-badge"><i class="fa-regular fa-calendar-check"></i> <?= $fecha_novedad ?></div>
+            </div>
+            <?php endif; ?>
+            <div class="modal-content">
+                <pre><?= htmlspecialchars($novedad_texto) ?></pre>
+            </div>
+        </div>
+        <?php endwhile; ?>
+
         <?php endif; ?>
 
     <?php elseif ($ambienteBuscado && !$ambienteInfo): ?>
-        <div class="ambiente-result"><div class="no-results"><i class="fa-solid fa-circle-xmark"></i><p>No se encontró el ambiente "<?= htmlspecialchars($ambienteBuscado) ?>"</p><small>Intenta con otro nombre o revisa la escritura</small></div></div>
+        <div class="ambiente-result">
+            <div class="no-results">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <p>No se encontró el ambiente "<?= htmlspecialchars($ambienteBuscado) ?>"</p>
+                <small>Intenta con otro nombre o revisa la escritura</small>
+            </div>
+        </div>
     <?php endif; ?>
 
     <a href="index.php" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver al Panel</a>
 
 </div>
 
+<!-- Overlay global -->
 <div class="novedades-overlay" id="modalOverlay"></div>
 
 <script>
+/**
+ * Abre el modal cuyo id está en data-modal del botón.
+ * Ya no depende de nextElementSibling ni de la posición en el DOM.
+ */
 function mostrarModal(btn) {
-    const modal = btn.nextElementSibling; const overlay = document.getElementById('modalOverlay'); const abierto = modal.style.display === 'block';
-    if(abierto) { overlay.style.display = 'none'; modal.style.display = 'none'; btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver'; }
-    else { cerrarTodosModales(); overlay.style.display = 'block'; modal.style.display = 'block'; btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar'; }
+    const modalId = btn.dataset.modal;
+    if (!modalId) return;
+
+    const modal   = document.getElementById(modalId);
+    const overlay = document.getElementById('modalOverlay');
+    if (!modal || !overlay) return;
+
+    const abierto = modal.classList.contains('visible');
+
+    if (abierto) {
+        cerrarModal(modalId);
+    } else {
+        cerrarTodosModales();           // cierra cualquier otro antes de abrir
+        overlay.style.display = 'block';
+        modal.style.display   = 'block';
+        // Pequeño delay para que la transición CSS funcione
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => modal.classList.add('visible'));
+        });
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Cerrar';
+    }
 }
+
+/**
+ * Cierra un modal específico por su id.
+ */
+function cerrarModal(modalId) {
+    const modal   = document.getElementById(modalId);
+    const overlay = document.getElementById('modalOverlay');
+    if (!modal) return;
+
+    modal.classList.remove('visible');
+
+    // Espera la transición antes de ocultarlo con display:none
+    modal.addEventListener('transitionend', function handler() {
+        modal.style.display = 'none';
+        modal.removeEventListener('transitionend', handler);
+    });
+
+    overlay.style.display = 'none';
+
+    // Restaura el texto del botón que abrió este modal
+    const btn = document.querySelector(`[data-modal="${modalId}"]`);
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-eye"></i> Ver';
+}
+
+/**
+ * Cierra todos los modales abiertos.
+ */
 function cerrarTodosModales() {
+    document.querySelectorAll('.novedades-modal.visible').forEach(m => {
+        cerrarModal(m.id);
+    });
     document.getElementById('modalOverlay').style.display = 'none';
-    document.querySelectorAll('.novedades-modal').forEach(m => m.style.display = 'none');
-    document.querySelectorAll('.btn-ver-novedades').forEach(b => b.innerHTML = '<i class="fa-solid fa-eye"></i> Ver');
 }
-document.addEventListener('click', e => { if(e.target?.id === 'modalOverlay') cerrarTodosModales(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarTodosModales(); });
+
+// Cerrar al hacer clic en el overlay
+document.getElementById('modalOverlay').addEventListener('click', cerrarTodosModales);
+
+// Cerrar con tecla Escape
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') cerrarTodosModales();
+});
 </script>
 
 </body>
