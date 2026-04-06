@@ -16,43 +16,46 @@ $meses_espanol = [
     '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
 ];
 
-$mes = $_GET['mes'] ?? date('m');
+$mes  = $_GET['mes']  ?? date('m');
 $anio = $_GET['anio'] ?? date('Y');
 
-$sql = "SELECT 
-            au.*,
+/*
+ * Agrupamos por ambiente + instructor + horario para mostrar
+ * el rango de fechas y los días de la semana recurrentes.
+ * DAYOFWEEK MySQL: 1=Dom 2=Lun 3=Mar 4=Mié 5=Jue 6=Vie 7=Sáb
+ */
+$sql = "SELECT
             a.nombre_ambiente,
-            i.nombre AS nombre_instructor
+            i.nombre                          AS nombre_instructor,
+            MIN(au.fecha_inicio)              AS fecha_inicio,
+            MAX(au.fecha_fin)                 AS fecha_fin,
+            au.hora_inicio,
+            au.hora_final,
+            au.rol_autorizado,
+            GROUP_CONCAT(
+                DISTINCT DAYOFWEEK(au.fecha_inicio)
+                ORDER BY DAYOFWEEK(au.fecha_inicio)
+            )                                 AS dias_semana
         FROM autorizaciones_ambientes au
-        JOIN ambientes a ON au.id_ambiente = a.id
+        JOIN ambientes a    ON au.id_ambiente   = a.id
         JOIN instructores i ON au.id_instructor = i.id
         WHERE MONTH(au.fecha_inicio) = '$mes'
-        AND YEAR(au.fecha_inicio) = '$anio'
-        ORDER BY au.fecha_inicio DESC, au.hora_inicio DESC";
+          AND YEAR(au.fecha_inicio)  = '$anio'
+        GROUP BY a.nombre_ambiente, i.nombre, au.hora_inicio, au.hora_final, au.rol_autorizado
+        ORDER BY MIN(au.fecha_inicio) DESC, au.hora_inicio DESC";
 
 $resultado = mysqli_query($conexion, $sql);
-$total = mysqli_num_rows($resultado);
+$total     = mysqli_num_rows($resultado);
 
-/* Stats */
-$pendiente = mysqli_fetch_row(mysqli_query($conexion,
-"SELECT COUNT(*) FROM autorizaciones_ambientes 
- WHERE MONTH(fecha_inicio)='$mes'
- AND YEAR(fecha_inicio)='$anio'
- AND estado='Pendiente'"))[0];
+/* Abreviaciones de días */
+$abrevDias = [
+    1 => 'Dom', 2 => 'Lun', 3 => 'Mar',
+    4 => 'Mié', 5 => 'Jue', 6 => 'Vie', 7 => 'Sáb',
+];
 
-$aprobado = mysqli_fetch_row(mysqli_query($conexion,
-"SELECT COUNT(*) FROM autorizaciones_ambientes 
- WHERE MONTH(fecha_inicio)='$mes'
- AND YEAR(fecha_inicio)='$anio'
- AND estado='Aprobado'"))[0];
-
-$rechazado = mysqli_fetch_row(mysqli_query($conexion,
-"SELECT COUNT(*) FROM autorizaciones_ambientes 
- WHERE MONTH(fecha_inicio)='$mes'
- AND YEAR(fecha_inicio)='$anio'
- AND estado='Rechazado'"))[0];
+/* Día actual en formato DAYOFWEEK para resaltar el badge de hoy */
+$dia_actual_mysql = (int)date('w') + 1;
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -84,20 +87,22 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion,
         <h3><i class="fa-regular fa-calendar"></i> Seleccionar Mes</h3>
         <form method="GET" class="search-form">
             <select name="mes">
-                <?php for($m=1; $m<=12; $m++): 
-                    $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT);
-                ?>
+                <?php for ($m = 1; $m <= 12; $m++):
+                    $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT); ?>
                 <option value="<?= $mes_num ?>" <?= $mes == $mes_num ? 'selected' : '' ?>>
                     <?= $meses_espanol[$mes_num] ?>
                 </option>
                 <?php endfor; ?>
             </select>
             <select name="anio">
-                <?php for($y=date('Y'); $y>=date('Y')-3; $y--): ?>
+                <?php for ($y = date('Y'); $y >= date('Y') - 3; $y--): ?>
                 <option value="<?= $y ?>" <?= $anio == $y ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endfor; ?>
             </select>
             <button type="submit"><i class="fa-solid fa-search"></i> Buscar</button>
+            <a href="exportar.php?mes=<?= $mes ?>&anio=<?= $anio ?>" class="btn-exportar-excel">
+                <i class="fa-solid fa-file-excel"></i> Exportar Excel
+            </a>
         </form>
     </div>
 
@@ -105,25 +110,49 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion,
     <div class="table-container">
         <div class="table-header">
             <h3>
-                <i class="fa-solid fa-list-check"></i> 
+                <i class="fa-solid fa-list-check"></i>
                 <?= $total ?> autorizaciones en <?= $meses_espanol[$mes] ?> <?= $anio ?>
             </h3>
         </div>
-        
-        <?php if($total > 0): ?>
+
+        <?php if ($total > 0): ?>
         <div class="table-scroll-wrapper">
             <table>
                 <thead>
                     <tr>
                         <th>Ambiente</th>
                         <th>Instructor</th>
-                        <th>Período</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
                         <th>Horario</th>
+                        <th>Días</th>
                         <th>Autorizado Por</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while($row = mysqli_fetch_assoc($resultado)): ?>
+                    <?php while ($row = mysqli_fetch_assoc($resultado)):
+
+                        /* ── Badges de días recurrentes ── */
+                        $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
+                                    ? array_map('intval', explode(',', $row['dias_semana']))
+                                    : [];
+
+                        $diasHtml = '';
+                        if (count($diasNums) > 0) {
+                            $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:3px;">';
+                            foreach ($diasNums as $dn) {
+                                $abrev     = $abrevDias[$dn] ?? '?';
+                                /* resalta el día de hoy en azul oscuro */
+                                $highlight = ($dn === $dia_actual_mysql)
+                                             ? ' style="background:#172f63;color:white;border-color:#172f63;"'
+                                             : '';
+                                $diasHtml .= '<span class="dia-badge"' . $highlight . '>' . $abrev . '</span>';
+                            }
+                            $diasHtml .= '</div>';
+                        } else {
+                            $diasHtml = '<span style="color:#999;">—</span>';
+                        }
+                    ?>
                     <tr>
                         <td><strong><?= htmlspecialchars($row['nombre_ambiente']) ?></strong></td>
                         <td>
@@ -131,13 +160,26 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion,
                             <?= htmlspecialchars($row['nombre_instructor']) ?>
                         </td>
                         <td>
-                            <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?> - 
-                            <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
+                            <span class="cell-fecha">
+                                <i class="fa-regular fa-calendar"></i>
+                                <?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?>
+                            </span>
                         </td>
                         <td>
-                            <?= date('h:i A', strtotime($row['hora_inicio'])) ?> - 
-                            <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                            <span class="cell-fecha">
+                                <i class="fa-regular fa-calendar-check"></i>
+                                <?= date('d/m/Y', strtotime($row['fecha_fin'])) ?>
+                            </span>
                         </td>
+                        <td>
+                            <span class="cell-horario">
+                                <i class="fa-regular fa-clock"></i>
+                                <?= date('h:i A', strtotime($row['hora_inicio'])) ?>
+                                &mdash;
+                                <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                            </span>
+                        </td>
+                        <td><?= $diasHtml ?></td>
                         <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
                     </tr>
                     <?php endwhile; ?>
@@ -153,61 +195,10 @@ $rechazado = mysqli_fetch_row(mysqli_query($conexion,
         <?php endif; ?>
     </div>
 
-    <!-- BOTONES -->
-    <div class="btn-group">
-        <a href="exportar.php?mes=<?= $mes ?>&anio=<?= $anio ?>" class="btn-exportar">
-            <i class="fa-solid fa-file-excel"></i> Exportar Excel
-        </a>
-        <a href="index.php" class="btn-volver">
-            <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-        </a>
-    </div>
+    <a href="index.php" class="btn-volver">
+        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+    </a>
 
 </div>
-
-<style>
-.search-form select { 
-    padding: 14px 20px; 
-    border: 2px solid #e0e0e0; 
-    border-radius: 10px; 
-    font-size: 15px; 
-    transition: all 0.3s ease; 
-    background: white; 
-}
-.search-form select:focus { 
-    outline: none; 
-    border-color: #667eea; 
-}
-
-.btn-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 24px;
-}
-
-.btn-exportar {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: #1D6F42;
-    color: white;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 15px;
-    transition: background 0.3s ease, transform 0.2s ease;
-    box-shadow: 0 2px 8px rgba(29,111,66,0.3);
-}
-.btn-exportar:hover {
-    background: #155230;
-    transform: translateY(-1px);
-}
-.btn-exportar i {
-    font-size: 16px;
-}
-</style>
-
 </body>
 </html>

@@ -29,7 +29,9 @@ if($row['novedades']):
             <span class="instructor-name"><?= htmlspecialchars($row['nombre_instructor']) ?></span>
             <!-- FECHA/HORA AGREGADA AQUÍ -->
             <div style="font-size: 0.85rem; color: #f57c00; margin-top: 4px;">
-                <i class="fa-regular fa-clock"></i> <?= $fecha_novedad ?>
+                <i class="fa-
+                
+                regular fa-clock"></i> <?= $fecha_novedad ?>
             </div>
         </div>
         <div class="modal-content">
