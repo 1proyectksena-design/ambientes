@@ -369,7 +369,7 @@ mysqli_data_seek($instructores, 0);
 
             <!-- AMBIENTE -->
             <div class="form-group">
-                <label><i class="fa-solid fa-building"></i> Ambiente * <small>(Solo habilitados)</small></label>
+                <label><i class="fa-solid fa-building"></i> Ambiente  <small>(Solo habilitados)</small></label>
 
                 <?php if($id_ambiente_seleccionado): ?>
                     <?php
@@ -431,7 +431,7 @@ mysqli_data_seek($instructores, 0);
 
             <!-- INSTRUCTOR -->
             <div class="form-group">
-                <label><i class="fa-solid fa-user"></i> Instructor * <small>(Solo activos)</small></label>
+                <label><i class="fa-solid fa-user"></i> Instructor  <small>(Solo activos)</small></label>
                 <select name="instructor" required>
                     <option value="">-- Seleccione un instructor --</option>
                     <?php while($i = mysqli_fetch_assoc($instructores)): ?>
@@ -446,11 +446,11 @@ mysqli_data_seek($instructores, 0);
             <!-- FECHAS -->
             <div class="time-grid">
                 <div class="form-group">
-                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Inicio *</label>
+                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Inicio </label>
                     <input type="date" name="fecha_inicio" id="fecha-inicio" min="<?= date('Y-m-d') ?>" required>
                 </div>
                 <div class="form-group">
-                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Fin *</label>
+                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Fin </label>
                     <input type="date" name="fecha_fin" id="fecha-fin" min="<?= date('Y-m-d') ?>" required>
                 </div>
             </div>
@@ -458,11 +458,11 @@ mysqli_data_seek($instructores, 0);
             <!-- HORARIOS -->
             <div class="time-grid">
                 <div class="form-group">
-                    <label><i class="fa-regular fa-clock"></i> Hora Inicio *</label>
+                    <label><i class="fa-regular fa-clock"></i> Hora Inicio </label>
                     <input type="time" name="hora_inicio" id="hora_inicio" required onchange="validarHoraEnCliente()">
                 </div>
                 <div class="form-group">
-                    <label><i class="fa-regular fa-clock"></i> Hora Fin *</label>
+                    <label><i class="fa-regular fa-clock"></i> Hora Fin </label>
                     <input type="time" name="hora_fin" id="hora_fin" required onchange="validarHoraEnCliente()">
                 </div>
             </div>
