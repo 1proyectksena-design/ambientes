@@ -235,10 +235,10 @@ if(isset($_GET['buscar_qr'])){
             <p>Escribe el nombre o número del ambiente para encontrar su QR</p>
         </div>
 
-        <div class="form-group search-wrapper">
+        <div class="form-group">
             <label>Buscar Ambiente</label>
-            <div class="search-input-group">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <div class="qr-search-group">
+                <i class="fa-solid fa-magnifying-glass qr-search-icon"></i>
                 <input
                     type="text"
                     id="inputBuscarQR"
@@ -246,24 +246,21 @@ if(isset($_GET['buscar_qr'])){
                     autocomplete="off"
                     oninput="buscarQR(this.value)"
                 >
-                <button type="button" class="btn-clear" id="btnLimpiar" onclick="limpiarBusqueda()" style="display:none;">
+                <button type="button" class="qr-btn-clear" id="btnLimpiar" onclick="limpiarBusqueda()" style="display:none;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Estado de carga -->
-        <div id="qr-loading" style="display:none;" class="qr-loading">
+        <div id="qr-loading" style="display:none;" class="qr-estado">
             <i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...
         </div>
 
-        <!-- Sin resultados -->
-        <div id="qr-empty" style="display:none;" class="qr-empty">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+        <div id="qr-empty" style="display:none;" class="qr-estado">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>
             <p>No se encontró ningún ambiente con ese nombre.</p>
         </div>
 
-        <!-- Resultados -->
         <div id="qr-resultados" class="qr-resultados"></div>
     </div>
     <!-- ============================= -->
@@ -275,7 +272,7 @@ if(isset($_GET['buscar_qr'])){
 </div>
 
 <style>
-/* ===== TOGGLE FORMS (ahora 3 columnas) ===== */
+/* ===== TOGGLE: 2 botones base, 3 cuando hay QR ===== */
 .toggle-forms {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -288,7 +285,7 @@ if(isset($_GET['buscar_qr'])){
     border: 2px solid #e5e7eb;
     padding: 15px 20px;
     border-radius: 12px;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     color: #666;
     cursor: pointer;
@@ -321,14 +318,19 @@ if(isset($_GET['buscar_qr'])){
 }
 
 /* ===== BUSCADOR QR ===== */
+<<<<<<< HEAD
 #form-buscar .search-wrapper { position: relative; }
 
 #form-buscar .search-input-group {
+=======
+.qr-search-group {
+>>>>>>> ee91ef26fced015c176aeaaa7bad726c04295544
     position: relative;
     display: flex;
     align-items: center;
 }
 
+<<<<<<< HEAD
 #form-buscar .search-input-group input {
     width: 100%;
     padding: 12px 45px 12px 42px;
@@ -345,14 +347,25 @@ if(isset($_GET['buscar_qr'])){
 }
 
 .search-icon {
+=======
+/* Reutiliza los estilos de input que ya define permisos.css,
+   solo ajustamos el padding para los íconos */
+.qr-search-group input {
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+}
+
+.qr-search-icon {
+>>>>>>> ee91ef26fced015c176aeaaa7bad726c04295544
     position: absolute;
     left: 14px;
     color: #9ca3af;
     font-size: 15px;
     pointer-events: none;
+    z-index: 1;
 }
 
-.btn-clear {
+.qr-btn-clear {
     position: absolute;
     right: 12px;
     background: none;
@@ -363,12 +376,13 @@ if(isset($_GET['buscar_qr'])){
     padding: 0;
     display: flex;
     align-items: center;
+    z-index: 1;
 }
 
-.btn-clear:hover { color: #ef4444; }
+.qr-btn-clear:hover { color: #ef4444; }
 
-/* Loading y empty */
-.qr-loading, .qr-empty {
+/* Estado loading / empty */
+.qr-estado {
     text-align: center;
     padding: 30px 0;
     color: #9ca3af;
@@ -379,14 +393,9 @@ if(isset($_GET['buscar_qr'])){
     gap: 10px;
 }
 
-.qr-loading i, .qr-empty i {
-    font-size: 2rem;
-    color: #667eea;
-}
+.qr-estado i { font-size: 2rem; color: #667eea; }
 
-.qr-empty i { color: #f59e0b; }
-
-/* Grid de resultados */
+/* Grid de tarjetas QR */
 .qr-resultados {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -394,7 +403,6 @@ if(isset($_GET['buscar_qr'])){
     margin-top: 10px;
 }
 
-/* Tarjeta individual */
 .qr-card {
     background: #f8f9fc;
     border: 2px solid #e5e7eb;
@@ -453,7 +461,6 @@ if(isset($_GET['buscar_qr'])){
 
 .qr-card-noimg i { font-size: 2rem; }
 
-/* Botón descargar */
 .btn-descargar-qr {
     background: linear-gradient(135deg, #24315e 0%, #6177a0 100%);
     color: white;
@@ -476,9 +483,9 @@ if(isset($_GET['buscar_qr'])){
 <script>
 /* ===== TOGGLE FORMULARIOS ===== */
 function showForm(tipo) {
-    document.getElementById('form-ambiente').style.display  = 'none';
+    document.getElementById('form-ambiente').style.display   = 'none';
     document.getElementById('form-instructor').style.display = 'none';
-    document.getElementById('form-buscar').style.display    = 'none';
+    document.getElementById('form-buscar').style.display     = 'none';
 
     document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
 
@@ -495,25 +502,25 @@ function showForm(tipo) {
 let debounceTimer = null;
 
 function buscarQR(termino) {
-    const btnLimpiar  = document.getElementById('btnLimpiar');
-    const loading     = document.getElementById('qr-loading');
-    const empty       = document.getElementById('qr-empty');
-    const resultados  = document.getElementById('qr-resultados');
+    const btnLimpiar = document.getElementById('btnLimpiar');
+    const loading    = document.getElementById('qr-loading');
+    const empty      = document.getElementById('qr-empty');
+    const resultados = document.getElementById('qr-resultados');
 
     btnLimpiar.style.display = termino.length > 0 ? 'flex' : 'none';
 
     clearTimeout(debounceTimer);
 
     if(termino.trim().length === 0){
-        loading.style.display    = 'none';
-        empty.style.display      = 'none';
-        resultados.innerHTML     = '';
+        loading.style.display  = 'none';
+        empty.style.display    = 'none';
+        resultados.innerHTML   = '';
         return;
     }
 
-    loading.style.display   = 'flex';
-    empty.style.display     = 'none';
-    resultados.innerHTML    = '';
+    loading.style.display  = 'flex';
+    empty.style.display    = 'none';
+    resultados.innerHTML   = '';
 
     debounceTimer = setTimeout(() => {
         fetch('registro.php?buscar_qr=' + encodeURIComponent(termino.trim()))
@@ -526,32 +533,28 @@ function buscarQR(termino) {
                     return;
                 }
 
-                resultados.innerHTML = data.map(item => {
-                    const imgHtml = `
-                        <img
-                            src="${item.qr}"
-                            alt="QR ${item.nombre}"
-                            onerror="this.parentElement.innerHTML = sinQrHtml()"
-                        >`;
-
-                    return `
+                resultados.innerHTML = data.map(item => `
                     <div class="qr-card">
                         <div class="qr-card-nombre">
                             <i class="fa-solid fa-building" style="color:#6177a0;margin-right:5px;"></i>
                             ${item.nombre}
                         </div>
-                        ${imgHtml}
+                        <img
+                            src="${item.qr}"
+                            alt="QR ${item.nombre}"
+                            onerror="this.outerHTML = sinQrHtml()"
+                        >
                         <a class="btn-descargar-qr" href="${item.qr}" download="QR_${item.nombre}.png">
                             <i class="fa-solid fa-download"></i> Descargar
                         </a>
-                    </div>`;
-                }).join('');
+                    </div>
+                `).join('');
             })
             .catch(() => {
                 loading.style.display = 'none';
                 empty.style.display   = 'flex';
             });
-    }, 350); // espera 350ms después de que el usuario deja de escribir
+    }, 350);
 }
 
 function sinQrHtml(){
