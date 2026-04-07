@@ -321,15 +321,15 @@ if(isset($_GET['buscar_qr'])){
 }
 
 /* ===== BUSCADOR QR ===== */
-.search-wrapper { position: relative; }
+#form-buscar .search-wrapper { position: relative; }
 
-.search-input-group {
+#form-buscar .search-input-group {
     position: relative;
     display: flex;
     align-items: center;
 }
 
-.search-input-group input {
+#form-buscar .search-input-group input {
     width: 100%;
     padding: 12px 45px 12px 42px;
     border: 2px solid #e5e7eb;
@@ -339,7 +339,7 @@ if(isset($_GET['buscar_qr'])){
     box-sizing: border-box;
 }
 
-.search-input-group input:focus {
+#form-buscar .search-input-group input:focus {
     outline: none;
     border-color: #667eea;
 }

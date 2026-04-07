@@ -13,7 +13,7 @@
 body {
     font-family: 'Nunito', sans-serif;
     min-height: 100vh;
-    background: linear-gradient(135deg, #415f79, #1a1a2e);;
+    background: url('../css/img/fon1.jpg') no-repeat center center fixed;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
