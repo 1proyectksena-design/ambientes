@@ -6,6 +6,47 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'instructor') {
     header("Location: ../login.php");
     exit;
 }
+
+/* ══════════════════════════════════════════════════════════
+   AJAX BUSCAR INSTRUCTOR
+   ══════════════════════════════════════════════════════════ */
+if (isset($_GET['buscar'])) {
+    header('Content-Type: application/json');
+
+    $identificacion = $_GET['documento'] ?? '';
+
+    if (!$identificacion) {
+        echo json_encode(["error" => "Identificación vacía"]);
+        exit;
+    }
+
+    $sql = "SELECT id, nombre, identificacion FROM instructores WHERE identificacion = ?";
+    $stmt = $conexion->prepare($sql);
+
+    if (!$stmt) {
+        echo json_encode(["error" => "Error en la consulta"]);
+        exit;
+    }
+
+    $stmt->bind_param("s", $identificacion);
+    $stmt->execute();
+    $res = $stmt->get_result();
+
+    if ($res->num_rows == 0) {
+        echo json_encode(["error" => "Instructor no encontrado"]);
+        exit;
+    }
+
+    $row = $res->fetch_assoc();
+
+    echo json_encode([
+        "id" => $row['id'],
+        "nombre" => $row['nombre'],
+        "identificacion" => $row['identificacion']
+    ]);
+
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -70,7 +111,7 @@ button {
     <label>NÚMERO DE IDENTIFICACIÓN DEL INSTRUCTOR *</label>
 
     <div style="display:flex; gap:10px;">
-        <input type="text" id="documento_instructor" placeholder="Ej: 123456">
+        <input type="text" id="identificacion" placeholder="Ej: 123456">
         <button onclick="buscarInstructor()">Buscar</button>
     </div>
 
@@ -84,7 +125,7 @@ button {
 
 <script>
 async function buscarInstructor() {
-    const doc = document.getElementById('documento_instructor').value.trim();
+    const doc = document.getElementById('identificacion').value.trim();
     const mensaje = document.getElementById('mensaje');
     const resultado = document.getElementById('resultado');
     const nombre = document.getElementById('nombre');
@@ -117,47 +158,3 @@ async function buscarInstructor() {
 
 </body>
 </html>
-
-<?php
-// ===============================
-// AJAX BUSCAR INSTRUCTOR
-// ===============================
-if (isset($_GET['buscar'])) {
-
-    header('Content-Type: application/json');
-
-    $identificacion = $_GET['documento'] ?? '';
-
-    if (!$identificacion) {
-        echo json_encode(["error" => "Identificación vacía"]);
-        exit;
-    }
-
-    $sql = "SELECT id, nombre, identificacion FROM instructores WHERE identificacion = ?";
-    $stmt = $conexion->prepare($sql);
-
-    if (!$stmt) {
-        echo json_encode(["error" => "Error en la consulta"]);
-        exit;
-    }
-
-    $stmt->bind_param("s", $identificacion);
-    $stmt->execute();
-    $res = $stmt->get_result();
-
-    if ($res->num_rows == 0) {
-        echo json_encode(["error" => "Instructor no encontrado"]);
-        exit;
-    }
-
-    $row = $res->fetch_assoc();
-
-    echo json_encode([
-        "id" => $row['id'],
-        "nombre" => $row['nombre'],
-        "identificacion" => $row['identificacion']
-    ]);
-
-    exit;
-}
-?>

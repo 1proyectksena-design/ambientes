@@ -312,77 +312,19 @@ tbody td{padding:12px 14px;font-size:14px;vertical-align:middle}
     <div class="stats-bar">
         <div class="stat-box pend">
             <div class="stat-num"><?= $pendientes ?></div>
-            <div class="stat-lbl">⏳ Pendientes</div>
+            <div class="stat-lbl"> Pendientes</div>
         </div>
         <div class="stat-box apro">
             <div class="stat-num"><?= $aprobadas ?></div>
-            <div class="stat-lbl">✅ Aprobadas</div>
+            <div class="stat-lbl">Aprobadas</div>
         </div>
         <div class="stat-box rech">
             <div class="stat-num"><?= $rechazadas ?></div>
-            <div class="stat-lbl">❌ Rechazadas</div>
+            <div class="stat-lbl"> Rechazadas</div>
         </div>
     </div>
 
-    <!-- NUEVA SOLICITUD -->
-    <?php if($msg_success): ?>
-    <div class="alert" style="background:var(--verde-p);border:1.5px solid var(--verde-m);color:var(--verde-d);">
-        <i class="fa-solid fa-check-circle"></i>
-        <span><?= htmlspecialchars($msg_success) ?></span>
-    </div>
-    <?php endif; ?>
-    <?php if($msg_error): ?>
-    <div class="alert alert-error">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <span><?= htmlspecialchars($msg_error) ?></span>
-    </div>
-    <?php endif; ?>
-
-    <div class="card">
-        <div class="card-title"><i class="fa-solid fa-plus-circle"></i> Solicitar Nuevo Ambiente</div>
-        
-        <form id="form-solicitud" method="POST">
-            <input type="hidden" name="cedula" value="<?= htmlspecialchars($instructor['identificacion']) ?>">
-            <input type="hidden" name="id_instructor" value="<?= $instructor['id'] ?>">
-            <input type="hidden" name="id_ambiente" id="id_ambiente">
-            
-            <div class="form-grid">
-                <div class="form-group">
-                    <label><i class="fa-solid fa-building"></i> Ambiente</label>
-                    <select id="select-ambiente" required onchange="loadAvailability()">
-                        <option value="">-- Seleccione un ambiente --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-calendar"></i> Fecha Inicio</label>
-                    <input type="date" id="fecha_inicio" min="<?= date('Y-m-d') ?>" required onchange="loadAvailability()">
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-calendar-check"></i> Fecha Fin</label>
-                    <input type="date" id="fecha_fin" min="<?= date('Y-m-d') ?>" required onchange="loadAvailability()">
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-regular fa-clock"></i> Hora Inicio</label>
-                    <input type="time" id="hora_inicio" required onchange="loadAvailability()">
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-regular fa-clock"></i> Hora Fin</label>
-                    <input type="time" id="hora_fin" required onchange="loadAvailability()">
-                </div>
-            </div>
-
-            <div id="availability-result" style="margin: 16px 0;"></div>
-
-            <div class="form-group">
-                <label><i class="fa-solid fa-comment"></i> Observaciones</label>
-                <textarea id="observaciones" rows="2" placeholder="Observaciones..."></textarea>
-            </div>
-
-            <button type="submit" class="btn-buscar" style="width:100%;">
-                <i class="fa-solid fa-paper-plane"></i> Enviar Solicitud
-            </button>
-        </form>
-    </div>
+   
 
     <!-- TABS FILTRO -->
     <?php if(count($solicitudes) > 0): ?>
