@@ -1,36 +1,7 @@
 <?php
 /*
- * get_disponibilidad_ajax.php  (v3 — sin campo capacidad)
- *
+ * get_disponibilidad_ajax.php
  * Retorna JSON con la disponibilidad de todos los ambientes habilitados
- * para UNA fecha puntual  O  para un rango recurrente de fechas.
- *
- * ── Modo simple ──────────────────────────────────────────────────────
- * GET params:
- *   fecha       → Y-m-d          (fecha única)
- *   hora_ini    → HH:MM
- *   hora_fin    → HH:MM
- *
- * ── Modo recurrente ──────────────────────────────────────────────────
- * GET params:
- *   recurrente  → "1"
- *   fecha_ini   → Y-m-d          (inicio del rango)
- *   fecha_fin   → Y-m-d          (fin del rango)
- *   hora_ini    → HH:MM
- *   hora_fin    → HH:MM
- *   dias[]      → 0-6 (lunes=0 … domingo=6)
- *
- * ── Respuesta JSON ───────────────────────────────────────────────────
- * [
- *   {
- *     id, nombre_ambiente, horario_disponible,
- *     libre           : bool
- *     conflictos      : [{ fecha, instructor, hora_ini, hora_fin, estado }]
- *     fechas_libres   : ["Y-m-d", ...]
- *     fechas_ocupadas : ["Y-m-d", ...]
- *     total_fechas    : int
- *   }, ...
- * ]
  */
 
 session_start();
@@ -51,12 +22,20 @@ if (isset($_GET['load_ambientes'])) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   VERIFICAR SESIÓN PARA CONSULTAS DE DISPONIBILIDAD
+   VERIFICAR SESIÓN - Permitir instructor, subdireccion, admin, administracion
    ══════════════════════════════════════════════════════════ */
-if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], ['instructor', 'subdireccion', 'admin'])) {
-    http_response_code(403);
-    echo json_encode(['error' => 'No autorizado']);
-    exit;
+$rol_permitido = ['instructor', 'subdireccion', 'admin', 'administracion'];
+
+$es_publico = true; // Cambiar a false para requerir sesión
+
+if ($es_publico) {
+    // Modo público - sin verificación de sesión
+} else {
+    if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], $rol_permitido)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'No autorizado: ' . ($_SESSION['rol'] ?? 'sin rol')]);
+        exit;
+    }
 }
 
 /* ══════════════════════════════════════════════════════════

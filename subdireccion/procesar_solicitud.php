@@ -5,7 +5,7 @@ session_start();
 include("../includes/conexion.php");
 
 // Solo el admin puede procesar solicitudes
-if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'admin') {
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
     header("Location: ../login.php");
     exit;
 }
