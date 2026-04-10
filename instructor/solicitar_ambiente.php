@@ -126,14 +126,14 @@ if (isset($_GET['buscar'])) {
 
     header('Content-Type: application/json');
 
-    $doc = $_GET['documento'] ?? '';
+    $identificacion = $_GET['documento'] ?? '';
 
-    if (!$doc) {
-        echo json_encode(["error" => "Documento vacío"]);
+    if (!$identificacion) {
+        echo json_encode(["error" => "Identificación vacía"]);
         exit;
     }
 
-    $sql = "SELECT nombre FROM usuarios WHERE documento = ? AND rol = 'instructor'";
+    $sql = "SELECT id, nombre, identificacion FROM instructores WHERE identificacion = ?";
     $stmt = $conexion->prepare($sql);
 
     if (!$stmt) {
@@ -141,7 +141,7 @@ if (isset($_GET['buscar'])) {
         exit;
     }
 
-    $stmt->bind_param("s", $doc);
+    $stmt->bind_param("s", $identificacion);
     $stmt->execute();
     $res = $stmt->get_result();
 
@@ -153,7 +153,9 @@ if (isset($_GET['buscar'])) {
     $row = $res->fetch_assoc();
 
     echo json_encode([
-        "nombre" => $row['nombre']
+        "id" => $row['id'],
+        "nombre" => $row['nombre'],
+        "identificacion" => $row['identificacion']
     ]);
 
     exit;
