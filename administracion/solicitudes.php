@@ -4,7 +4,7 @@ ini_set('display_errors', 1);
 session_start();
 include("../includes/conexion.php");
 
-if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'administracion') {
     header("Location: ../login.php");
     exit;
 }

@@ -8,7 +8,7 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'instructor') {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   AJAX ▸ Autocompletar instructores (nombre o cédula)
+   AJAX ▸ Autocompletar instructores
 ═══════════════════════════════════════════════════════════════════════ */
 if (isset($_GET['buscar_instructor'])) {
     header('Content-Type: application/json; charset=utf-8');
@@ -28,7 +28,7 @@ if (isset($_GET['buscar_instructor'])) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   AJAX ▸ Datos del calendario (ambientes + reservas en rango)
+   AJAX ▸ Datos del calendario
 ═══════════════════════════════════════════════════════════════════════ */
 if (isset($_GET['get_cal'])) {
     header('Content-Type: application/json; charset=utf-8');
@@ -61,7 +61,7 @@ if (isset($_GET['get_cal'])) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   POST ▸ Insertar solicitud (único o recurrente)
+   POST ▸ Insertar solicitud
 ═══════════════════════════════════════════════════════════════════════ */
 $msg_success = $msg_error = '';
 $inserted_count = 0;
@@ -76,13 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
 
     $err = '';
 
-    /* ── Validaciones comunes ── */
     if (!$id_instructor || !$id_ambiente || !$hora_ini || !$hora_fin)
         $err = 'Datos incompletos. Por favor reinicie el proceso.';
     elseif ($hora_ini >= $hora_fin)
         $err = 'La hora fin debe ser mayor que la hora inicio.';
 
-    /* ── Validar instructor y ambiente ── */
     if (!$err) {
         $st = $conexion->prepare("SELECT id FROM instructores WHERE id = ?");
         $st->bind_param('i', $id_instructor); $st->execute();
@@ -94,9 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
         if (!$st->get_result()->num_rows) $err = 'El ambiente no está habilitado.';
     }
 
-    /* ══════════════════════════════════════════════════
-       MODO ÚNICO
-    ══════════════════════════════════════════════════ */
+    /* MODO ÚNICO */
     if (!$err && $tipo_solicitud === 'unico') {
         $fecha = trim($_POST['fecha'] ?? '');
 
@@ -136,9 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
         }
     }
 
-    /* ══════════════════════════════════════════════════
-       MODO RECURRENTE
-    ══════════════════════════════════════════════════ */
+    /* MODO RECURRENTE */
     elseif (!$err && $tipo_solicitud === 'recurrente') {
         $fecha_inicio = trim($_POST['fecha_inicio'] ?? '');
         $fecha_fin_r  = trim($_POST['fecha_fin_r']  ?? '');
@@ -155,7 +149,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
         elseif (empty($dias_sel))
             $err = 'Debe seleccionar al menos un día de la semana.';
 
-        /* Días válidos: 1=Lun … 6=Sáb */
         $dias_validos = array_map('intval', $dias_sel);
         $dias_validos = array_filter($dias_validos, fn($d) => $d >= 1 && $d <= 6);
 
@@ -163,14 +156,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
             $err = 'Los días seleccionados no son válidos.';
 
         if (!$err) {
-            /* Generar lista de fechas que coincidan con los días seleccionados */
             $fechas_a_insertar = [];
             $cursor = new DateTime($fecha_inicio);
             $limite = new DateTime($fecha_fin_r);
             $limite->modify('+1 day');
 
             while ($cursor < $limite) {
-                $dow = (int)$cursor->format('N'); // 1=Lun … 7=Dom
+                $dow = (int)$cursor->format('N');
                 if (in_array($dow, $dias_validos))
                     $fechas_a_insertar[] = $cursor->format('Y-m-d');
                 $cursor->modify('+1 day');
@@ -179,7 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
             if (empty($fechas_a_insertar))
                 $err = 'No se encontraron fechas que coincidan con los días seleccionados en el rango indicado.';
 
-            /* Verificar conflictos */
             if (!$err) {
                 $conflictos = [];
                 foreach ($fechas_a_insertar as $f) {
@@ -195,14 +186,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
                         $conflictos[] = $f;
                 }
                 if (!empty($conflictos)) {
-                    $err = 'Las siguientes fechas tienen conflicto de horario y no se pueden reservar: ' .
+                    $err = 'Las siguientes fechas tienen conflicto de horario: ' .
                            implode(', ', array_slice($conflictos, 0, 5)) .
                            (count($conflictos) > 5 ? ' (y más...)' : '') .
                            '. Ajuste el rango o los días seleccionados.';
                 }
             }
 
-            /* Insertar registros */
             if (!$err) {
                 $st = $conexion->prepare(
                     "INSERT INTO autorizaciones_ambientes
@@ -216,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
                     if ($st->execute()) $inserted_count++;
                 }
                 if ($inserted_count > 0) {
-                    $msg_success = "Se generaron {$inserted_count} solicitud(es) recurrente(s) exitosamente. Puede revisar su estado en el panel de solicitudes.";
+                    $msg_success = "Se generaron {$inserted_count} solicitud(es) recurrente(s) exitosamente.";
                 } else {
                     $msg_error = 'No se pudo guardar ninguna solicitud. Por favor intente nuevamente.';
                 }
@@ -237,7 +227,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-/* ── Variables ─────────────────────────────────────────── */
 :root {
     --navy:      #0c1f38;
     --navy-2:    #163357;
@@ -255,12 +244,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
     --shadow:    0 4px 24px rgba(12,31,56,0.09);
 }
 
-/* ── Reset & Base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 .hidden { display: none !important; }
 
-/* ── Header ────────────────────────────────────────────── */
 .hdr {
     background: var(--navy);
     height: 60px;
@@ -283,7 +270,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 }
 .hdr-back:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-/* ── Step Progress Bar ─────────────────────────────────── */
 .steps-wrap {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -309,10 +295,8 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .step-item.done   .step-lbl  { color: var(--green); }
 .step-connector.done { background: var(--green); }
 
-/* ── Container ─────────────────────────────────────────── */
 .container { max-width: 1100px; margin: 0 auto; padding: 26px 18px 80px; }
 
-/* ── Alerts ─────────────────────────────────────────────── */
 .alert {
     display: flex; align-items: flex-start; gap: 10px;
     padding: 14px 18px; border-radius: var(--r);
@@ -322,7 +306,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .alert-success { background: var(--green-lt); border: 1.5px solid var(--green-mid); color: #145f31; }
 .alert-error   { background: var(--red-lt);   border: 1.5px solid #f5bfba;         color: #8b2117; }
 
-/* ── Cards ──────────────────────────────────────────────── */
 .card {
     background: var(--surface);
     border-radius: var(--r); border: 1px solid var(--border);
@@ -337,7 +320,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 }
 .card-title i { color: var(--green); }
 
-/* ── Buttons ────────────────────────────────────────────── */
 .btn {
     padding: 11px 20px; border: none; border-radius: 10px;
     font-size: 14px; font-weight: 700; font-family: inherit;
@@ -353,7 +335,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .btn-outline:hover { border-color: var(--navy); background: #f4f6fa; }
 .btn-sm { padding: 8px 14px; font-size: 13px; }
 
-/* ── Autocomplete ───────────────────────────────────────── */
 .ac-wrap { position: relative; flex: 1; }
 .search-input {
     width: 100%; padding: 12px 16px;
@@ -385,7 +366,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .ac-cc   { font-size: 12px; color: var(--muted); }
 .ac-empty { padding: 18px; text-align: center; color: var(--muted); font-size: 14px; }
 
-/* ── Instructor Chip ─────────────────────────────────────── */
 .inst-chip {
     display: flex; align-items: center; gap: 14px;
     background: var(--green-lt); border: 1.5px solid var(--green-mid);
@@ -401,7 +381,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .inst-info span   { font-size: 13px; color: var(--muted); }
 .inst-chip .check { margin-left: auto; color: var(--green); font-size: 20px; }
 
-/* ── Instructor mini-bar (shown in steps 2-4) ────────────── */
 .inst-bar {
     display: flex; align-items: center; gap: 10px;
     background: #f4f7fb; border: 1px solid var(--border);
@@ -411,7 +390,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .inst-bar strong { color: var(--text); font-weight: 700; }
 .inst-bar i { color: var(--green); }
 
-/* ── Calendar Toolbar ───────────────────────────────────── */
 .cal-toolbar {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
@@ -432,7 +410,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 }
 .view-btn.active { background: var(--navy); color: #fff; }
 
-/* ── Day View Grid ──────────────────────────────────────── */
 .day-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
 .day-grid   { min-width: 500px; }
 
@@ -471,7 +448,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .cal-cell.past       { background: #f5f6f8; color: #ccd0da; cursor: not-allowed; }
 .cal-cell.no-sched   { background: #fafbfd; color: #d0d5e0; cursor: not-allowed; }
 
-/* ── Week View ──────────────────────────────────────────── */
 .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
 .week-card {
     border: 1.5px solid var(--border); border-radius: 10px;
@@ -491,7 +467,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .week-stat.libre { color: var(--green-dk); }
 .week-stat.occ   { color: #9e3128; }
 
-/* ── Month View ─────────────────────────────────────────── */
 .month-day-names {
     display: grid; grid-template-columns: repeat(7, 1fr);
     margin-bottom: 6px;
@@ -514,7 +489,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .m-dot.libre { background: var(--green); }
 .m-dot.occ   { background: #e05050; }
 
-/* ── Slot Confirm Bar ───────────────────────────────────── */
 .slot-bar {
     background: var(--navy); color: #fff; border-radius: 12px;
     padding: 18px 22px; display: flex; align-items: center; gap: 16px;
@@ -531,7 +505,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .slot-bar-info span   { font-size: 13px; color: rgba(255,255,255,0.65); }
 .slot-bar .btn-green  { flex-shrink: 0; }
 
-/* ── Summary ────────────────────────────────────────────── */
 .summary {
     background: #f6f9fc; border: 1.5px solid var(--border);
     border-radius: 12px; padding: 18px 20px; margin-bottom: 22px;
@@ -554,7 +527,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .sum-lbl { font-size: 12px; color: var(--muted); }
 .sum-val { font-size: 14px; font-weight: 700; color: var(--text); }
 
-/* ── Form ───────────────────────────────────────────────── */
 .form-group  { margin-bottom: 18px; }
 .form-label  { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
 .form-ctrl {
@@ -568,21 +540,17 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
 
-/* ── Loading ─────────────────────────────────────────────── */
 .cal-loading { text-align: center; padding: 56px 20px; color: var(--muted); }
 .cal-loading i   { font-size: 26px; margin-bottom: 12px; display: block; }
 .cal-loading span{ font-size: 14px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .fa-spin { animation: spin .8s linear infinite; }
 
-/* ── Tipo solicitud toggle ───────────────────────────────── */
 .tipo-toggle {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     margin-bottom: 24px;
 }
-.tipo-option {
-    position: relative;
-}
+.tipo-option { position: relative; }
 .tipo-option input[type="radio"] { display: none; }
 .tipo-option label {
     display: flex; align-items: center; gap: 12px;
@@ -602,14 +570,11 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     display: flex; align-items: center; justify-content: center;
     font-size: 15px; flex-shrink: 0; transition: all .18s;
 }
-.tipo-option input:checked + label .tipo-icon {
-    background: var(--green); color: #fff;
-}
+.tipo-option input:checked + label .tipo-icon { background: var(--green); color: #fff; }
 .tipo-text strong { display: block; font-size: 14px; }
 .tipo-text span   { font-size: 12px; font-weight: 400; color: var(--muted); }
 .tipo-option input:checked + label .tipo-text span { color: var(--green-dk); opacity: .75; }
 
-/* ── Días semana checkboxes ──────────────────────────────── */
 .dias-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
     margin-top: 8px;
@@ -625,11 +590,8 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     text-align: center;
 }
 .dia-option label:hover { border-color: var(--green-mid); background: var(--green-lt); color: var(--text); }
-.dia-option input:checked + label {
-    border-color: var(--green); background: var(--green); color: #fff;
-}
+.dia-option input:checked + label { border-color: var(--green); background: var(--green); color: #fff; }
 
-/* ── Recurrente fields block ─────────────────────────────── */
 .recurrente-block {
     background: #f6f9fc; border: 1.5px solid var(--border);
     border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;
@@ -645,19 +607,10 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     display: flex; align-items: center; gap: 7px;
 }
 .recurrente-block .block-ttl i { color: var(--green); }
-
-/* ── Dynamic summary rows ────────────────────────────────── */
-#sum-tipo-row, #sum-recurrente-row { transition: all .2s; }
-
-/* ── Section divider ─────────────────────────────────────── */
-.section-divider {
-    height: 1px; background: var(--border); margin: 22px 0;
-}
 </style>
 </head>
 <body>
 
-<!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
 <div class="hdr">
     <div class="hdr-left">
         <img src="../css/img/senab.png" alt="SENA" class="hdr-logo">
@@ -669,7 +622,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     <a href="index.php" class="hdr-back"><i class="fa-solid fa-arrow-left"></i> Volver</a>
 </div>
 
-<!-- ══ STEP PROGRESS BAR ══════════════════════════════════════════════ -->
 <div class="steps-wrap">
     <div class="steps-bar">
         <div class="step-item active" id="si-1">
@@ -694,7 +646,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </div>
 </div>
 
-<!-- ══ MAIN CONTENT ════════════════════════════════════════════════════ -->
 <div class="container">
 
 <?php if ($msg_success): ?>
@@ -710,15 +661,12 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 </div>
 <?php endif; ?>
 
-<!-- ╔═══════════════════════════════════════════════════════╗
-     ║  PASO 1 — Buscar Instructor                          ║
-     ╚═══════════════════════════════════════════════════════╝ -->
+<!-- PASO 1 -->
 <div id="panel-1" class="card">
     <div class="card-title"><i class="fa-solid fa-id-card"></i> Paso 1 — Identificar al Instructor</div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">
-        Busque al instructor por nombre o número de identificación. Es el primer paso obligatorio.
+        Busque al instructor por nombre o número de identificación.
     </p>
-
     <div style="display:flex;gap:10px;margin-bottom:14px;">
         <div class="ac-wrap">
             <input type="text" id="ac-input" class="search-input"
@@ -727,8 +675,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
             <div id="ac-drop" class="ac-drop hidden"></div>
         </div>
     </div>
-
-    <!-- Instructor encontrado -->
     <div id="inst-found" class="hidden">
         <div class="inst-chip">
             <div class="inst-av"><i class="fa-solid fa-chalkboard-user"></i></div>
@@ -749,19 +695,14 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </div>
 </div>
 
-<!-- ╔═══════════════════════════════════════════════════════╗
-     ║  PASO 2 — Calendario de disponibilidad               ║
-     ╚═══════════════════════════════════════════════════════╝ -->
+<!-- PASO 2 -->
 <div id="panel-2" class="card hidden">
     <div class="card-title"><i class="fa-solid fa-calendar-days"></i> Paso 2 — Seleccionar espacio disponible</div>
-
     <div class="inst-bar">
         <i class="fa-solid fa-user-check"></i>
         Instructor: <strong id="ibar-nombre"></strong>&nbsp;·&nbsp;
         <a href="#" onclick="goToStep(1);return false;" style="color:var(--green);font-size:12px;font-weight:700;">Cambiar</a>
     </div>
-
-    <!-- Toolbar -->
     <div class="cal-toolbar">
         <div class="cal-nav">
             <button class="btn btn-outline btn-sm" onclick="navCal(-1)"><i class="fa-solid fa-chevron-left"></i></button>
@@ -775,63 +716,49 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
             <button class="view-btn"        id="vb-month" onclick="setView('month')">Mes</button>
         </div>
     </div>
-
     <div id="cal-content">
         <div class="cal-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>Cargando disponibilidad...</span></div>
     </div>
-
     <div id="slot-bar" class="slot-bar hidden">
         <div class="slot-bar-icon"><i class="fa-solid fa-map-pin"></i></div>
         <div class="slot-bar-info">
             <strong id="slot-bar-txt">—</strong>
-            <span>Espacio seleccionado &mdash; haga clic en «Nueva solicitud» para continuar</span>
+            <span>Espacio seleccionado — haga clic en «Nueva solicitud» para continuar</span>
         </div>
         <button class="btn btn-green" onclick="goToStep(4)">
             <i class="fa-solid fa-plus"></i> Nueva solicitud
         </button>
     </div>
-
     <div style="margin-top:16px;">
         <button class="btn btn-outline" onclick="goToStep(1)"><i class="fa-solid fa-arrow-left"></i> Volver</button>
     </div>
 </div>
 
-<!-- ╔═══════════════════════════════════════════════════════╗
-     ║  PASO 4 — Formulario + Resumen                       ║
-     ╚═══════════════════════════════════════════════════════╝ -->
+<!-- PASO 4 -->
 <div id="panel-4" class="card hidden">
     <div class="card-title"><i class="fa-solid fa-paper-plane"></i> Paso 4 — Confirmar solicitud</div>
-
-    <!-- Mini instructor bar -->
     <div class="inst-bar">
         <i class="fa-solid fa-user-check"></i>
         Instructor: <strong id="ibar2-nombre"></strong>
     </div>
 
-    <!-- ── Resumen dinámico ── -->
     <div class="summary">
         <div class="summary-ttl">Resumen de la reserva</div>
         <div class="sum-row">
             <div class="sum-icon"><i class="fa-solid fa-building"></i></div>
             <div><div class="sum-lbl">Ambiente</div><div class="sum-val" id="sum-ambiente">—</div></div>
         </div>
-        <!-- tipo solicitud -->
         <div class="sum-row" id="sum-tipo-row">
             <div class="sum-icon"><i class="fa-solid fa-layer-group"></i></div>
             <div><div class="sum-lbl">Tipo de solicitud</div><div class="sum-val" id="sum-tipo">Único</div></div>
         </div>
-        <!-- fecha única -->
         <div class="sum-row" id="sum-fecha-row">
             <div class="sum-icon"><i class="fa-regular fa-calendar"></i></div>
             <div><div class="sum-lbl">Fecha</div><div class="sum-val" id="sum-fecha">—</div></div>
         </div>
-        <!-- rango recurrente (oculto por defecto) -->
         <div class="sum-row hidden" id="sum-recurrente-row">
             <div class="sum-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
-            <div>
-                <div class="sum-lbl">Recurrencia</div>
-                <div class="sum-val" id="sum-recurrente">—</div>
-            </div>
+            <div><div class="sum-lbl">Recurrencia</div><div class="sum-val" id="sum-recurrente">—</div></div>
         </div>
         <div class="sum-row">
             <div class="sum-icon"><i class="fa-regular fa-clock"></i></div>
@@ -839,15 +766,11 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         FORMULARIO
-    ══════════════════════════════════════ -->
     <form method="POST" id="form-sol">
         <input type="hidden" name="enviar"        value="1">
         <input type="hidden" name="id_instructor" id="f-id-inst">
         <input type="hidden" name="id_ambiente"   id="f-id-amb">
 
-        <!-- ── Tipo de solicitud ── -->
         <div class="form-group">
             <label class="form-label"><i class="fa-solid fa-layer-group"></i> Tipo de solicitud</label>
             <div class="tipo-toggle">
@@ -855,26 +778,20 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
                     <input type="radio" name="tipo_solicitud" id="tipo-unico" value="unico" checked onchange="onTipoChange()">
                     <label for="tipo-unico">
                         <div class="tipo-icon"><i class="fa-regular fa-calendar-check"></i></div>
-                        <div class="tipo-text">
-                            <strong>Único</strong>
-                            <span>Una sola fecha</span>
-                        </div>
+                        <div class="tipo-text"><strong>Único</strong><span>Una sola fecha</span></div>
                     </label>
                 </div>
                 <div class="tipo-option">
                     <input type="radio" name="tipo_solicitud" id="tipo-recurrente" value="recurrente" onchange="onTipoChange()">
                     <label for="tipo-recurrente">
                         <div class="tipo-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
-                        <div class="tipo-text">
-                            <strong>Recurrente</strong>
-                            <span>Varios días / semanas</span>
-                        </div>
+                        <div class="tipo-text"><strong>Recurrente</strong><span>Varios días / semanas</span></div>
                     </label>
                 </div>
             </div>
         </div>
 
-        <!-- ══ BLOQUE ÚNICO ══════════════════════════════════ -->
+        <!-- BLOQUE ÚNICO -->
         <div id="bloque-unico">
             <input type="hidden" name="fecha" id="f-fecha">
             <div class="form-row">
@@ -893,12 +810,10 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
             </p>
         </div>
 
-        <!-- ══ BLOQUE RECURRENTE ══════════════════════════════ -->
+        <!-- BLOQUE RECURRENTE -->
         <div id="bloque-recurrente" class="hidden">
             <div class="recurrente-block">
                 <div class="block-ttl"><i class="fa-solid fa-arrows-rotate"></i> Configuración de recurrencia</div>
-
-                <!-- Rango de fechas -->
                 <div class="form-row" style="margin-bottom:16px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label"><i class="fa-regular fa-calendar"></i> Fecha inicio</label>
@@ -911,8 +826,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
                                min="<?= date('Y-m-d') ?>" oninput="updateRecurrenteSummary()">
                     </div>
                 </div>
-
-                <!-- Días de la semana -->
                 <div class="form-group" style="margin-bottom:14px;">
                     <label class="form-label"><i class="fa-solid fa-calendar-week"></i> Días de la semana</label>
                     <div class="dias-grid">
@@ -945,8 +858,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
                         <i class="fa-solid fa-circle-info"></i> Seleccione los días en que se repetirá la reserva.
                     </p>
                 </div>
-
-                <!-- Horario recurrente -->
                 <div class="form-row">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label"><i class="fa-regular fa-clock"></i> Hora inicio</label>
@@ -964,7 +875,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
             </div>
         </div>
 
-        <!-- ── Observaciones ── -->
         <div class="form-group">
             <label class="form-label">
                 <i class="fa-solid fa-comment-dots"></i> Observaciones
@@ -974,7 +884,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
                       placeholder="Describa el propósito de la reserva u otras observaciones..."></textarea>
         </div>
 
-        <!-- ── Botones ── -->
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
             <button type="submit" class="btn btn-green" style="flex:1;justify-content:center;min-width:180px;">
                 <i class="fa-solid fa-circle-check"></i> Confirmar solicitud
@@ -986,64 +895,44 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </form>
 </div>
 
-</div><!-- /container -->
+</div>
 
-<!-- ══════════════════════════════════════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════════════════════════════════════ -->
 <script>
-/* ─────────────────────────────────────
-   GLOBAL STATE
-───────────────────────────────────── */
+/* ─── GLOBAL STATE ─── */
 const S = {
-    step:       1,
-    instructor: null,
-    slot:       null,
-    view:       'day',
-    date:       new Date(),
-    ambientes:  [],
-    reservas:   [],
-    loaded:     false,
-    loading:    false
+    step: 1, instructor: null, slot: null,
+    view: 'day', date: new Date(),
+    ambientes: [], reservas: [],
+    loaded: false, loading: false
 };
 
-/* ─────────────────────────────────────
-   UTILITIES
-───────────────────────────────────── */
-const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const today = () => fmt(new Date());
+/* ─── UTILITIES ─── */
+const fmt      = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today    = () => fmt(new Date());
 
 function addHour(t, n) {
     const [h, m] = t.split(':').map(Number);
     return `${String(h + n).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 }
-
 function fmtDisplay(dateStr) {
     if (!dateStr) return '—';
     const d = new Date(dateStr + 'T12:00:00');
     return d.toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 }
-
 function esc(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-
 const DIAS_LABELS = { '1':'Lunes','2':'Martes','3':'Miércoles','4':'Jueves','5':'Viernes','6':'Sábado' };
 
-/* ─────────────────────────────────────
-   STEP NAVIGATION
-───────────────────────────────────── */
+/* ─── STEP NAVIGATION ─── */
 function goToStep(n) {
     if (n >= 2 && !S.instructor) return;
     if (n >= 4 && !S.slot) { alert('Seleccione un espacio en el calendario.'); return; }
-
     S.step = n;
     ['panel-1','panel-2','panel-4'].forEach(id => document.getElementById(id).classList.add('hidden'));
-
     if      (n === 1) document.getElementById('panel-1').classList.remove('hidden');
     else if (n === 2) { document.getElementById('panel-2').classList.remove('hidden'); initCalendar(); }
     else if (n === 4) { document.getElementById('panel-4').classList.remove('hidden'); fillForm(); }
-
     updateStepBar(n);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1063,18 +952,14 @@ function updateStepBar(n) {
     }
 }
 
-/* ─────────────────────────────────────
-   AUTOCOMPLETE
-───────────────────────────────────── */
+/* ─── AUTOCOMPLETE ─── */
 let searchTimer = null;
-
 function onSearchInput(val) {
     clearTimeout(searchTimer);
     const drop = document.getElementById('ac-drop');
     if (val.trim().length < 2) { drop.classList.add('hidden'); return; }
     searchTimer = setTimeout(() => doSearch(val.trim()), 280);
 }
-
 async function doSearch(q) {
     const drop = document.getElementById('ac-drop');
     drop.innerHTML = '<div class="ac-empty"><i class="fa-solid fa-spinner fa-spin"></i> Buscando...</div>';
@@ -1098,7 +983,6 @@ async function doSearch(q) {
         drop.innerHTML = '<div class="ac-empty">Error al buscar. Intente de nuevo.</div>';
     }
 }
-
 function selectInstructor(id, nombre, cc) {
     S.instructor = { id, nombre, identificacion: cc };
     document.getElementById('ac-drop').classList.add('hidden');
@@ -1107,7 +991,6 @@ function selectInstructor(id, nombre, cc) {
     document.getElementById('inst-cc-txt').textContent     = 'C.C. ' + cc;
     document.getElementById('inst-found').classList.remove('hidden');
 }
-
 function clearInstructor() {
     S.instructor = null; S.slot = null; S.loaded = false;
     document.getElementById('ac-input').value = '';
@@ -1115,25 +998,20 @@ function clearInstructor() {
     document.getElementById('ac-drop').classList.add('hidden');
     goToStep(1);
 }
-
 document.addEventListener('click', e => {
     if (!e.target.closest('.ac-wrap'))
         document.getElementById('ac-drop').classList.add('hidden');
 });
 
-/* ─────────────────────────────────────
-   CALENDAR INIT & DATA LOADING
-───────────────────────────────────── */
+/* ─── CALENDAR DATA ─── */
 async function initCalendar() {
     document.getElementById('ibar-nombre').textContent = S.instructor?.nombre || '';
     if (S.loaded) { renderCalendar(); return; }
     if (S.loading) return;
     S.loading = true;
-
     const d  = S.date;
     const fi = fmt(new Date(d.getFullYear(), d.getMonth() - 1, 1));
     const ff = fmt(new Date(d.getFullYear(), d.getMonth() + 3, 0));
-
     document.getElementById('cal-content').innerHTML =
         '<div class="cal-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>Cargando disponibilidad...</span></div>';
     try {
@@ -1151,9 +1029,7 @@ async function initCalendar() {
     renderCalendar();
 }
 
-/* ─────────────────────────────────────
-   CALENDAR RENDER DISPATCH
-───────────────────────────────────── */
+/* ─── CALENDAR RENDER ─── */
 function renderCalendar() {
     updatePeriodLabel();
     if      (S.view === 'day')   renderDayView();
@@ -1175,9 +1051,7 @@ function updatePeriodLabel() {
     }
 }
 
-/* ─────────────────────────────────────
-   IS OCCUPIED
-───────────────────────────────────── */
+/* ─── IS OCCUPIED ─── */
 function isOccupied(ambId, dateStr, hourStr) {
     const hEnd = addHour(hourStr, 1);
     return S.reservas.some(r =>
@@ -1189,15 +1063,13 @@ function isOccupied(ambId, dateStr, hourStr) {
     );
 }
 
-/* ─────────────────────────────────────
-   DAY VIEW
-───────────────────────────────────── */
+/* ─── DAY VIEW — horario 06:00 a 22:00 ─── */
 function renderDayView() {
     const dateStr  = fmt(S.date);
     const todayStr = today();
     const isPast   = dateStr < todayStr;
     const hours    = [];
-    for (let h = 7; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`);
+    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`); // ← 06:00–22:00
 
     if (!S.ambientes.length) {
         document.getElementById('cal-content').innerHTML =
@@ -1211,15 +1083,15 @@ function renderDayView() {
     html += `</div>`;
 
     hours.forEach(h => {
-        const hEnd   = addHour(h, 1);
-        const nowStr = new Date().toTimeString().slice(0,5);
+        const hEnd    = addHour(h, 1);
+        const nowStr  = new Date().toTimeString().slice(0,5);
         const slotPast = isPast || (dateStr === todayStr && h < nowStr);
 
         html += `<div class="day-row"><div class="day-time">${h}</div>`;
         S.ambientes.forEach(a => {
             const selMatch = S.slot &&
                 parseInt(S.slot.id_ambiente) === parseInt(a.id) &&
-                S.slot.fecha   === dateStr &&
+                S.slot.fecha    === dateStr &&
                 S.slot.hora_ini === h;
 
             if (slotPast) {
@@ -1247,27 +1119,24 @@ function renderDayView() {
     updateSlotBar();
 }
 
-/* ─────────────────────────────────────
-   WEEK VIEW
-───────────────────────────────────── */
+/* ─── WEEK VIEW ─── */
 function renderWeekView() {
-    const ws      = getWeekStart(S.date);
+    const ws       = getWeekStart(S.date);
     const todayStr = today();
-    const days    = [];
+    const days     = [];
     for (let i = 0; i < 7; i++) {
         const d = new Date(ws); d.setDate(d.getDate() + i);
         days.push(d);
     }
     const dayNames = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
     const hours    = [];
-    for (let h = 7; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`);
+    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`); // ← 06:00–22:00
 
     let html = `<div class="week-grid">`;
     days.forEach((d, i) => {
         const ds     = fmt(d);
         const isPast = ds < todayStr;
         const isToday= ds === todayStr;
-
         let libre = 0, ocupado = 0;
         S.ambientes.forEach(a => {
             hours.forEach(h => {
@@ -1275,18 +1144,13 @@ function renderWeekView() {
                 else if (!isPast) libre++;
             });
         });
-
         html += `<div class="week-card${isToday?' today':''}${isPast?' past':''}"
                       onclick="${isPast ? '' : `goDayView('${ds}')`}">
             <div class="week-hdr">${dayNames[i]}<br>${d.getDate()}</div>
             <div class="week-body">`;
-        if (!isPast) {
-            html += `<div class="week-stat libre"><i class="fa-solid fa-circle" style="font-size:8px;color:var(--green);"></i> ${libre} libres</div>`;
-        }
-        if (ocupado) {
-            html += `<div class="week-stat occ"><i class="fa-solid fa-circle" style="font-size:8px;color:#e05050;"></i> ${ocupado} ocupados</div>`;
-        }
-        if (isPast) html += `<div class="week-stat" style="color:var(--muted);font-size:11px;">Pasado</div>`;
+        if (!isPast) html += `<div class="week-stat libre"><i class="fa-solid fa-circle" style="font-size:8px;color:var(--green);"></i> ${libre} libres</div>`;
+        if (ocupado) html += `<div class="week-stat occ"><i class="fa-solid fa-circle" style="font-size:8px;color:#e05050;"></i> ${ocupado} ocupados</div>`;
+        if (isPast)  html += `<div class="week-stat" style="color:var(--muted);font-size:11px;">Pasado</div>`;
         html += `</div></div>`;
     });
     html += `</div><p style="font-size:12px;color:var(--muted);margin-top:12px;"><i class="fa-solid fa-hand-pointer"></i> Haga clic en un día para ver sus espacios disponibles.</p>`;
@@ -1303,21 +1167,19 @@ function goDayView(dateStr) {
     renderCalendar();
 }
 
-/* ─────────────────────────────────────
-   MONTH VIEW
-───────────────────────────────────── */
+/* ─── MONTH VIEW ─── */
 function renderMonthView() {
     const y        = S.date.getFullYear();
     const m        = S.date.getMonth();
     const todayStr = today();
     const hours    = [];
-    for (let h = 7; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`);
+    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`); // ← 06:00–22:00
 
-    const firstDay   = new Date(y, m, 1).getDay();
+    const firstDay    = new Date(y, m, 1).getDay();
     const startOffset = (firstDay === 0) ? 6 : firstDay - 1;
     const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const dayNames    = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
-    const dayNames = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
     let html = `<div class="month-day-names">`;
     html += dayNames.map(n => `<div class="month-day-name">${n}</div>`).join('');
     html += `</div><div class="month-grid">`;
@@ -1328,7 +1190,6 @@ function renderMonthView() {
         const ds      = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const isPast  = ds < todayStr;
         const isToday = ds === todayStr;
-
         let libre = 0, occ = 0;
         if (!isPast) {
             S.ambientes.forEach(a => {
@@ -1338,39 +1199,34 @@ function renderMonthView() {
                 });
             });
         }
-
         html += `<div class="month-day${isToday?' today':''}${isPast?' past':''}"
                       onclick="${isPast ? '' : `goDayView('${ds}')`}">
                     <div class="month-num">${d}</div>`;
         if (!isPast && S.ambientes.length) {
             html += `<div class="month-avail">`;
-            if (libre)  html += `<span class="m-dot libre" title="${libre} espacios libres"></span>`;
-            if (occ)    html += `<span class="m-dot occ"   title="${occ} ocupados"></span>`;
+            if (libre) html += `<span class="m-dot libre" title="${libre} espacios libres"></span>`;
+            if (occ)   html += `<span class="m-dot occ"   title="${occ} ocupados"></span>`;
             html += `</div>`;
         }
         html += `</div>`;
     }
-    html += `</div><p style="font-size:12px;color:var(--muted);margin-top:12px;"><i class="fa-solid fa-circle" style="color:var(--green);font-size:8px;"></i> Libre &nbsp;<i class="fa-solid fa-circle" style="color:#e05050;font-size:8px;"></i> Ocupado &mdash; Haga clic en un día para ver el detalle.</p>`;
+    html += `</div><p style="font-size:12px;color:var(--muted);margin-top:12px;"><i class="fa-solid fa-circle" style="color:var(--green);font-size:8px;"></i> Libre &nbsp;<i class="fa-solid fa-circle" style="color:#e05050;font-size:8px;"></i> Ocupado — Haga clic en un día para ver el detalle.</p>`;
     document.getElementById('cal-content').innerHTML = html;
     updateSlotBar();
 }
 
-/* ─────────────────────────────────────
-   SLOT SELECTION
-───────────────────────────────────── */
+/* ─── SLOT ─── */
 function selectSlot(ambId, ambNombre, fecha, hIni, hFin) {
     S.slot = { id_ambiente: ambId, nombre: ambNombre, fecha, hora_ini: hIni, hora_fin: hFin };
     renderDayView();
     updateSlotBar();
     document.getElementById('slot-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-
 function deselectSlot() {
     S.slot = null;
     renderDayView();
     updateSlotBar();
 }
-
 function updateSlotBar() {
     const bar = document.getElementById('slot-bar');
     if (!S.slot) { bar.classList.add('hidden'); return; }
@@ -1379,96 +1235,66 @@ function updateSlotBar() {
         `${S.slot.nombre} · ${fmtDisplay(S.slot.fecha)} · ${S.slot.hora_ini} – ${S.slot.hora_fin}`;
 }
 
-/* ─────────────────────────────────────
-   CALENDAR NAVIGATION
-───────────────────────────────────── */
+/* ─── NAV ─── */
 function setView(v) {
     S.view = v;
     ['day','week','month'].forEach(x => document.getElementById('vb-'+x).classList.toggle('active', x===v));
     renderCalendar();
 }
-
 function navCal(dir) {
     const d = S.date;
-    if (S.view === 'day')        S.date = new Date(d.getFullYear(), d.getMonth(), d.getDate() + dir);
+    if      (S.view === 'day')   S.date = new Date(d.getFullYear(), d.getMonth(), d.getDate() + dir);
     else if (S.view === 'week')  S.date = new Date(d.getFullYear(), d.getMonth(), d.getDate() + dir*7);
     else                         S.date = new Date(d.getFullYear(), d.getMonth() + dir, 1);
     renderCalendar();
 }
-
-function goToday() {
-    S.date = new Date();
-    renderCalendar();
-}
-
+function goToday() { S.date = new Date(); renderCalendar(); }
 function getWeekStart(d) {
     const day = d.getDay();
     const diff = (day === 0) ? -6 : 1 - day;
-    const ws = new Date(d);
-    ws.setDate(d.getDate() + diff);
+    const ws = new Date(d); ws.setDate(d.getDate() + diff);
     return ws;
 }
 
-/* ─────────────────────────────────────
-   TIPO SOLICITUD — TOGGLE BLOQUES
-───────────────────────────────────── */
+/* ─── TIPO SOLICITUD ─── */
 function onTipoChange() {
     const tipo = document.querySelector('input[name="tipo_solicitud"]:checked')?.value || 'unico';
-    const isRecurrente = tipo === 'recurrente';
-
-    document.getElementById('bloque-unico').classList.toggle('hidden', isRecurrente);
-    document.getElementById('bloque-recurrente').classList.toggle('hidden', !isRecurrente);
-
-    // Ajustar required
-    document.getElementById('f-hora-ini').required   = !isRecurrente;
-    document.getElementById('f-hora-fin').required   = !isRecurrente;
-    document.getElementById('f-hora-ini-r').required = isRecurrente;
-    document.getElementById('f-hora-fin-r').required = isRecurrente;
-
-    // Actualizar resumen dinámico
-    document.getElementById('sum-tipo').textContent = isRecurrente ? 'Recurrente' : 'Único';
-    document.getElementById('sum-fecha-row').classList.toggle('hidden', isRecurrente);
-    document.getElementById('sum-recurrente-row').classList.toggle('hidden', !isRecurrente);
-
-    if (isRecurrente) updateRecurrenteSummary();
+    const isRec = tipo === 'recurrente';
+    document.getElementById('bloque-unico').classList.toggle('hidden', isRec);
+    document.getElementById('bloque-recurrente').classList.toggle('hidden', !isRec);
+    document.getElementById('f-hora-ini').required   = !isRec;
+    document.getElementById('f-hora-fin').required   = !isRec;
+    document.getElementById('f-hora-ini-r').required = isRec;
+    document.getElementById('f-hora-fin-r').required = isRec;
+    document.getElementById('sum-tipo').textContent = isRec ? 'Recurrente' : 'Único';
+    document.getElementById('sum-fecha-row').classList.toggle('hidden', isRec);
+    document.getElementById('sum-recurrente-row').classList.toggle('hidden', !isRec);
+    if (isRec) updateRecurrenteSummary();
     else updateUnicoSummary();
 }
 
-/* ─────────────────────────────────────
-   FILL FORM (step 4)
-───────────────────────────────────── */
+/* ─── FILL FORM ─── */
 function fillForm() {
     if (!S.instructor || !S.slot) return;
-
     document.getElementById('ibar2-nombre').textContent = S.instructor.nombre;
     document.getElementById('sum-ambiente').textContent  = S.slot.nombre;
     document.getElementById('f-id-inst').value           = S.instructor.id;
     document.getElementById('f-id-amb').value            = S.slot.id_ambiente;
-
-    // Precargar fecha y horas en modo único
     document.getElementById('f-fecha').value    = S.slot.fecha;
     document.getElementById('f-hora-ini').value = S.slot.hora_ini;
     document.getElementById('f-hora-fin').value = S.slot.hora_fin;
-
-    // Precargar horas en modo recurrente también (útil como default)
     document.getElementById('f-hora-ini-r').value = S.slot.hora_ini;
     document.getElementById('f-hora-fin-r').value = S.slot.hora_fin;
-
-    // Pre-completar fechas recurrentes con la fecha del slot como inicio
     if (!document.getElementById('f-fecha-inicio').value)
         document.getElementById('f-fecha-inicio').value = S.slot.fecha;
-
-    // Resumen
     updateUnicoSummary();
-
-    // Trigger tipo change to sync UI state
     onTipoChange();
 }
 
 function updateUnicoSummary() {
-    const fecha   = document.getElementById('f-fecha').value;
-    const hIni    = document.getElementById('f-hora-ini').value;
-    const hFin    = document.getElementById('f-hora-fin').value;
+    const fecha = document.getElementById('f-fecha').value;
+    const hIni  = document.getElementById('f-hora-ini').value;
+    const hFin  = document.getElementById('f-hora-fin').value;
     document.getElementById('sum-fecha').textContent   = fmtDisplay(fecha) || '—';
     document.getElementById('sum-horario').textContent = (hIni && hFin) ? `${hIni} – ${hFin}` : '—';
 }
@@ -1478,56 +1304,42 @@ function updateRecurrenteSummary() {
     const ff   = document.getElementById('f-fecha-fin-r').value;
     const hIni = document.getElementById('f-hora-ini-r').value;
     const hFin = document.getElementById('f-hora-fin-r').value;
-
     const dias = Array.from(document.querySelectorAll('input[name="dias[]"]:checked'))
                       .map(cb => DIAS_LABELS[cb.value] || cb.value);
-
     let recTxt = '';
-    if (fi && ff)         recTxt += `${fmtDisplay(fi)} al ${fmtDisplay(ff)}`;
-    if (dias.length)      recTxt += ` · ${dias.join(', ')}`;
-    if (!recTxt)          recTxt = '—';
-
+    if (fi && ff)    recTxt += `${fmtDisplay(fi)} al ${fmtDisplay(ff)}`;
+    if (dias.length) recTxt += ` · ${dias.join(', ')}`;
+    if (!recTxt)     recTxt = '—';
     document.getElementById('sum-recurrente').textContent = recTxt;
     document.getElementById('sum-horario').textContent    = (hIni && hFin) ? `${hIni} – ${hFin}` : '—';
 }
 
-/* ─────────────────────────────────────
-   FORM SUBMIT VALIDATION
-───────────────────────────────────── */
+/* ─── FORM VALIDATION ─── */
 document.getElementById('form-sol').addEventListener('submit', function(e) {
     const tipo = document.querySelector('input[name="tipo_solicitud"]:checked')?.value || 'unico';
-
     if (tipo === 'unico') {
         const hIni = document.getElementById('f-hora-ini').value;
         const hFin = document.getElementById('f-hora-fin').value;
-        if (hIni >= hFin) {
-            e.preventDefault();
-            alert('La hora fin debe ser mayor que la hora inicio.');
-            return;
-        }
+        if (hIni >= hFin) { e.preventDefault(); alert('La hora fin debe ser mayor que la hora inicio.'); return; }
     } else {
         const fi   = document.getElementById('f-fecha-inicio').value;
         const ff   = document.getElementById('f-fecha-fin-r').value;
         const hIni = document.getElementById('f-hora-ini-r').value;
         const hFin = document.getElementById('f-hora-fin-r').value;
         const dias = document.querySelectorAll('input[name="dias[]"]:checked');
-
-        if (!fi) { e.preventDefault(); alert('Ingrese la fecha inicio de la recurrencia.'); return; }
-        if (!ff) { e.preventDefault(); alert('Ingrese la fecha fin de la recurrencia.'); return; }
-        if (fi > ff) { e.preventDefault(); alert('La fecha fin debe ser mayor o igual a la fecha inicio.'); return; }
+        if (!fi)         { e.preventDefault(); alert('Ingrese la fecha inicio de la recurrencia.'); return; }
+        if (!ff)         { e.preventDefault(); alert('Ingrese la fecha fin de la recurrencia.'); return; }
+        if (fi > ff)     { e.preventDefault(); alert('La fecha fin debe ser mayor o igual a la fecha inicio.'); return; }
         if (fi < '<?= date('Y-m-d') ?>') { e.preventDefault(); alert('La fecha inicio no puede ser en el pasado.'); return; }
-        if (hIni >= hFin) { e.preventDefault(); alert('La hora fin debe ser mayor que la hora inicio.'); return; }
-        if (!dias.length) { e.preventDefault(); alert('Seleccione al menos un día de la semana.'); return; }
+        if (hIni >= hFin){ e.preventDefault(); alert('La hora fin debe ser mayor que la hora inicio.'); return; }
+        if (!dias.length){ e.preventDefault(); alert('Seleccione al menos un día de la semana.'); return; }
     }
 });
 
-/* Sync horas único en tiempo real para actualizar resumen */
 document.getElementById('f-hora-ini').addEventListener('input', updateUnicoSummary);
 document.getElementById('f-hora-fin').addEventListener('input', updateUnicoSummary);
 
-/* ─────────────────────────────────────
-   INIT
-───────────────────────────────────── */
+/* ─── INIT ─── */
 (function init() {
     updateStepBar(1);
     <?php if ($msg_success || $msg_error): ?>
