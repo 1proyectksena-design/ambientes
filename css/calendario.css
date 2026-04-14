@@ -5,7 +5,7 @@
    Tipografías: DM Sans · Lora
    ═══════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap');
 
 /* ── Variables ─────────────────────────────────────────────────────── */
 :root {
@@ -60,8 +60,8 @@
   --r-full:         999px;
 
   /* Tipografía */
-  --font-ui:        'DM Sans', system-ui, sans-serif;
-  --font-display:   'Lora', Georgia, serif;
+  --font-ui:        'DM Sans', sans-serif;
+  --font-display:   'DM Sans', Georgia, serif;
 
   /* Movimiento */
   --spring:         cubic-bezier(.34,1.4,.64,1);
@@ -72,12 +72,15 @@
 /* ── Reset & base ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 body {
   font-family: var(--font-ui);
   background: var(--bg);
   color: var(--text-1);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   font-size: 15px;
   line-height: 1.5;
 }
@@ -113,19 +116,18 @@ body {
   display: flex;
   align-items: center;
   gap: 20px;
+  min-width: 0; /* permite truncar en mobile */
 }
 
 .logo-sena {
   height: 32px;
+  flex-shrink: 0;
   filter: brightness(0) invert(1);
   opacity: .9;
 }
 
-.header-divider {
-  width: 1px;
-  height: 24px;
-  background: rgba(255,255,255,.1);
-  flex-shrink: 0;
+.header-title {
+  min-width: 0;
 }
 
 .header-title h1 {
@@ -136,6 +138,9 @@ body {
   color: rgba(255,255,255,.92);
   letter-spacing: -.01em;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-title span {
@@ -151,6 +156,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .header-user {
@@ -165,6 +171,7 @@ body {
   font-weight: 500;
   color: rgba(255,255,255,.75);
   letter-spacing: .01em;
+  white-space: nowrap;
 }
 
 .btn-volver {
@@ -181,6 +188,7 @@ body {
   color: #81c784;
   text-decoration: none;
   letter-spacing: .01em;
+  white-space: nowrap;
   transition: background var(--dur) var(--ease),
               border-color var(--dur) var(--ease),
               color var(--dur) var(--ease),
@@ -324,6 +332,7 @@ body {
   background-position: right 10px center;
   background-size: 15px;
   cursor: pointer;
+  width: 100%;
   transition: border-color var(--dur) var(--ease),
               background-color var(--dur) var(--ease),
               box-shadow var(--dur) var(--ease);
@@ -478,8 +487,6 @@ body {
 
 /* ══════════════════════════════════════════════════════════════════════
    FULLCALENDAR OVERRIDES
-   Estilo: celdas cuadradas blancas, bordes sutiles, puntos de color.
-   Inspirado en la captura: limpio, espacioso, fácil de leer.
    ══════════════════════════════════════════════════════════════════════ */
 .fc {
   font-family: var(--font-ui) !important;
@@ -489,7 +496,7 @@ body {
   --fc-highlight-color: rgba(26,39,68,.05);
 }
 
-/* Toolbar ────────────────────────────────────────────────────────── */
+/* Toolbar */
 .fc .fc-toolbar {
   flex-wrap: wrap;
   gap: 10px;
@@ -548,7 +555,7 @@ body {
   box-shadow: none !important;
 }
 
-/* Estado activo (vista seleccionada) */
+/* Estado activo */
 .fc .fc-button-primary:not(:disabled).fc-button-active,
 .fc .fc-button-primary:not(:disabled):active {
   background: var(--navy) !important;
@@ -579,7 +586,7 @@ body {
 
 .fc .fc-today-button:not(:disabled) { opacity: 1 !important; }
 
-/* Botones prev/next circulares */
+/* Botones prev/next */
 .fc .fc-prev-button,
 .fc .fc-next-button {
   width: 32px !important;
@@ -609,7 +616,7 @@ body {
   font-size: .78rem !important;
 }
 
-/* Encabezados de columna ─────────────────────────────────────────── */
+/* Encabezados de columna */
 .fc .fc-col-header-cell {
   background: transparent !important;
   padding: 10px 0 9px !important;
@@ -630,7 +637,7 @@ body {
   color: var(--green) !important;
 }
 
-/* Celdas del mes ─────────────────────────────────────────────────── */
+/* Celdas del mes */
 .fc .fc-daygrid-day {
   background: var(--white) !important;
   transition: background var(--dur) !important;
@@ -661,7 +668,6 @@ body {
   color: var(--text-1) !important;
 }
 
-/* Días fuera del mes */
 .fc .fc-day-other .fc-daygrid-day-number {
   color: var(--text-4) !important;
   opacity: .5;
@@ -683,7 +689,7 @@ body {
   box-shadow: 0 2px 6px rgba(46,125,50,.28) !important;
 }
 
-/* Eventos ────────────────────────────────────────────────────────── */
+/* Eventos */
 .fc-event {
   border: none !important;
   border-radius: 5px !important;
@@ -743,7 +749,7 @@ body {
   color: #fff !important;
 }
 
-/* Slots de tiempo ────────────────────────────────────────────────── */
+/* Slots de tiempo */
 .fc .fc-timegrid-slot {
   height: 36px !important;
   border-color: var(--border) !important;
@@ -763,7 +769,7 @@ body {
   padding-top: 4px !important;
 }
 
-/* Indicador de hora actual */
+/* Indicador hora actual */
 .fc .fc-timegrid-now-indicator-line {
   border-color: var(--danger) !important;
   border-width: 1.5px !important;
@@ -992,7 +998,6 @@ body {
   overflow: hidden;
 }
 
-/* Patrón de puntos decorativo */
 .new-modal-head::after {
   content: '';
   position: absolute;
@@ -1131,24 +1136,231 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--bg-2); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-md); }
 
-/* ── Responsive ─────────────────────────────────────────────────────── */
-@media (max-width: 960px) {
-  .controls-bar { grid-template-columns: 1fr; }
-  .legend-card { min-width: unset; }
-  .legend-items { flex-direction: row; flex-wrap: wrap; gap: 12px; }
-  .cal-wrapper { padding: 18px 14px 40px; }
-  .header { padding: 0 18px; height: 58px; }
-  .header-title h1 { font-size: .9rem; }
-  .btn-volver span { display: none; }
-  .btn-volver { padding: 6px 12px; }
+/* ══════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Tablet landscape (≤ 1100px) ─────────────────────────────────── */
+@media (max-width: 1100px) {
+  .cal-wrapper {
+    padding: 22px 22px 50px;
+  }
+
+  .filter-group {
+    min-width: 130px;
+  }
 }
 
-@media (max-width: 600px) {
-  .filters-row { flex-direction: column; }
-  .filter-group { min-width: unset; }
-  .stats-strip { gap: 6px; }
-  .stat-chip { padding: 7px 12px; }
-  .calendar-card { padding: 16px 12px; }
-  .fc .fc-toolbar { flex-direction: column; align-items: flex-start !important; }
-  .fc .fc-toolbar-title { font-size: 1rem !important; }
+/* ── Tablet portrait (≤ 960px) ───────────────────────────────────── */
+@media (max-width: 960px) {
+  /* Controls: apila filtros y leyenda en columna */
+  .controls-bar {
+    grid-template-columns: 1fr;
+  }
+
+  /* Leyenda: en horizontal cuando está sola en su fila */
+  .legend-card {
+    min-width: unset;
+  }
+
+  .legend-items {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  /* Header */
+  .cal-wrapper {
+    padding: 18px 16px 40px;
+  }
+
+  .header {
+    padding: 0 20px;
+    height: 58px;
+  }
+
+  .header-title h1 {
+    font-family: var(--font-ui);
+    font-weight: 400;
+  }
+
+  .header-title span {
+    display: none;
+  }
+
+  /* Ocultar texto del botón volver, dejar solo icono */
+  .btn-volver span {
+    display: none;
+  }
+
+  .btn-volver {
+    padding: 7px 11px;
+  }
+
+  /* Ocultar el chip de usuario en tablet */
+  .header-user {
+    display: none;
+  }
+
+  /* Stats: scroll horizontal si no caben */
+  .stats-strip {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .stats-strip::-webkit-scrollbar { display: none; }
+
+  .stat-chip {
+    flex-shrink: 0;
+  }
+}
+
+/* ── Mobile grande (≤ 720px) ─────────────────────────────────────── */
+@media (max-width: 720px) {
+  /* Filtros apilados en columna */
+  .filters-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-group {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .btn-reset {
+    width: 100%;
+    justify-content: center;
+    height: 42px;
+  }
+
+  /* Calendario: padding mínimo */
+  .calendar-card {
+    padding: 16px 10px 14px;
+  }
+
+  /* Toolbar de FC: apila en 2 filas */
+  .fc .fc-toolbar {
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    gap: 10px 8px !important;
+    align-items: center !important;
+  }
+
+  .fc .fc-toolbar-chunk:nth-child(1) {
+    /* prev/next + today */
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    gap: 6px;
+  }
+
+  .fc .fc-toolbar-chunk:nth-child(2) {
+    /* título */
+    grid-column: 2;
+    grid-row: 1;
+    text-align: center;
+  }
+
+  .fc .fc-toolbar-chunk:nth-child(3) {
+    /* vistas día/semana/mes */
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    justify-content: center;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1rem !important;
+  }
+
+  /* Botones de vista más compactos */
+  .fc .fc-button {
+    font-size: .7rem !important;
+    padding: 6px 11px !important;
+  }
+
+  /* Slots más bajos para que quepan más horas */
+  .fc .fc-timegrid-slot {
+    height: 28px !important;
+  }
+}
+
+/* ── Mobile pequeño (≤ 480px) ────────────────────────────────────── */
+@media (max-width: 480px) {
+  .header {
+    padding: 0 14px;
+    height: 54px;
+  }
+
+  .logo-sena {
+    height: 26px;
+  }
+
+  .header-title h1 {
+    font-size: .82rem;
+  }
+
+  .cal-wrapper {
+    padding: 14px 10px 36px;
+    gap: 12px;
+  }
+
+  /* Stats chips: tamaño reducido */
+  .stat-chip {
+    padding: 6px 11px;
+    font-size: .72rem;
+  }
+
+  .stat-chip .count {
+    font-size: .95rem;
+  }
+
+  /* Modales ocupan más pantalla */
+  .event-modal,
+  .new-modal {
+    width: calc(100vw - 16px);
+    border-radius: var(--r-lg);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Botones del modal en columna */
+  .modal-footer {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 16px 18px;
+  }
+
+  .modal-btn-close,
+  .modal-btn-edit {
+    flex: unset;
+    width: 100%;
+    padding: 12px;
+  }
+
+  /* Toolbar muy compacto */
+  .fc .fc-toolbar-title {
+    font-size: .88rem !important;
+  }
+
+  .fc .fc-button {
+    font-size: .66rem !important;
+    padding: 5px 9px !important;
+  }
+
+  .fc .fc-prev-button,
+  .fc .fc-next-button {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  /* Ocultar etiquetas de tiempo en vista semana para ganar espacio */
+  .fc .fc-timegrid-slot-label {
+    font-size: .6rem !important;
+  }
 }

@@ -13,15 +13,14 @@ if ($_SESSION['rol'] != 'administracion') {
     <title>Calendario de Ambientes</title>
 
     <!-- FullCalendar v6 -->
-    <link rel="stylesheet" href="../css/calendario.css">
-    <link  href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/es.global.min.js"></script>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- CSS externo del calendario -->
+    <!-- CSS del calendario (incluye @import de DM Sans + Lora) -->
     <link rel="stylesheet" href="../css/calendario.css">
 </head>
 <body>
@@ -259,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data.forEach(a => sel.appendChild(new Option(a.nombre_ambiente, a.id)));
         }).catch(e => console.warn('Ambientes:', e));
 
-   fetch('filtro_calendario.php?type=instructores')
+    fetch('filtro_calendario.php?type=instructores')
         .then(r => r.json())
         .then(data => {
             const sel = $('filtroInstructor');
@@ -284,44 +283,40 @@ document.addEventListener('DOMContentLoaded', function () {
         nowIndicator: true,
         dayMaxEvents: 4,
 
-        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-           FIX FILTROS: leer DOM en el momento del
-           fetch, no desde variable externa
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
         events: function (info, ok, fail) {
-    showLoading(true);
+            showLoading(true);
 
-    const params = new URLSearchParams({
-        ambiente:   $('filtroAmbiente').value,
-        instructor: $('filtroInstructor').value,
-        estado:     $('filtroEstado').value,
-        start:      info.startStr,
-        end:        info.endStr,
-    });
+            const params = new URLSearchParams({
+                ambiente:   $('filtroAmbiente').value,
+                instructor: $('filtroInstructor').value,
+                estado:     $('filtroEstado').value,
+                start:      info.startStr,
+                end:        info.endStr,
+            });
 
-    console.log("📡 Enviando params:", params.toString());
+            console.log("📡 Enviando params:", params.toString());
 
-    fetch('eventos.php?' + params)
-        .then(r => {
-            console.log("📥 Response status:", r.status);
-            if (!r.ok) throw new Error("Error HTTP " + r.status);
-            return r.json();
-        })
-       .then(data => {
-    if (data.error) {
-        console.error("❌ Error en eventos.php:", data.error);
-        fail(data.error);
-    } else {
-        actualizarStats(data);
-        ok(data); // funciona con [] también
-    }
-})
-        .catch(err => {
-            console.error('❌ ERROR eventos.php:', err);
-            fail(err);
-        })
-        .finally(() => showLoading(false));
-},
+            fetch('eventos.php?' + params)
+                .then(r => {
+                    console.log("📥 Response status:", r.status);
+                    if (!r.ok) throw new Error("Error HTTP " + r.status);
+                    return r.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        console.error("❌ Error en eventos.php:", data.error);
+                        fail(data.error);
+                    } else {
+                        actualizarStats(data);
+                        ok(data);
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ ERROR eventos.php:', err);
+                    fail(err);
+                })
+                .finally(() => showLoading(false));
+        },
 
         /* ── Clic en evento ── */
         eventClick: function (info) {
@@ -372,20 +367,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     calendar.render();
 
-    /* ── Filtros disparan refetch ── */
-let timeout;
+    /* ── Filtros disparan refetch con debounce ── */
+    let timeout;
 
-function refetchSeguro() {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-        calendar.refetchEvents();
-    }, 300);
-}
+    function refetchSeguro() {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            calendar.refetchEvents();
+        }, 300);
+    }
 
-['filtroAmbiente', 'filtroInstructor', 'filtroEstado'].forEach(id =>
-    $(id).addEventListener('change', refetchSeguro)
-);
-    /* ── Limpiar ── */
+    ['filtroAmbiente', 'filtroInstructor', 'filtroEstado'].forEach(id =>
+        $(id).addEventListener('change', refetchSeguro)
+    );
+
+    /* ── Limpiar filtros ── */
     $('btnReset').addEventListener('click', () => {
         ['filtroAmbiente','filtroInstructor','filtroEstado']
             .forEach(id => $(id).value = 'todos');
