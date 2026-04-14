@@ -1,27 +1,40 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
 session_start();
 include("../includes/conexion.php");
 
-if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'subdireccion') {
+if (!isset($_SESSION['rol'])) {
     header("Location: ../login.php");
     exit;
 }
 
-$hoy = date('Y-m-d');
-$hora_actual = date('H:i:s');
-$mes = date('m');
-$anio = date('Y');
+$meses_espanol = [
+    '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
+    '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto',
+    '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
+];
 
-$resHabilitados = mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Habilitado'");
-$ambientes_habilitados = mysqli_fetch_row($resHabilitados)[0];
+$rol         = $_SESSION['rol'];
+$hoy         = date('Y-m-d');
+$hora_actual = date('H:i:s');
+$mes         = date('m');
+$anio        = date('Y');
+
+/* ── Conteos de ambientes ── */
+$resHabilitados   = mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Habilitado'");
+$ambientes_habilitados   = mysqli_fetch_row($resHabilitados)[0];
+
 $resDeshabilitados = mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Deshabilitado'");
 $ambientes_deshabilitados = mysqli_fetch_row($resDeshabilitados)[0];
+
 $resMantenimiento = mysqli_query($conexion, "SELECT COUNT(*) FROM ambientes WHERE estado='Mantenimiento'");
 $ambientes_mantenimiento = mysqli_fetch_row($resMantenimiento)[0];
+
 $total_ambientes = $ambientes_habilitados + $ambientes_deshabilitados + $ambientes_mantenimiento;
 
+/* ── Disponibles ahora ── */
 $resDisponibles = mysqli_query($conexion, "
     SELECT COUNT(DISTINCT a.id) FROM ambientes a
     WHERE a.estado = 'Habilitado'
@@ -34,13 +47,14 @@ $resDisponibles = mysqli_query($conexion, "
 ");
 $disponibles_ahora = mysqli_fetch_row($resDisponibles)[0];
 
+/* ── Autorizaciones del mes ── */
 $resMes = mysqli_query($conexion, "
     SELECT COUNT(*) FROM autorizaciones_ambientes
     WHERE MONTH(fecha_inicio) = '$mes' AND YEAR(fecha_inicio) = '$anio'
 ");
 $autorizaciones_mes = mysqli_fetch_row($resMes)[0];
 
-// ── NUEVO: solicitudes pendientes ──────────────────────────────
+/* ── Solicitudes pendientes ── */
 $resPendientes = mysqli_query($conexion, "SELECT COUNT(*) FROM autorizaciones_ambientes WHERE estado = 'Pendiente'");
 $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
 ?>
@@ -49,76 +63,24 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Administración</title>
-    <link rel="stylesheet" href="../css/subdire.css">
+    <title>Panel de Subdirección</title>
+    <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        /* ── Campana de notificaciones ─────────────────────── */
-        .notif-bell {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px; height: 40px;
-            background: transparent;
-            border: 1px solid var(--border, #2e3250);
-            border-radius: 10px;
-            color: var(--text-muted, #7c85b3);
-            text-decoration: none;
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-        .notif-bell:hover { border-color: #f59e0b; color: #f59e0b; }
-        .notif-bell .badge-bell {
-            position: absolute;
-            top: -6px; right: -6px;
-            background: #ef4444;
-            color: #fff;
-            font-size: 0.65rem;
-            font-weight: 700;
-            width: 18px; height: 18px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            animation: bellPulse 1.5s ease infinite;
-        }
-        @keyframes bellPulse {
-            0%, 100% { transform: scale(1); }
-            50%       { transform: scale(1.2); }
-        }
-
-        /* ── Card de pendientes ────────────────────────────── */
-        .stat-card.warning {
-            border-color: rgba(245,158,11,0.35) !important;
-            background: rgba(245,158,11,0.04) !important;
-        }
-        .stat-card.warning .stat-value { color: #f59e0b; }
-        .stat-card.warning:hover { border-color: #f59e0b !important; }
-
-        .btn-ver {
-            display: inline-flex; align-items: center; gap: .4rem;
-            margin-top: .75rem;
-            padding: .4rem .9rem;
-            background: #f59e0b;
-            color: #000; font-weight: 700; font-size: .78rem;
-            border-radius: 20px; text-decoration: none;
-            transition: background .2s, transform .15s;
-        }
-        .btn-ver:hover { background: #d97706; transform: translateY(-1px); }
-    </style>
 </head>
 <body>
 
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
 <div class="header">
     <div class="header-left">
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
         <div class="header-title">
-            <h1>Panel de Administración</h1>
+            <h1>Panel de subdirección</h1>
             <span>Gestión y control de ambientes</span>
         </div>
     </div>
-    <div class="header-user" style="display:flex;align-items:center;gap:.75rem;">
-        <!-- Campana de notificaciones -->
-        <a href="solicitudes.php" class="notif-bell" title="Solicitudes pendientes">
+    <div class="header-user">
+        <!-- Campana -->
+        <a href="solicitudes.php?estado=Pendiente" class="notif-bell" title="Solicitudes pendientes">
             <i class="fa-solid fa-bell"></i>
             <?php if ($solicitudes_pendientes > 0): ?>
                 <span class="badge-bell"><?= $solicitudes_pendientes ?></span>
@@ -131,9 +93,13 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
     </div>
 </div>
 
+<!-- ═══════════════════════ DASHBOARD ═══════════════════════ -->
 <div class="dashboard-container">
+
+    <!-- STAT CARDS (4 columnas) -->
     <div class="stats-grid">
-        <!-- Card: Total ambientes -->
+
+        <!-- 1. Total ambientes -->
         <a href="total_ambientes.php" class="stat-card stat-link">
             <div class="stat-label">TOTAL AMBIENTES</div>
             <div class="stat-value"><?= $total_ambientes ?></div>
@@ -144,83 +110,86 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
             </div>
         </a>
 
-        <!-- Card: Disponibles ahora -->
+        <!-- 2. Disponibles ahora -->
         <a href="disponibles.php" class="stat-card stat-link success">
             <div class="stat-label">DISPONIBLES AHORA</div>
             <div class="stat-value"><?= $disponibles_ahora ?></div>
             <div class="stat-details"><small>Ambientes libres en este momento</small></div>
         </a>
 
-        <!-- Card: Autorizaciones del mes -->
+        <!-- 3. Autorizaciones del mes -->
         <a href="autorizacion_mes.php" class="stat-card stat-link info">
             <div class="stat-label">AUTORIZACIONES DEL MES</div>
             <div class="stat-value"><?= $autorizaciones_mes ?></div>
-            <div class="stat-details"><small><?= date('F Y') ?></small></div>
+            <div class="stat-details">
+                <small><?= $meses_espanol[$mes] . ' ' . $anio ?></small>
+            </div>
         </a>
 
-        <!-- ── NUEVA Card: Solicitudes pendientes ── -->
-        <div class="stat-card warning" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <!-- 4. Solicitudes pendientes -->
+        <div class="stat-card warning">
             <div>
                 <div class="stat-label">
-                    <i class="fa-solid fa-bell" style="margin-right:.35rem;"></i>SOLICITUDES PENDIENTES
+                    <i class="fa-solid fa-bell"></i> SOLICITUDES PENDIENTES
                 </div>
                 <div class="stat-value"><?= $solicitudes_pendientes ?></div>
                 <div class="stat-details">
                     <small>
                         <?= $solicitudes_pendientes > 0
-                            ? $solicitudes_pendientes . ' solicitud' . ($solicitudes_pendientes !== 1 ? 'es esperan revisión' : ' espera revisión')
-                            : 'Sin solicitudes por revisar ✓' ?>
+                            ? $solicitudes_pendientes . ' solicitud' . ($solicitudes_pendientes !== 1 ? 'es por revisar' : ' por revisar')
+                            : 'Sin solicitudes pendientes ✓' ?>
                     </small>
                 </div>
             </div>
-            <a href="solicitudes.php" class="btn-ver">
-                <i class="fa-solid fa-eye"></i> Ver solicitudes
-            </a>
+            <div>
+                <a href="solicitudes.php?estado=Pendiente" class="btn-ver-sol">
+                    <i class="fa-solid fa-eye"></i> Ver solicitudes
+                </a>
+            </div>
         </div>
-    </div>
 
+    </div><!-- /stats-grid -->
+
+    <!-- ACCIONES -->
     <div class="actions-container">
         <h2 class="actions-title">Acciones disponibles</h2>
+
         <div class="menu-grid">
+
             <a href="consultar.php" class="menu-card">
                 <div class="menu-card-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
                 <div class="menu-card-title">Consultar Ambiente</div>
                 <div class="menu-card-description">Buscar ambiente, ver historial y gestionar permisos</div>
             </a>
+
             <a href="historial.php" class="menu-card">
                 <div class="menu-card-icon"><i class="fa-solid fa-clipboard-list"></i></div>
                 <div class="menu-card-title">Historial Autorizaciones</div>
                 <div class="menu-card-description">Ver todas las autorizaciones del sistema</div>
             </a>
-            <a href="registro.php" class="menu-card registro">
+
+            <a href="registro.php" class="menu-card crear">
                 <div class="menu-card-icon"><i class="fa-solid fa-circle-plus"></i></div>
                 <div class="menu-card-title">Crear Registros</div>
-                <div class="menu-card-description">Ver registros del sistema</div>
+                <div class="menu-card-description">Registrar nuevos ambientes e instructores</div>
             </a>
-            <!-- ── NUEVO acceso rápido ── -->
-            <a href="solicitudes.php" class="menu-card" style="position:relative;">
-                <div class="menu-card-icon" style="color:#f59e0b;">
-                    <i class="fa-solid fa-bell"></i>
-                    <?php if ($solicitudes_pendientes > 0): ?>
-                        <span style="
-                            position:absolute;top:1rem;right:1rem;
-                            background:#ef4444;color:#fff;font-size:.65rem;
-                            font-weight:700;width:20px;height:20px;border-radius:50%;
-                            display:flex;align-items:center;justify-content:center;">
-                            <?= $solicitudes_pendientes ?>
-                        </span>
-                    <?php endif; ?>
-                </div>
-                <div class="menu-card-title">Solicitudes</div>
-                <div class="menu-card-description">Aprobar o rechazar solicitudes de instructores</div>
-            </a>
-        </div>
-    </div>
-</div>
 
+            <a href="calendario.php" class="menu-card calendario">
+                <div class="menu-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="menu-card-title">Calendario de Ambientes</div>
+                <div class="menu-card-description">Vista interactiva de reservas y permisos por día, semana o mes</div>
+            </a>
+
+        </div><!-- /menu-grid -->
+    </div><!-- /actions-container -->
+
+</div><!-- /dashboard-container -->
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
 <footer class="footer">
     <div class="footer-top-line"></div>
     <div class="footer-container">
+
         <div class="footer-brand">
             <div class="footer-logo"><span>&#94;</span></div>
             <div class="footer-brand-text">
@@ -228,18 +197,22 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
                 <h3 class="footer-title">Sistema de Gestión<br>de Ambientes</h3>
             </div>
         </div>
+
         <div class="footer-description">
             <p>Plataforma institucional para la administración y control de ambientes de aprendizaje.</p>
         </div>
+
         <div class="footer-nav">
             <span class="footer-section-title">NAVEGACIÓN</span>
             <ul>
                 <li><a href="#">Inicio</a></li>
                 <li><a href="consultar.php">Consultar Ambiente</a></li>
                 <li><a href="historial.php">Historial Autorizaciones</a></li>
-                <li><a href="solicitudes.php">Solicitudes</a></li>
+                <li><a href="registro.php">Crear Registros</a></li>
+                <li><a href="calendario.php">Calendario de Ambientes</a></li>
             </ul>
         </div>
+
         <div class="footer-location">
             <span class="footer-section-title">UBICACIÓN</span>
             <ul>
@@ -248,6 +221,7 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
                 <li><span class="footer-icon">&#9993;</span>sena.edu.co</li>
             </ul>
         </div>
+
     </div>
     <div class="footer-divider"></div>
     <div class="footer-bottom">
@@ -259,8 +233,8 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
     </div>
 </footer>
 
+<!-- Refresca contador de campana cada 30 s sin recargar la página -->
 <script>
-// Refresca el contador de la campana cada 30 segundos sin recargar toda la página
 setInterval(() => {
     fetch('api_pendientes.php')
         .then(r => r.json())
@@ -280,8 +254,9 @@ setInterval(() => {
                 badge.remove();
             }
         })
-        .catch(() => {}); // silencioso si falla
+        .catch(() => {});
 }, 30000);
 </script>
+
 </body>
 </html>
