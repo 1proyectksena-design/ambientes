@@ -245,31 +245,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 .hidden { display: none !important; }
 
+/* ══ HEADER — más alto, más presencia ══ */
 .hdr {
     background: var(--navy);
-    height: 60px;
+    height: 76px;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 28px;
+    padding: 0 32px;
     position: sticky; top: 0; z-index: 200;
-    box-shadow: 0 2px 14px rgba(0,0,0,0.28);
+    box-shadow: 0 3px 20px rgba(0,0,0,0.32);
 }
-.hdr-left { display: flex; align-items: center; gap: 14px; }
-.hdr-logo { height: 34px; }
-.hdr-title h1 { font-size: 14px; font-weight: 700; color: #fff; }
-.hdr-title p  { font-size: 11px; color: rgba(255,255,255,0.45); }
+.hdr-left { display: flex; align-items: center; gap: 16px; }
+.hdr-logo { height: 40px; }
+.hdr-divider {
+    width: 1.5px; height: 36px;
+    background: rgba(255,255,255,0.15);
+}
+.hdr-title h1 { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+.hdr-title p  { font-size: 12px; color: rgba(255,255,255,0.42); margin-top: 2px; }
 .hdr-back {
-    color: rgba(255,255,255,0.75); text-decoration: none;
+    color: rgba(255,255,255,0.78); text-decoration: none;
     font-size: 13px; font-weight: 600;
-    padding: 7px 14px; border-radius: 8px;
-    border: 1.5px solid rgba(255,255,255,0.15);
-    display: flex; align-items: center; gap: 6px;
-    transition: all .15s;
+    padding: 9px 18px; border-radius: 9px;
+    border: 1.5px solid rgba(255,255,255,0.18);
+    display: flex; align-items: center; gap: 7px;
+    transition: all .15s; white-space: nowrap;
 }
-.hdr-back:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.hdr-back:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.3); }
 
+/* ══ STEPS ══ */
 .steps-wrap {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -277,26 +284,30 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .steps-bar {
     max-width: 760px; margin: 0 auto;
     display: flex; align-items: center;
-    padding: 16px 24px; gap: 0;
+    padding: 18px 24px; gap: 0;
+    overflow-x: auto;
 }
-.step-item { display: flex; align-items: center; gap: 9px; }
+.steps-bar::-webkit-scrollbar { display: none; }
+.step-item { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
 .step-num {
-    width: 30px; height: 30px; border-radius: 50%;
+    width: 32px; height: 32px; border-radius: 50%;
     background: var(--border); color: var(--muted);
     font-size: 13px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; transition: all .25s;
 }
-.step-lbl { font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; transition: color .25s; }
-.step-connector { flex: 1; height: 2px; background: var(--border); margin: 0 10px; transition: background .3s; }
+.step-lbl { font-size: 13px; font-weight: 600; color: var(--muted); transition: color .25s; }
+.step-connector { flex: 1; min-width: 20px; height: 2px; background: var(--border); margin: 0 8px; transition: background .3s; }
 .step-item.active .step-num  { background: var(--green); color: #fff; }
 .step-item.active .step-lbl  { color: var(--text); }
 .step-item.done   .step-num  { background: var(--green-lt); color: var(--green); }
 .step-item.done   .step-lbl  { color: var(--green); }
 .step-connector.done { background: var(--green); }
 
+/* ══ CONTAINER ══ */
 .container { max-width: 1100px; margin: 0 auto; padding: 26px 18px 80px; }
 
+/* ══ ALERTS ══ */
 .alert {
     display: flex; align-items: flex-start; gap: 10px;
     padding: 14px 18px; border-radius: var(--r);
@@ -306,6 +317,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .alert-success { background: var(--green-lt); border: 1.5px solid var(--green-mid); color: #145f31; }
 .alert-error   { background: var(--red-lt);   border: 1.5px solid #f5bfba;         color: #8b2117; }
 
+/* ══ CARD ══ */
 .card {
     background: var(--surface);
     border-radius: var(--r); border: 1px solid var(--border);
@@ -320,6 +332,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 }
 .card-title i { color: var(--green); }
 
+/* ══ BUTTONS ══ */
 .btn {
     padding: 11px 20px; border: none; border-radius: 10px;
     font-size: 14px; font-weight: 700; font-family: inherit;
@@ -335,7 +348,8 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .btn-outline:hover { border-color: var(--navy); background: #f4f6fa; }
 .btn-sm { padding: 8px 14px; font-size: 13px; }
 
-.ac-wrap { position: relative; flex: 1; }
+/* ══ AUTOCOMPLETE ══ */
+.ac-wrap { position: relative; flex: 1; min-width: 0; }
 .search-input {
     width: 100%; padding: 12px 16px;
     border: 1.5px solid var(--border); border-radius: 10px;
@@ -366,6 +380,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .ac-cc   { font-size: 12px; color: var(--muted); }
 .ac-empty { padding: 18px; text-align: center; color: var(--muted); font-size: 14px; }
 
+/* ══ INSTRUCTOR CHIP ══ */
 .inst-chip {
     display: flex; align-items: center; gap: 14px;
     background: var(--green-lt); border: 1.5px solid var(--green-mid);
@@ -377,12 +392,13 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     color: #fff; display: flex; align-items: center; justify-content: center;
     font-size: 17px; flex-shrink: 0;
 }
-.inst-info strong { font-size: 15px; color: var(--navy); display: block; }
+.inst-info { min-width: 0; }
+.inst-info strong { font-size: 15px; color: var(--navy); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .inst-info span   { font-size: 13px; color: var(--muted); }
-.inst-chip .check { margin-left: auto; color: var(--green); font-size: 20px; }
+.inst-chip .check { margin-left: auto; color: var(--green); font-size: 20px; flex-shrink: 0; }
 
 .inst-bar {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     background: #f4f7fb; border: 1px solid var(--border);
     border-radius: 10px; padding: 10px 14px; margin-bottom: 18px;
     font-size: 13px; color: var(--muted);
@@ -390,34 +406,36 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .inst-bar strong { color: var(--text); font-weight: 700; }
 .inst-bar i { color: var(--green); }
 
+/* ══ CALENDAR TOOLBAR ══ */
 .cal-toolbar {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
 }
-.cal-nav { display: flex; align-items: center; gap: 8px; }
+.cal-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .cal-period {
-    font-size: 16px; font-weight: 700; color: var(--navy);
-    min-width: 200px; text-align: center;
+    font-size: 15px; font-weight: 700; color: var(--navy);
+    min-width: 160px; text-align: center;
 }
 .cal-views {
     display: flex; border: 1.5px solid var(--border);
     border-radius: 9px; overflow: hidden;
 }
 .view-btn {
-    padding: 7px 18px; font-size: 13px; font-weight: 700;
+    padding: 7px 16px; font-size: 13px; font-weight: 700;
     font-family: inherit; border: none; background: transparent;
     cursor: pointer; color: var(--muted); transition: all .15s;
 }
 .view-btn.active { background: var(--navy); color: #fff; }
 
+/* ══ DAY VIEW ══ */
 .day-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
-.day-grid   { min-width: 500px; }
+.day-grid   { min-width: 400px; }
 
 .day-hdr { display: flex; background: #f4f7fb; border-bottom: 2px solid var(--border); }
-.day-hdr-time { width: 68px; flex-shrink: 0; padding: 10px 8px; border-right: 1px solid var(--border); }
+.day-hdr-time { width: 64px; flex-shrink: 0; padding: 10px 8px; border-right: 1px solid var(--border); }
 .day-hdr-amb {
-    flex: 1; min-width: 150px;
-    padding: 10px 12px; font-size: 12px; font-weight: 700; color: var(--navy);
+    flex: 1; min-width: 120px;
+    padding: 10px 10px; font-size: 11px; font-weight: 700; color: var(--navy);
     border-right: 1px solid var(--border); text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -426,15 +444,15 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .day-row { display: flex; border-bottom: 1px solid var(--border); }
 .day-row:last-child { border-bottom: none; }
 .day-time {
-    width: 68px; flex-shrink: 0; border-right: 1px solid var(--border);
+    width: 64px; flex-shrink: 0; border-right: 1px solid var(--border);
     display: flex; align-items: center; justify-content: flex-end;
-    padding: 0 10px; font-size: 11px; font-weight: 700; color: var(--muted);
-    height: 54px; background: #fafbfd;
+    padding: 0 8px; font-size: 11px; font-weight: 700; color: var(--muted);
+    height: 50px; background: #fafbfd;
 }
 .cal-cell {
-    flex: 1; min-width: 150px; height: 54px;
-    display: flex; align-items: center; justify-content: center; gap: 5px;
-    font-size: 12px; font-weight: 700;
+    flex: 1; min-width: 100px; height: 50px;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-size: 11px; font-weight: 700;
     border-right: 1px solid var(--border); transition: all .12s;
 }
 .cal-cell:last-child { border-right: none; }
@@ -448,6 +466,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .cal-cell.past       { background: #f5f6f8; color: #ccd0da; cursor: not-allowed; }
 .cal-cell.no-sched   { background: #fafbfd; color: #d0d5e0; cursor: not-allowed; }
 
+/* ══ WEEK VIEW ══ */
 .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
 .week-card {
     border: 1.5px solid var(--border); border-radius: 10px;
@@ -462,49 +481,52 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     padding: 8px 4px; font-size: 12px; font-weight: 700;
 }
 .week-card.today .week-hdr { background: var(--green); }
-.week-body { padding: 8px 10px; }
-.week-stat { font-size: 12px; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+.week-body { padding: 8px 8px; }
+.week-stat { font-size: 11px; display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
 .week-stat.libre { color: var(--green-dk); }
 .week-stat.occ   { color: #9e3128; }
 
+/* ══ MONTH VIEW ══ */
 .month-day-names {
     display: grid; grid-template-columns: repeat(7, 1fr);
     margin-bottom: 6px;
 }
 .month-day-name { text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); padding: 5px 0; }
-.month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .month-day {
     border-radius: 9px; border: 1.5px solid var(--border);
-    min-height: 64px; padding: 7px 8px;
+    min-height: 56px; padding: 6px 7px;
     cursor: pointer; transition: all .15s; position: relative;
 }
 .month-day:hover:not(.past):not(.empty) { border-color: var(--green); background: var(--green-lt); }
 .month-day.today  { border-color: var(--navy-2); }
 .month-day.past   { opacity: .4; cursor: not-allowed; }
 .month-day.empty  { border: none; background: transparent; cursor: default; }
-.month-num { font-size: 14px; font-weight: 700; color: var(--text); }
+.month-num { font-size: 13px; font-weight: 700; color: var(--text); }
 .month-day.today .month-num { color: var(--navy-2); }
 .month-avail { margin-top: 5px; display: flex; gap: 3px; flex-wrap: wrap; }
 .m-dot { width: 7px; height: 7px; border-radius: 50%; }
 .m-dot.libre { background: var(--green); }
 .m-dot.occ   { background: #e05050; }
 
+/* ══ SLOT BAR ══ */
 .slot-bar {
     background: var(--navy); color: #fff; border-radius: 12px;
-    padding: 18px 22px; display: flex; align-items: center; gap: 16px;
+    padding: 16px 20px; display: flex; align-items: center; gap: 14px;
     margin-top: 18px; flex-wrap: wrap;
 }
 .slot-bar-icon {
-    width: 46px; height: 46px; border-radius: 12px;
+    width: 44px; height: 44px; border-radius: 12px;
     background: rgba(255,255,255,0.1);
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px; flex-shrink: 0;
+    font-size: 18px; flex-shrink: 0;
 }
-.slot-bar-info { flex: 1; }
-.slot-bar-info strong { display: block; font-size: 15px; margin-bottom: 3px; }
-.slot-bar-info span   { font-size: 13px; color: rgba(255,255,255,0.65); }
+.slot-bar-info { flex: 1; min-width: 160px; }
+.slot-bar-info strong { display: block; font-size: 14px; margin-bottom: 3px; }
+.slot-bar-info span   { font-size: 12px; color: rgba(255,255,255,0.65); }
 .slot-bar .btn-green  { flex-shrink: 0; }
 
+/* ══ SUMMARY ══ */
 .summary {
     background: #f6f9fc; border: 1.5px solid var(--border);
     border-radius: 12px; padding: 18px 20px; margin-bottom: 22px;
@@ -527,6 +549,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .sum-lbl { font-size: 12px; color: var(--muted); }
 .sum-val { font-size: 14px; font-weight: 700; color: var(--text); }
 
+/* ══ FORM ══ */
 .form-group  { margin-bottom: 18px; }
 .form-label  { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
 .form-ctrl {
@@ -540,12 +563,14 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
 
+/* ══ LOADING ══ */
 .cal-loading { text-align: center; padding: 56px 20px; color: var(--muted); }
 .cal-loading i   { font-size: 26px; margin-bottom: 12px; display: block; }
 .cal-loading span{ font-size: 14px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .fa-spin { animation: spin .8s linear infinite; }
 
+/* ══ TIPO TOGGLE ══ */
 .tipo-toggle {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     margin-bottom: 24px;
@@ -575,6 +600,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .tipo-text span   { font-size: 12px; font-weight: 400; color: var(--muted); }
 .tipo-option input:checked + label .tipo-text span { color: var(--green-dk); opacity: .75; }
 
+/* ══ DÍAS GRID ══ */
 .dias-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
     margin-top: 8px;
@@ -592,6 +618,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .dia-option label:hover { border-color: var(--green-mid); background: var(--green-lt); color: var(--text); }
 .dia-option input:checked + label { border-color: var(--green); background: var(--green); color: #fff; }
 
+/* ══ RECURRENTE BLOCK ══ */
 .recurrente-block {
     background: #f6f9fc; border: 1.5px solid var(--border);
     border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;
@@ -607,6 +634,76 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     display: flex; align-items: center; gap: 7px;
 }
 .recurrente-block .block-ttl i { color: var(--green); }
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 768px) {
+    .hdr {
+        height: 68px;
+        padding: 0 16px;
+    }
+    .hdr-logo { height: 34px; }
+    .hdr-title h1 { font-size: 14px; }
+    .hdr-title p  { font-size: 11px; }
+    .hdr-back span { display: none; }
+    .hdr-back { padding: 8px 12px; gap: 0; }
+    .hdr-divider { display: none; }
+
+    .steps-bar { padding: 12px 16px; }
+    .step-lbl { font-size: 11px; }
+    .step-connector { margin: 0 4px; min-width: 12px; }
+
+    .container { padding: 16px 12px 60px; }
+    .card { padding: 18px 16px; }
+
+    .form-row { grid-template-columns: 1fr; gap: 12px; }
+    .tipo-toggle { grid-template-columns: 1fr; }
+    .dias-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .cal-toolbar { gap: 10px; }
+    .cal-period { min-width: 0; font-size: 13px; }
+
+    .week-grid { grid-template-columns: repeat(4, 1fr); }
+    .week-stat { font-size: 10px; }
+    .week-hdr  { font-size: 11px; padding: 6px 3px; }
+
+    .month-grid { gap: 3px; }
+    .month-day  { min-height: 44px; padding: 4px 5px; }
+    .month-num  { font-size: 12px; }
+    .month-day-name { font-size: 11px; }
+
+    .slot-bar { padding: 14px 16px; gap: 12px; }
+    .slot-bar-info strong { font-size: 13px; }
+
+    .inst-chip { padding: 12px 14px; gap: 10px; }
+    .inst-av   { width: 38px; height: 38px; font-size: 15px; }
+    .inst-info strong { font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+    .hdr { height: 62px; }
+    .hdr-logo { height: 30px; }
+    .hdr-title h1 { font-size: 13px; }
+    .hdr-title p  { display: none; }
+
+    .step-lbl { display: none; }
+    .step-num { width: 28px; height: 28px; font-size: 12px; }
+
+    .week-grid { grid-template-columns: repeat(3, 1fr); }
+
+    .tipo-option label { padding: 12px 12px; gap: 10px; }
+    .tipo-icon { width: 32px; height: 32px; font-size: 13px; }
+    .tipo-text strong { font-size: 13px; }
+    .tipo-text span   { font-size: 11px; }
+
+    .dias-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .dia-option label { padding: 8px 6px; font-size: 12px; }
+
+    .btn { font-size: 13px; padding: 10px 16px; }
+    .btn-sm { padding: 7px 12px; font-size: 12px; }
+
+    .cal-period { font-size: 12px; min-width: 120px; }
+    .view-btn { padding: 6px 10px; font-size: 12px; }
+}
 </style>
 </head>
 <body>
@@ -614,12 +711,13 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 <div class="hdr">
     <div class="hdr-left">
         <img src="../css/img/senab.png" alt="SENA" class="hdr-logo">
+        <div class="hdr-divider"></div>
         <div class="hdr-title">
             <h1>Solicitar Ambiente</h1>
             <p>Flujo guiado de reserva</p>
         </div>
     </div>
-    <a href="index.php" class="hdr-back"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    <a href="index.php" class="hdr-back"><i class="fa-solid fa-arrow-left"></i> <span>Volver</span></a>
 </div>
 
 <div class="steps-wrap">
@@ -684,7 +782,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
             </div>
             <i class="fa-solid fa-circle-check check"></i>
         </div>
-        <div style="display:flex;gap:10px;margin-top:14px;">
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
             <button class="btn btn-green" onclick="goToStep(2)">
                 <i class="fa-solid fa-calendar-days"></i> Ver Calendario
             </button>
@@ -700,8 +798,8 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     <div class="card-title"><i class="fa-solid fa-calendar-days"></i> Paso 2 — Seleccionar espacio disponible</div>
     <div class="inst-bar">
         <i class="fa-solid fa-user-check"></i>
-        Instructor: <strong id="ibar-nombre"></strong>&nbsp;·&nbsp;
-        <a href="#" onclick="goToStep(1);return false;" style="color:var(--green);font-size:12px;font-weight:700;">Cambiar</a>
+        Instructor: <strong id="ibar-nombre"></strong>
+        <a href="#" onclick="goToStep(1);return false;" style="color:var(--green);font-size:12px;font-weight:700;margin-left:4px;">Cambiar</a>
     </div>
     <div class="cal-toolbar">
         <div class="cal-nav">
@@ -885,7 +983,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
         </div>
 
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
-            <button type="submit" class="btn btn-green" style="flex:1;justify-content:center;min-width:180px;">
+            <button type="submit" class="btn btn-green" style="flex:1;justify-content:center;min-width:160px;">
                 <i class="fa-solid fa-circle-check"></i> Confirmar solicitud
             </button>
             <button type="button" class="btn btn-outline" onclick="goToStep(2)">
@@ -1063,13 +1161,13 @@ function isOccupied(ambId, dateStr, hourStr) {
     );
 }
 
-/* ─── DAY VIEW — horario 06:00 a 22:00 ─── */
+/* ─── DAY VIEW ─── */
 function renderDayView() {
     const dateStr  = fmt(S.date);
     const todayStr = today();
     const isPast   = dateStr < todayStr;
     const hours    = [];
-    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`); // ← 06:00–22:00
+    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`);
 
     if (!S.ambientes.length) {
         document.getElementById('cal-content').innerHTML =
@@ -1098,7 +1196,7 @@ function renderDayView() {
                 html += `<div class="cal-cell past">—</div>`;
             } else if (selMatch) {
                 html += `<div class="cal-cell selected" onclick="deselectSlot()">
-                            <i class="fa-solid fa-check"></i> Seleccionado
+                            <i class="fa-solid fa-check"></i> Sel.
                          </div>`;
             } else if (isOccupied(a.id, dateStr, h)) {
                 html += `<div class="cal-cell occupied">
@@ -1130,7 +1228,7 @@ function renderWeekView() {
     }
     const dayNames = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
     const hours    = [];
-    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`); // ← 06:00–22:00
+    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`);
 
     let html = `<div class="week-grid">`;
     days.forEach((d, i) => {
@@ -1148,9 +1246,9 @@ function renderWeekView() {
                       onclick="${isPast ? '' : `goDayView('${ds}')`}">
             <div class="week-hdr">${dayNames[i]}<br>${d.getDate()}</div>
             <div class="week-body">`;
-        if (!isPast) html += `<div class="week-stat libre"><i class="fa-solid fa-circle" style="font-size:8px;color:var(--green);"></i> ${libre} libres</div>`;
-        if (ocupado) html += `<div class="week-stat occ"><i class="fa-solid fa-circle" style="font-size:8px;color:#e05050;"></i> ${ocupado} ocupados</div>`;
-        if (isPast)  html += `<div class="week-stat" style="color:var(--muted);font-size:11px;">Pasado</div>`;
+        if (!isPast) html += `<div class="week-stat libre"><i class="fa-solid fa-circle" style="font-size:8px;color:var(--green);"></i> ${libre} lib.</div>`;
+        if (ocupado) html += `<div class="week-stat occ"><i class="fa-solid fa-circle" style="font-size:8px;color:#e05050;"></i> ${ocupado} ocu.</div>`;
+        if (isPast)  html += `<div class="week-stat" style="color:var(--muted);font-size:10px;">Pasado</div>`;
         html += `</div></div>`;
     });
     html += `</div><p style="font-size:12px;color:var(--muted);margin-top:12px;"><i class="fa-solid fa-hand-pointer"></i> Haga clic en un día para ver sus espacios disponibles.</p>`;
@@ -1173,7 +1271,7 @@ function renderMonthView() {
     const m        = S.date.getMonth();
     const todayStr = today();
     const hours    = [];
-    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`); // ← 06:00–22:00
+    for (let h = 6; h < 22; h++) hours.push(`${String(h).padStart(2,'0')}:00`);
 
     const firstDay    = new Date(y, m, 1).getDay();
     const startOffset = (firstDay === 0) ? 6 : firstDay - 1;
