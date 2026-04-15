@@ -299,7 +299,7 @@ body {
 .menu-card.crear:hover .menu-card-title { color: var(--success); }
 
 /* ── Variante CALENDARIO (morado) ── */
-.menu-card.calendario .menu-card-icon {
+.menu-card.calendario .menu+-card-icon {
     background: linear-gradient(135deg, #2c3e8f 0%, #1a2654 100%);
     box-shadow: 0 6px 20px rgba(45, 93, 197, 0.35);
 }

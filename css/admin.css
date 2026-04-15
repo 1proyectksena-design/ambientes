@@ -187,19 +187,6 @@ body {
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
-/* ── Card WARNING (solicitudes pendientes) ── */
-.stat-card.warning {
-    border-color: rgba(251, 140, 0, 0.3);
-    background: rgba(251, 140, 0, 0.03);
-    display: flex; flex-direction: column;
-    justify-content: space-between; text-align: center;
-}
-.stat-card.warning:hover { border-color: rgba(251, 140, 0, 0.6); }
-.stat-card.warning .stat-value {
-    background: linear-gradient(135deg, #fb8c00 0%, #ffa726 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.stat-card.warning .stat-label i { margin-right: .3rem; }
 
 /* ── Botón dentro de la card warning ── */
 .btn-ver-sol {
@@ -298,20 +285,7 @@ body {
 .menu-card.crear:hover { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-color: #66bb6a; }
 .menu-card.crear:hover .menu-card-title { color: var(--success); }
 
-/* ── Variante CALENDARIO (morado) ── */
-.menu-card.calendario .menu-card-icon {
-    background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%);
-    box-shadow: 0 6px 20px rgba(124,58,237,0.35);
-}
-.menu-card.calendario {
-    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-    border-color: #c4b5fd;
-}
-.menu-card.calendario:hover {
-    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
-    border-color: #7c3aed;
-}
-.menu-card.calendario:hover .menu-card-title { color: #7c3aed; }
+
 
 /* ===================== FOOTER ===================== */
 .footer {

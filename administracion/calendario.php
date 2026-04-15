@@ -31,7 +31,6 @@ if ($_SESSION['rol'] != 'administracion') {
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
         <div class="header-title">
             <h1>Calendario de Ambientes</h1>
-            <span>Vista interactiva de reservas y permisos</span>
         </div>
     </div>
     <div class="header-right">

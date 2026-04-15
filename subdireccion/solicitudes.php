@@ -129,7 +129,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:1rem}
 .info-cell{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px}
 .info-cell-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:4px}
-.info-cell-val{font-size:13.5px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace}
+.info-cell-val{font-size:13.5px;font-weight:700;color:var(--text)}
 .info-cell-val .ic{margin-right:5px;color:var(--teal);font-size:11px;font-family:'DM Sans',sans-serif}
 
 .dias-section{margin-bottom:1rem}
@@ -278,34 +278,34 @@ $i = 0;
             <div class="info-grid">
                 <div class="info-cell">
                     <div class="info-cell-lbl">Ambiente</div>
-                    <div class="info-cell-val"><i class="ic fa-solid fa-door-open"></i><?= htmlspecialchars($g['nombre_ambiente']) ?></div>
+                    <div class="info-cell-val"><?= htmlspecialchars($g['nombre_ambiente']) ?></div>
                 </div>
                 <?php if (!$esRec): ?>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Fecha</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-calendar"></i><?= $primerFecha ?></div>
+                    <div class="info-cell-val"><?= $primerFecha ?></div>
                 </div>
                 <?php else: ?>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Desde</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-calendar"></i><?= $primerFecha ?></div>
+                    <div class="info-cell-val"><?= $primerFecha ?></div>
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Hasta</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-calendar-check"></i><?= $ultimaFecha ?></div>
+                    <div class="info-cell-val"><?= $ultimaFecha ?></div>
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Sesiones</div>
-                    <div class="info-cell-val"><i class="ic fa-solid fa-layer-group"></i><?= count($g['ids']) ?></div>
+                    <div class="info-cell-val"><?= count($g['ids']) ?></div>
                 </div>
                 <?php endif; ?>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Hora inicio</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-clock"></i><?= $hIni ?></div>
+                    <div class="info-cell-val"><?= $hIni ?></div>
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Hora fin</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-clock"></i><?= $hFin ?></div>
+                    <div class="info-cell-val"><?= $hFin ?></div>
                 </div>
             </div>
 
@@ -427,5 +427,11 @@ function toggleFechas(btn, id) {
             : ` Ver ${n} fechas específicas`;
 }
 </script>
+
+
+
+
+
+
 </body>
 </html>
