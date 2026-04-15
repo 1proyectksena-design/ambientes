@@ -35,15 +35,30 @@ $ambientes_mantenimiento = mysqli_fetch_row($resMantenimiento)[0];
 $total_ambientes = $ambientes_habilitados + $ambientes_deshabilitados + $ambientes_mantenimiento;
 
 /* ── Disponibles ahora ── */
+/* ── Disponibles ahora (versión actualizada) ── */
 $resDisponibles = mysqli_query($conexion, "
-    SELECT COUNT(DISTINCT a.id) FROM ambientes a
+    SELECT COUNT(DISTINCT a.id)
+    FROM ambientes a
     WHERE a.estado = 'Habilitado'
-    AND a.id NOT IN (
-        SELECT id_ambiente FROM autorizaciones_ambientes
-        WHERE fecha_inicio <= '$hoy' AND fecha_fin >= '$hoy'
-        AND hora_inicio <= '$hora_actual' AND hora_final >= '$hora_actual'
-        AND estado = 'Aprobado'
-    )
+      /* sin reserva activa */
+      AND a.id NOT IN (
+          SELECT au.id_ambiente
+          FROM autorizaciones_ambientes au
+          WHERE au.fecha_inicio <= '$hoy'
+            AND au.fecha_fin    >= '$hoy'
+            AND au.hora_inicio  <= '$hora_actual'
+            AND au.hora_final   >= '$hora_actual'
+            AND au.estado = 'Aprobado'
+      )
+      /* sin bloque 'Ocupado' activo */
+      AND a.id NOT IN (
+          SELECT da.id_ambiente
+          FROM disponibilidad_ambiente da
+          WHERE da.fecha       = '$hoy'
+            AND da.hora_inicio <= '$hora_actual'
+            AND da.hora_fin    >= '$hora_actual'
+            AND da.estado = 'Ocupado'
+      )
 ");
 $disponibles_ahora = mysqli_fetch_row($resDisponibles)[0];
 

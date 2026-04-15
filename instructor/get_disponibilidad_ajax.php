@@ -1,66 +1,64 @@
 <?php
 /*
  * get_disponibilidad_ajax.php
- * Retorna JSON con la disponibilidad de todos los ambientes habilitados
+ * Verifica disponibilidad usando:
+ *   - autorizaciones_ambientes (reservas aprobadas/pendientes)
+ *   - disponibilidad_ambiente  (bloques explícitos 'Ocupado')
+ * Horarios en formato 24 h. Sin columnas horario_fijo / horario_disponible.
  */
 
 session_start();
-
 header('Content-Type: application/json; charset=utf-8');
 include("../includes/conexion.php");
 
-/* ══════════════════════════════════════════════════════════
-   LOAD AMBIENTES (público - sin verificación de rol)
-   ══════════════════════════════════════════════════════════ */
+/* ── Carga pública de ambientes para dropdowns ── */
 if (isset($_GET['load_ambientes'])) {
-    $stAmb = $conexion->prepare("SELECT id, nombre_ambiente FROM ambientes WHERE estado = 'Habilitado' ORDER BY nombre_ambiente");
-    $stAmb->execute();
-    $ambientes = $stAmb->get_result()->fetch_all(MYSQLI_ASSOC);
-    $stAmb->close();
-    echo json_encode($ambientes);
+    $st = $conexion->prepare(
+        "SELECT id, nombre_ambiente
+         FROM ambientes
+         WHERE estado = 'Habilitado'
+         ORDER BY nombre_ambiente"
+    );
+    $st->execute();
+    echo json_encode($st->get_result()->fetch_all(MYSQLI_ASSOC));
+    $st->close();
     exit;
 }
 
-/* ══════════════════════════════════════════════════════════
-   VERIFICAR SESIÓN - Permitir instructor, subdireccion, admin, administracion
-   ══════════════════════════════════════════════════════════ */
-$rol_permitido = ['instructor', 'subdireccion', 'admin', 'administracion'];
-
-$es_publico = true; // Cambiar a false para requerir sesión
-
-if ($es_publico) {
-    // Modo público - sin verificación de sesión
-} else {
-    if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], $rol_permitido)) {
+/* ── Validación de sesión ── */
+$es_publico = true;
+if (!$es_publico) {
+    $roles_ok = ['instructor', 'subdireccion', 'admin', 'administracion'];
+    if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], $roles_ok)) {
         http_response_code(403);
-        echo json_encode(['error' => 'No autorizado: ' . ($_SESSION['rol'] ?? 'sin rol')]);
+        echo json_encode(['error' => 'No autorizado']);
         exit;
     }
 }
 
 /* ══════════════════════════════════════════════════════════
-   1. LEER Y VALIDAR PARÁMETROS
+   1. PARÁMETROS Y VALIDACIÓN
    ══════════════════════════════════════════════════════════ */
 $modo_recurrente = ($_GET['recurrente'] ?? '0') === '1';
-
 $hora_ini = trim($_GET['hora_ini'] ?? '');
 $hora_fin = trim($_GET['hora_fin'] ?? '');
 
 if (!preg_match('/^\d{2}:\d{2}$/', $hora_ini)) { echo json_encode(['error' => 'Hora inicio inválida']); exit; }
-if (!preg_match('/^\d{2}:\d{2}$/', $hora_fin)) { echo json_encode(['error' => 'Hora fin inválida']);   exit; }
-if ($hora_fin <= $hora_ini)                     { echo json_encode(['error' => 'Hora fin debe ser mayor que hora inicio']); exit; }
+if (!preg_match('/^\d{2}:\d{2}$/', $hora_fin))  { echo json_encode(['error' => 'Hora fin inválida']);   exit; }
+if ($hora_fin <= $hora_ini)                      { echo json_encode(['error' => 'Hora fin debe ser mayor que hora inicio']); exit; }
+
+/* Normalizar a HH:MM:SS para comparar con columnas TIME de MySQL */
+$hora_ini_sql = $hora_ini . ':00';
+$hora_fin_sql = $hora_fin . ':00';
 
 $fechas_a_verificar = [];
 
 if (!$modo_recurrente) {
-    /* ── Modo simple: una sola fecha ── */
     $fecha = trim($_GET['fecha'] ?? '');
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) { echo json_encode(['error' => 'Fecha inválida']); exit; }
     if ($fecha < date('Y-m-d'))                         { echo json_encode(['error' => 'La fecha no puede ser pasada']); exit; }
     $fechas_a_verificar = [$fecha];
-
 } else {
-    /* ── Modo recurrente ── */
     $fecha_ini_rango = trim($_GET['fecha_ini'] ?? '');
     $fecha_fin_rango = trim($_GET['fecha_fin'] ?? '');
     $dias_raw        = $_GET['dias'] ?? [];
@@ -72,49 +70,45 @@ if (!$modo_recurrente) {
 
     $dias_permitidos = array_unique(array_map('intval', (array) $dias_raw));
     $dias_permitidos = array_filter($dias_permitidos, fn($d) => $d >= 0 && $d <= 6);
-
-    if (empty($dias_permitidos)) { echo json_encode(['error' => 'Debes seleccionar al menos un día de semana']); exit; }
+    if (empty($dias_permitidos)) { echo json_encode(['error' => 'Debes seleccionar al menos un día']); exit; }
 
     $dt_ini = new DateTime($fecha_ini_rango);
     $dt_fin = new DateTime($fecha_fin_rango);
-    if ($dt_ini->diff($dt_fin)->days > 366) {
-        echo json_encode(['error' => 'El rango no puede superar 1 año']); exit;
-    }
+    if ($dt_ini->diff($dt_fin)->days > 366) { echo json_encode(['error' => 'El rango no puede superar 1 año']); exit; }
 
-    // Expandir fechas según días de semana
-    // PHP date('N'): 1=Lun … 7=Dom → nuestra conv: 0=Lun … 6=Dom
     $dt_cur = clone $dt_ini;
     while ($dt_cur <= $dt_fin) {
-        $dow_php = (int) $dt_cur->format('N') - 1;
-        if (in_array($dow_php, $dias_permitidos)) {
+        $dow = (int) $dt_cur->format('N') - 1; // 0=Lun … 6=Dom
+        if (in_array($dow, $dias_permitidos)) {
             $fechas_a_verificar[] = $dt_cur->format('Y-m-d');
         }
         $dt_cur->modify('+1 day');
     }
 
-    if (empty($fechas_a_verificar)) {
-        echo json_encode(['error' => 'Ningún día del rango coincide con los días seleccionados']); exit;
-    }
-    if (count($fechas_a_verificar) > 200) {
-        echo json_encode(['error' => 'Demasiadas fechas en el rango. Reduce el período o los días.']); exit;
-    }
+    if (empty($fechas_a_verificar))         { echo json_encode(['error' => 'Ningún día del rango coincide con los días seleccionados']); exit; }
+    if (count($fechas_a_verificar) > 200)   { echo json_encode(['error' => 'Demasiadas fechas. Reduce el período.']); exit; }
 }
 
 /* ══════════════════════════════════════════════════════════
-   2. CARGAR AMBIENTES HABILITADOS (sin capacidad)
+   2. CARGAR AMBIENTES — usa hora_inicio / hora_fin
    ══════════════════════════════════════════════════════════ */
-$stAmb = $conexion->prepare("
-    SELECT id, nombre_ambiente, horario_disponible
-    FROM ambientes
-    WHERE estado = 'Habilitado'
-    ORDER BY nombre_ambiente
-");
+$stAmb = $conexion->prepare(
+    "SELECT id, nombre_ambiente,
+            TIME_FORMAT(hora_inicio, '%H:%i') AS fmt_hora_inicio,
+            TIME_FORMAT(hora_fin,    '%H:%i') AS fmt_hora_fin
+     FROM ambientes
+     WHERE estado = 'Habilitado'
+     ORDER BY nombre_ambiente"
+);
 $stAmb->execute();
 $ambientes = $stAmb->get_result()->fetch_all(MYSQLI_ASSOC);
 $stAmb->close();
 
 /* ══════════════════════════════════════════════════════════
    3. VERIFICAR CONFLICTOS POR AMBIENTE
+      Fuentes de conflicto:
+        A) autorizaciones_ambientes  (estado Aprobado o Pendiente)
+        B) disponibilidad_ambiente   (estado Ocupado)
    ══════════════════════════════════════════════════════════ */
 $min_fecha = min($fechas_a_verificar);
 $max_fecha = max($fechas_a_verificar);
@@ -124,84 +118,106 @@ $resultado = [];
 foreach ($ambientes as $amb) {
     $id_amb = (int) $amb['id'];
 
-    /*
-     * Buscar reservas (Aprobado o Pendiente) que:
-     *  - Sean del ambiente actual
-     *  - Solapen en hora con [hora_ini, hora_fin)
-     *  - Cuyo rango de fechas se cruce con [min_fecha, max_fecha]
-     */
-    $stOc = $conexion->prepare("
-        SELECT
-            aa.fecha_inicio,
-            aa.fecha_fin,
-            aa.hora_inicio,
-            aa.hora_final,
-            aa.estado,
-            CONCAT(i.nombre, ' ', COALESCE(i.apellido,'')) AS instructor
-        FROM autorizaciones_ambientes aa
-        JOIN instructores i ON aa.id_instructor = i.id
-        WHERE aa.id_ambiente = ?
-          AND aa.estado IN ('Aprobado','Pendiente')
-          AND aa.hora_inicio < ?
-          AND aa.hora_final  > ?
-          AND aa.fecha_inicio <= ?
-          AND aa.fecha_fin   >= ?
-        ORDER BY aa.fecha_inicio ASC
+    /* ── A) Reservas de autorizaciones_ambientes ── */
+    $stAu = $conexion->prepare("
+        SELECT au.fecha_inicio,
+               au.fecha_fin,
+               au.hora_inicio,
+               au.hora_final,
+               au.estado,
+               CONCAT(i.nombre, ' ', COALESCE(i.apellido,'')) AS instructor
+        FROM autorizaciones_ambientes au
+        JOIN instructores i ON au.id_instructor = i.id
+        WHERE au.id_ambiente  = ?
+          AND au.estado       IN ('Aprobado','Pendiente')
+          AND au.hora_inicio  < ?
+          AND au.hora_final   > ?
+          AND au.fecha_inicio <= ?
+          AND au.fecha_fin    >= ?
+        ORDER BY au.fecha_inicio ASC
     ");
-    $stOc->bind_param('issss', $id_amb, $hora_fin, $hora_ini, $max_fecha, $min_fecha);
-    $stOc->execute();
-    $reservas_raw = $stOc->get_result()->fetch_all(MYSQLI_ASSOC);
-    $stOc->close();
+    $stAu->bind_param('issss', $id_amb, $hora_fin_sql, $hora_ini_sql, $max_fecha, $min_fecha);
+    $stAu->execute();
+    $reservas_au = $stAu->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stAu->close();
 
-    /*
-     * Para cada reserva existente, determinar con cuáles de las
-     * $fechas_a_verificar colisiona:
-     *   F >= reserva.fecha_inicio  AND  F <= reserva.fecha_fin
-     */
+    /* ── B) Bloques explícitos de disponibilidad_ambiente ── */
+    $stDa = $conexion->prepare("
+        SELECT fecha,
+               hora_inicio,
+               hora_fin
+        FROM disponibilidad_ambiente
+        WHERE id_ambiente  = ?
+          AND estado       = 'Ocupado'
+          AND hora_inicio  < ?
+          AND hora_fin     > ?
+          AND fecha        BETWEEN ? AND ?
+        ORDER BY fecha ASC
+    ");
+    $stDa->bind_param('issss', $id_amb, $hora_fin_sql, $hora_ini_sql, $min_fecha, $max_fecha);
+    $stDa->execute();
+    $bloques_da = $stDa->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stDa->close();
+
+    /* ── Cruzar ambas fuentes con las fechas a verificar ── */
     $fechas_ocupadas = [];
     $conflictos      = [];
 
-    foreach ($reservas_raw as $res) {
-        $fi = $res['fecha_inicio'];
-        $ff = $res['fecha_fin'];
-
+    /* Fuente A: rangos de autorizaciones */
+    foreach ($reservas_au as $res) {
         foreach ($fechas_a_verificar as $f) {
-            if ($f >= $fi && $f <= $ff) {
+            if ($f >= $res['fecha_inicio'] && $f <= $res['fecha_fin']) {
                 $fechas_ocupadas[] = $f;
                 $conflictos[] = [
                     'fecha'      => $f,
                     'instructor' => trim($res['instructor']),
-                    'hora_ini'   => date('h:i A', strtotime($res['hora_inicio'])),
-                    'hora_fin'   => date('h:i A', strtotime($res['hora_final'])),
+                    'hora_ini'   => date('H:i', strtotime($res['hora_inicio'])),
+                    'hora_fin'   => date('H:i', strtotime($res['hora_final'])),
                     'estado'     => $res['estado'],
+                    'fuente'     => 'reserva',
                 ];
             }
         }
     }
 
+    /* Fuente B: bloques de disponibilidad_ambiente */
+    foreach ($bloques_da as $bloque) {
+        if (in_array($bloque['fecha'], $fechas_a_verificar)) {
+            $fechas_ocupadas[] = $bloque['fecha'];
+            $conflictos[] = [
+                'fecha'      => $bloque['fecha'],
+                'instructor' => '—',
+                'hora_ini'   => date('H:i', strtotime($bloque['hora_inicio'])),
+                'hora_fin'   => date('H:i', strtotime($bloque['hora_fin'])),
+                'estado'     => 'Bloqueado',
+                'fuente'     => 'disponibilidad',
+            ];
+        }
+    }
+
     $fechas_ocupadas = array_values(array_unique($fechas_ocupadas));
     sort($fechas_ocupadas);
-    $fechas_libres   = array_values(array_diff($fechas_a_verificar, $fechas_ocupadas));
+    $fechas_libres = array_values(array_diff($fechas_a_verificar, $fechas_ocupadas));
     sort($fechas_libres);
 
     $resultado[] = [
-        'id'                 => $id_amb,
-        'nombre_ambiente'    => $amb['nombre_ambiente'],
-        'horario_disponible' => $amb['horario_disponible'],
-        'libre'              => empty($fechas_ocupadas),
-        'conflictos'         => $conflictos,
-        'fechas_libres'      => $fechas_libres,
-        'fechas_ocupadas'    => $fechas_ocupadas,
-        'total_fechas'       => count($fechas_a_verificar),
+        'id'              => $id_amb,
+        'nombre_ambiente' => $amb['nombre_ambiente'],
+        'hora_inicio'     => $amb['fmt_hora_inicio'],  // 24 h
+        'hora_fin'        => $amb['fmt_hora_fin'],      // 24 h
+        'libre'           => empty($fechas_ocupadas),
+        'conflictos'      => $conflictos,
+        'fechas_libres'   => $fechas_libres,
+        'fechas_ocupadas' => $fechas_ocupadas,
+        'total_fechas'    => count($fechas_a_verificar),
     ];
 }
 
-/* Ordenar: libres → parciales → ocupados; dentro de cada grupo, alfabético */
+/* Ordenar: libres → parciales → completamente ocupados */
 usort($resultado, function ($a, $b) {
-    $score_a = empty($a['fechas_ocupadas']) ? 0 : (count($a['fechas_libres']) > 0 ? 1 : 2);
-    $score_b = empty($b['fechas_ocupadas']) ? 0 : (count($b['fechas_libres']) > 0 ? 1 : 2);
-    if ($score_a !== $score_b) return $score_a - $score_b;
-    return strcmp($a['nombre_ambiente'], $b['nombre_ambiente']);
+    $sa = empty($a['fechas_ocupadas']) ? 0 : (count($a['fechas_libres']) > 0 ? 1 : 2);
+    $sb = empty($b['fechas_ocupadas']) ? 0 : (count($b['fechas_libres']) > 0 ? 1 : 2);
+    return $sa !== $sb ? $sa - $sb : strcmp($a['nombre_ambiente'], $b['nombre_ambiente']);
 });
 
 echo json_encode($resultado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
