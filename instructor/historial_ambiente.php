@@ -187,9 +187,9 @@ $abrevDias = [
                                     // Fecha ✓  Día ✓  pero fuera del horario → programado para hoy
                                     $estadoActual = 'programado';
                                     $textoEstado  = 'Programado ('
-                                        . date('h:i A', strtotime($row['hora_inicio']))
+                                        . date('H:i', strtotime($row['hora_inicio']))
                                         . ' - '
-                                        . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                        . date('H:i', strtotime($row['hora_final'])) . ')';
                                     $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
 
                                 } elseif ($enRangoFecha) {
@@ -251,9 +251,9 @@ $abrevDias = [
                             <td>
                                 <span class="cell-horario">
                                     <i class="fa-regular fa-clock"></i>
-                                    <?= date('h:i A', strtotime($row['hora_inicio'])) ?>
+                                    <?= date('H:i', strtotime($row['hora_inicio'])) ?>
                                     &mdash;
-                                    <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                    <?= date('H:i', strtotime($row['hora_final'])) ?>
                                 </span>
                             </td>
                             <td><?= $diasHtml ?></td>
