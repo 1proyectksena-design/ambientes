@@ -71,9 +71,9 @@ function getDiasActivos(array $fechas): array {
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;background-image:radial-gradient(ellipse 800px 400px at 0% 0%,rgba(13,127,110,.06) 0%,transparent 70%),radial-gradient(ellipse 600px 600px at 100% 100%,rgba(27,42,74,.06) 0%,transparent 70%)}
 
-.hdr{background:var(--navy);height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(255,255,255,.07),0 4px 20px rgba(0,0,0,.22)}
+.hdr{background:var(--navy);height:89px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(255,255,255,.07),0 4px 20px rgba(0,0,0,.22)}
 .hdr-left{display:flex;align-items:center;gap:14px}
-.hdr-logo{height:36px}
+.hdr-logo{height:50px}
 .hdr-title h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em}
 .hdr-title p{font-size:11.5px;color:rgba(255,255,255,.4)}
 .hdr-right{display:flex;align-items:center;gap:10px}
@@ -93,10 +93,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pill{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;border-radius:100px;font-size:13px;font-weight:700}
 .pill-amber{background:var(--amber-lt);color:var(--amber);border:1.5px solid var(--amber-mid)}
 .pill-teal{background:var(--teal-lt);color:var(--teal);border:1.5px solid var(--teal-mid)}
-
-.refresh-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:1.6rem}
-.live-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);animation:livepulse 2s infinite}
-@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 .alert{display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:var(--r);font-size:14px;margin-bottom:1.4rem;font-weight:500}
 .alert-ok{background:var(--teal-lt);border:1.5px solid var(--teal-mid);color:var(--teal)}
@@ -129,8 +125,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:1rem}
 .info-cell{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px}
 .info-cell-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:4px}
-.info-cell-val{font-size:13.5px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace}
-.info-cell-val .ic{margin-right:5px;color:var(--teal);font-size:11px;font-family:'DM Sans',sans-serif}
+.info-cell-val{font-size:13.5px;font-weight:400;color:var(--text);font-family:'DM Mono',monospace}
 
 .dias-section{margin-bottom:1rem}
 .dias-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:5px}
@@ -222,11 +217,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <?php endif; ?>
 </div>
 
-<div class="refresh-row">
-    <div class="live-dot"></div>
-    Actualizando en <strong id="cnt" style="color:var(--teal);margin:0 3px;">30</strong>s
-</div>
-
 <?php if ($total_grupos === 0): ?>
 <div class="empty">
     <div class="empty-icon"><i class="fa-solid fa-circle-check"></i></div>
@@ -278,40 +268,39 @@ $i = 0;
             <div class="info-grid">
                 <div class="info-cell">
                     <div class="info-cell-lbl">Ambiente</div>
-                    <div class="info-cell-val"><i class="ic fa-solid fa-door-open"></i><?= htmlspecialchars($g['nombre_ambiente']) ?></div>
+                    <div class="info-cell-val"><?= htmlspecialchars($g['nombre_ambiente']) ?></div>
                 </div>
                 <?php if (!$esRec): ?>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Fecha</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-calendar"></i><?= $primerFecha ?></div>
+                    <div class="info-cell-val"><?= $primerFecha ?></div>
                 </div>
                 <?php else: ?>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Desde</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-calendar"></i><?= $primerFecha ?></div>
+                    <div class="info-cell-val"><?= $primerFecha ?></div>
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Hasta</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-calendar-check"></i><?= $ultimaFecha ?></div>
+                    <div class="info-cell-val"><?= $ultimaFecha ?></div>
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Sesiones</div>
-                    <div class="info-cell-val"><i class="ic fa-solid fa-layer-group"></i><?= count($g['ids']) ?></div>
+                    <div class="info-cell-val"><?= count($g['ids']) ?></div>
                 </div>
                 <?php endif; ?>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Hora inicio</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-clock"></i><?= $hIni ?></div>
+                    <div class="info-cell-val"><?= $hIni ?></div>
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-lbl">Hora fin</div>
-                    <div class="info-cell-val"><i class="ic fa-regular fa-clock"></i><?= $hFin ?></div>
+                    <div class="info-cell-val"><?= $hFin ?></div>
                 </div>
             </div>
 
             <div class="dias-section">
                 <div class="dias-label">
-                    <i class="fa-solid fa-calendar-week" style="color:var(--<?= $esRec?'purple':'teal' ?>);font-size:11px;"></i>
                     <?= $esRec ? 'Días de recurrencia' : 'Día de la semana' ?>
                 </div>
                 <div class="dias-row">
@@ -400,9 +389,8 @@ $i = 0;
 </div>
 
 <script>
-let t = 30;
-const cnt = document.getElementById('cnt');
-setInterval(() => { t--; if(cnt) cnt.textContent = t; if(t <= 0) location.reload(); }, 1000);
+/* Auto-refresh silencioso cada 30 segundos — sin indicador visual */
+setTimeout(function(){ location.reload(); }, 30000);
 
 function openModal(ids) {
     document.getElementById('modal_ids').value = ids;

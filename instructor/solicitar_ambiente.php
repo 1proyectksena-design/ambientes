@@ -249,7 +249,7 @@ html { scroll-behavior: smooth; }
 body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 .hidden { display: none !important; }
 
-/* ══ HEADER — más alto, más presencia ══ */
+/* ══ HEADER ══ */
 .hdr {
     background: var(--navy);
     height: 76px;
@@ -433,8 +433,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 
 .day-hdr { display: flex; background: #f4f7fb; border-bottom: 2px solid var(--border); }
 .day-hdr-time { width: 64px; flex-shrink: 0; padding: 10px 8px; border-right: 1px solid var(--border); }
+/* CORREGIDO: mismo flex basis que .cal-cell para que las columnas coincidan */
 .day-hdr-amb {
-    flex: 1; min-width: 120px;
+    flex: 1 1 0; min-width: 120px; max-width: none;
     padding: 10px 10px; font-size: 11px; font-weight: 700; color: var(--navy);
     border-right: 1px solid var(--border); text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -449,8 +450,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     padding: 0 8px; font-size: 11px; font-weight: 700; color: var(--muted);
     height: 50px; background: #fafbfd;
 }
+/* CORREGIDO: mismo flex basis que .day-hdr-amb */
 .cal-cell {
-    flex: 1; min-width: 100px; height: 50px;
+    flex: 1 1 0; min-width: 120px; max-width: none; height: 50px;
     display: flex; align-items: center; justify-content: center; gap: 4px;
     font-size: 11px; font-weight: 700;
     border-right: 1px solid var(--border); transition: all .12s;
@@ -637,43 +639,32 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 
 /* ══ RESPONSIVE ══ */
 @media (max-width: 768px) {
-    .hdr {
-        height: 68px;
-        padding: 0 16px;
-    }
+    .hdr { height: 68px; padding: 0 16px; }
     .hdr-logo { height: 34px; }
     .hdr-title h1 { font-size: 14px; }
     .hdr-title p  { font-size: 11px; }
     .hdr-back span { display: none; }
     .hdr-back { padding: 8px 12px; gap: 0; }
     .hdr-divider { display: none; }
-
     .steps-bar { padding: 12px 16px; }
     .step-lbl { font-size: 11px; }
     .step-connector { margin: 0 4px; min-width: 12px; }
-
     .container { padding: 16px 12px 60px; }
     .card { padding: 18px 16px; }
-
     .form-row { grid-template-columns: 1fr; gap: 12px; }
     .tipo-toggle { grid-template-columns: 1fr; }
     .dias-grid { grid-template-columns: repeat(2, 1fr); }
-
     .cal-toolbar { gap: 10px; }
     .cal-period { min-width: 0; font-size: 13px; }
-
     .week-grid { grid-template-columns: repeat(4, 1fr); }
     .week-stat { font-size: 10px; }
     .week-hdr  { font-size: 11px; padding: 6px 3px; }
-
     .month-grid { gap: 3px; }
     .month-day  { min-height: 44px; padding: 4px 5px; }
     .month-num  { font-size: 12px; }
     .month-day-name { font-size: 11px; }
-
     .slot-bar { padding: 14px 16px; gap: 12px; }
     .slot-bar-info strong { font-size: 13px; }
-
     .inst-chip { padding: 12px 14px; gap: 10px; }
     .inst-av   { width: 38px; height: 38px; font-size: 15px; }
     .inst-info strong { font-size: 14px; }
@@ -684,23 +675,17 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     .hdr-logo { height: 30px; }
     .hdr-title h1 { font-size: 13px; }
     .hdr-title p  { display: none; }
-
     .step-lbl { display: none; }
     .step-num { width: 28px; height: 28px; font-size: 12px; }
-
     .week-grid { grid-template-columns: repeat(3, 1fr); }
-
     .tipo-option label { padding: 12px 12px; gap: 10px; }
     .tipo-icon { width: 32px; height: 32px; font-size: 13px; }
     .tipo-text strong { font-size: 13px; }
     .tipo-text span   { font-size: 11px; }
-
     .dias-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
     .dia-option label { padding: 8px 6px; font-size: 12px; }
-
     .btn { font-size: 13px; padding: 10px 16px; }
     .btn-sm { padding: 7px 12px; font-size: 12px; }
-
     .cal-period { font-size: 12px; min-width: 120px; }
     .view-btn { padding: 6px 10px; font-size: 12px; }
 }
@@ -801,6 +786,13 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
         Instructor: <strong id="ibar-nombre"></strong>
         <a href="#" onclick="goToStep(1);return false;" style="color:var(--green);font-size:12px;font-weight:700;margin-left:4px;">Cambiar</a>
     </div>
+
+    <!-- Instrucción de selección por rango -->
+    <div style="background:#f0f8ff;border:1.5px solid #b3d9f7;border-radius:10px;padding:11px 15px;margin-bottom:16px;font-size:13px;color:#1a5276;display:flex;align-items:center;gap:9px;">
+        <i class="fa-solid fa-circle-info" style="font-size:15px;flex-shrink:0;"></i>
+        <span><strong>Selección por rango:</strong> haga clic en la <strong>hora de inicio</strong> y luego en la <strong>hora final</strong> del mismo ambiente.</span>
+    </div>
+
     <div class="cal-toolbar">
         <div class="cal-nav">
             <button class="btn btn-outline btn-sm" onclick="navCal(-1)"><i class="fa-solid fa-chevron-left"></i></button>
@@ -821,9 +813,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
         <div class="slot-bar-icon"><i class="fa-solid fa-map-pin"></i></div>
         <div class="slot-bar-info">
             <strong id="slot-bar-txt">—</strong>
-            <span>Espacio seleccionado — haga clic en «Nueva solicitud» para continuar</span>
+            <span id="slot-bar-sub">Espacio seleccionado — haga clic en «Nueva solicitud» para continuar</span>
         </div>
-        <button class="btn btn-green" onclick="goToStep(4)">
+        <button class="btn btn-green" id="slot-bar-btn" onclick="goToStep(4)">
             <i class="fa-solid fa-plus"></i> Nueva solicitud
         </button>
     </div>
@@ -999,6 +991,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 /* ─── GLOBAL STATE ─── */
 const S = {
     step: 1, instructor: null, slot: null,
+    rangeStart: null,                   /* ← NUEVO: primer clic del rango */
     view: 'day', date: new Date(),
     ambientes: [], reservas: [],
     loaded: false, loading: false
@@ -1025,7 +1018,7 @@ const DIAS_LABELS = { '1':'Lunes','2':'Martes','3':'Miércoles','4':'Jueves','5'
 /* ─── STEP NAVIGATION ─── */
 function goToStep(n) {
     if (n >= 2 && !S.instructor) return;
-    if (n >= 4 && !S.slot) { alert('Seleccione un espacio en el calendario.'); return; }
+    if (n >= 4 && !S.slot) { alert('Seleccione un rango completo en el calendario (inicio y fin).'); return; }
     S.step = n;
     ['panel-1','panel-2','panel-4'].forEach(id => document.getElementById(id).classList.add('hidden'));
     if      (n === 1) document.getElementById('panel-1').classList.remove('hidden');
@@ -1090,7 +1083,7 @@ function selectInstructor(id, nombre, cc) {
     document.getElementById('inst-found').classList.remove('hidden');
 }
 function clearInstructor() {
-    S.instructor = null; S.slot = null; S.loaded = false;
+    S.instructor = null; S.slot = null; S.rangeStart = null; S.loaded = false;
     document.getElementById('ac-input').value = '';
     document.getElementById('inst-found').classList.add('hidden');
     document.getElementById('ac-drop').classList.add('hidden');
@@ -1187,16 +1180,30 @@ function renderDayView() {
 
         html += `<div class="day-row"><div class="day-time">${h}</div>`;
         S.ambientes.forEach(a => {
-            const selMatch = S.slot &&
+
+            // ¿Esta celda está dentro del rango ya confirmado?
+            const inRange = S.slot &&
                 parseInt(S.slot.id_ambiente) === parseInt(a.id) &&
-                S.slot.fecha    === dateStr &&
-                S.slot.hora_ini === h;
+                S.slot.fecha === dateStr &&
+                h >= S.slot.hora_ini &&
+                h <  S.slot.hora_fin;
+
+            // ¿Es la celda del primer clic (rango en progreso, aún sin confirmar)?
+            const isRangeStart = S.rangeStart && !S.slot &&
+                parseInt(S.rangeStart.id_ambiente) === parseInt(a.id) &&
+                S.rangeStart.fecha === dateStr &&
+                S.rangeStart.hora  === h;
 
             if (slotPast) {
                 html += `<div class="cal-cell past">—</div>`;
-            } else if (selMatch) {
+            } else if (inRange) {
+                const isFirst = h === S.slot.hora_ini;
                 html += `<div class="cal-cell selected" onclick="deselectSlot()">
-                            <i class="fa-solid fa-check"></i> Sel.
+                            ${isFirst ? '<i class="fa-solid fa-check"></i> Sel.' : '<i class="fa-solid fa-minus"></i>'}
+                         </div>`;
+            } else if (isRangeStart) {
+                html += `<div class="cal-cell selected" style="background:var(--navy);cursor:pointer;" onclick="deselectSlot()">
+                            <i class="fa-solid fa-clock"></i> Ini.
                          </div>`;
             } else if (isOccupied(a.id, dateStr, h)) {
                 html += `<div class="cal-cell occupied">
@@ -1313,24 +1320,72 @@ function renderMonthView() {
     updateSlotBar();
 }
 
-/* ─── SLOT ─── */
+/* ════════════════════════════════════════════════════════════════
+   SLOT — Selección por rango con dos clics
+   ════════════════════════════════════════════════════════════════ */
 function selectSlot(ambId, ambNombre, fecha, hIni, hFin) {
-    S.slot = { id_ambiente: ambId, nombre: ambNombre, fecha, hora_ini: hIni, hora_fin: hFin };
+    // ── PRIMER CLIC: guarda el inicio del rango ──
+    if (!S.rangeStart) {
+        S.rangeStart = { id_ambiente: ambId, nombre: ambNombre, fecha, hora: hIni };
+        S.slot = null;
+        renderDayView();
+        updateSlotBar();
+        return;
+    }
+
+    // ── SEGUNDO CLIC ──
+    // Si es diferente ambiente o fecha, reinicia desde este clic
+    if (parseInt(S.rangeStart.id_ambiente) !== parseInt(ambId) || S.rangeStart.fecha !== fecha) {
+        S.rangeStart = { id_ambiente: ambId, nombre: ambNombre, fecha, hora: hIni };
+        S.slot = null;
+        renderDayView();
+        updateSlotBar();
+        return;
+    }
+
+    // Ordenar horas por si el usuario hizo clic en orden inverso
+    const h1 = S.rangeStart.hora <= hIni ? S.rangeStart.hora : hIni;
+    const h2 = S.rangeStart.hora <= hIni ? hIni              : S.rangeStart.hora;
+
+    // hora_fin = última hora seleccionada + 1 hora
+    const horaFin = addHour(h2, 1);
+
+    S.slot = { id_ambiente: ambId, nombre: ambNombre, fecha, hora_ini: h1, hora_fin: horaFin };
+    S.rangeStart = null;
     renderDayView();
     updateSlotBar();
     document.getElementById('slot-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
 function deselectSlot() {
     S.slot = null;
+    S.rangeStart = null;
     renderDayView();
     updateSlotBar();
 }
+
 function updateSlotBar() {
-    const bar = document.getElementById('slot-bar');
+    const bar    = document.getElementById('slot-bar');
+    const btn    = document.getElementById('slot-bar-btn');
+    const subTxt = document.getElementById('slot-bar-sub');
+
+    // Primer clic en progreso: mostrar barra informativa, ocultar botón continuar
+    if (S.rangeStart && !S.slot) {
+        bar.classList.remove('hidden');
+        document.getElementById('slot-bar-txt').textContent =
+            `${S.rangeStart.nombre} · ${fmtDisplay(S.rangeStart.fecha)} · ${S.rangeStart.hora} → seleccione la hora final`;
+        subTxt.textContent = 'Primer clic registrado — ahora haga clic en la hora final del mismo ambiente';
+        btn.classList.add('hidden');
+        return;
+    }
+
     if (!S.slot) { bar.classList.add('hidden'); return; }
+
     bar.classList.remove('hidden');
+    btn.classList.remove('hidden');
     document.getElementById('slot-bar-txt').textContent =
         `${S.slot.nombre} · ${fmtDisplay(S.slot.fecha)} · ${S.slot.hora_ini} – ${S.slot.hora_fin}`;
+    subTxt.textContent = 'Espacio seleccionado — haga clic en «Nueva solicitud» para continuar';
 }
 
 /* ─── NAV ─── */
