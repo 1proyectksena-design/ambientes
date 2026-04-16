@@ -152,7 +152,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 
 /* ══ TOPBAR — más alto ══ */
 .topbar {
-    background:var(--navy); height:76px; padding:0 2rem;
+    background:var(--navy); height:92px; padding:0 2rem;
     display:flex; align-items:center; justify-content:space-between;
     position:sticky; top:0; z-index:200;
     box-shadow:0 3px 20px rgba(0,0,0,0.26);
@@ -163,7 +163,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     width: 1.5px; height: 38px;
     background: rgba(255,255,255,0.15);
 }
-.topbar-title h1  { font-size:16px; font-weight:700; color:#fff; letter-spacing:-.01em; }
+.topbar-title h1  { font-size:20px; font-weight:700; color:#fff; letter-spacing:-.01em; }
 .topbar-title span{ font-size:12px; color:rgba(255,255,255,0.42); margin-top:2px; display:block; }
 .topbar-right { display:flex; align-items:center; gap:8px; }
 
