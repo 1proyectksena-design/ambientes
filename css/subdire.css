@@ -298,20 +298,7 @@ body {
 .menu-card.crear:hover { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-color: #66bb6a; }
 .menu-card.crear:hover .menu-card-title { color: var(--success); }
 
-/* ── Variante CALENDARIO (morado) ── */
-.menu-card.calendario .menu+-card-icon {
-    background: linear-gradient(135deg, #2c3e8f 0%, #1a2654 100%);
-    box-shadow: 0 6px 20px rgba(45, 93, 197, 0.35);
-}
-.menu-card.calendario {
-    background: linear-gradient(135deg, #f3fbff 0%, #e9fafe 100%);
-    border-color: #b5e9fd;
-}
-.menu-card.calendario:hover {
-    background: linear-gradient(135deg, #e9f6fe 0%, #b7d5f7 100%);
-    border-color: #edf0f5;
-}
-.menu-card.calendario:hover .menu-card-title { color: #1a2654; }
+
 
 /* ===================== FOOTER ===================== */
 .footer {
