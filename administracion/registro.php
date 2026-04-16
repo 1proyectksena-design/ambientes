@@ -16,33 +16,22 @@ if (isset($_POST['crear_ambiente'])) {
                      ? mysqli_real_escape_string($conexion, $_POST['instructor_id'])
                      : null;
 
-    /* hora_inicio / hora_fin (24 h) */
-    $hora_inicio_val = !empty($_POST['hora_inicio']) && preg_match('/^\d{2}:\d{2}$/', $_POST['hora_inicio'])
-                       ? "'" . mysqli_real_escape_string($conexion, $_POST['hora_inicio']) . ":00'"
-                       : 'NULL';
-    $hora_fin_val    = !empty($_POST['hora_fin']) && preg_match('/^\d{2}:\d{2}$/', $_POST['hora_fin'])
-                       ? "'" . mysqli_real_escape_string($conexion, $_POST['hora_fin']) . ":00'"
-                       : 'NULL';
-
-    /* Validar hora_fin > hora_inicio si ambas están presentes */
-    if (!empty($_POST['hora_inicio']) && !empty($_POST['hora_fin'])) {
-        if ($_POST['hora_fin'] <= $_POST['hora_inicio']) {
-            echo "<script>alert('❌ La hora de fin debe ser mayor que la hora de inicio.'); window.history.back();</script>";
-            exit;
-        }
-    }
+    $horario_fijo = $_POST['horario_fijo'] ?? null;
+    
 
     $check = mysqli_query($conexion, "SELECT id FROM ambientes WHERE nombre_ambiente = '$nombre'");
     if (mysqli_num_rows($check) > 0) {
         echo "<script>alert('Ya existe un ambiente con el nombre \"$nombre\"'); window.history.back();</script>";
         exit;
     }
+    $horario_fijo_val = $horario_fijo ? "'$horario_fijo'" : "NULL";
 
     $sql = "INSERT INTO ambientes
-                (nombre_ambiente, estado, descripcion_general, hora_inicio, hora_fin, instructor_id)
-            VALUES
-                ('$nombre', '$estado', '$descripcion', $hora_inicio_val, $hora_fin_val,
-                 " . ($instructor_id ? "'$instructor_id'" : 'NULL') . ")";
+        (nombre_ambiente, estado, descripcion_general, horario_fijo, instructor_id)
+    VALUES
+        ('$nombre', '$estado', '$descripcion', $horario_fijo_val,
+        " . ($instructor_id ? "'$instructor_id'" : 'NULL') . ")";
+   
 
     if (mysqli_query($conexion, $sql)) {
         $id_ambiente = mysqli_insert_id($conexion);
@@ -174,18 +163,13 @@ if (isset($_GET['buscar_qr'])) {
                 <label>Descripción General</label>
                 <textarea name="descripcion" placeholder="Equipamiento, capacidad, observaciones..."></textarea>
             </div>
-            <!-- hora_inicio / hora_fin en 24 h -->
-            <div class="time-grid">
-                <div class="form-group">
-                    <label><i class="fa-regular fa-clock"></i> Hora de inicio (24 h)</label>
-                    <input type="time" name="hora_inicio" placeholder="07:00">
-                    <small class="form-hint">Hora en que el ambiente abre.</small>
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-regular fa-clock"></i> Hora de fin (24 h)</label>
-                    <input type="time" name="hora_fin" placeholder="22:00">
-                    <small class="form-hint">Hora en que el ambiente cierra.</small>
-                </div>
+            <div class="form-group">
+                <label>Horario fijo (opcional)</label>
+                <input 
+                    type="text" 
+                    name="horario_fijo" 
+                    placeholder="Ej: Lun - Mié - Vie 06:00 - 12:00"
+                >
             </div>
             <button type="submit" name="crear_ambiente" class="btn-submit">
                 <i class="fa-solid fa-plus-circle"></i> Crear Ambiente

@@ -15,16 +15,20 @@ $meses_espanol = [
     '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
 ];
 
-/* DAYOFWEEK MySQL: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb */
 $abrevDias = [
     1 => 'Dom', 2 => 'Lun', 3 => 'Mar',
     4 => 'Mié', 5 => 'Jue', 6 => 'Vie', 7 => 'Sáb',
 ];
 
-$filtro_mes  = $_GET['mes']  ?? date('m');
-$filtro_anio = $_GET['anio'] ?? date('Y');
+$filtro_estado = $_GET['estado'] ?? 'todos';
+$filtro_mes    = $_GET['mes']    ?? date('m');
+$filtro_anio   = $_GET['anio']   ?? date('Y');
 
-$whereMain   = [];
+$whereMain = [];
+if ($filtro_estado != 'todos') {
+    $estadoSeguro = mysqli_real_escape_string($conexion, $filtro_estado);
+    $whereMain[] = "au.estado = '$estadoSeguro'";
+}
 $whereMain[] = "MONTH(au.fecha_inicio) = '$filtro_mes'";
 $whereMain[] = "YEAR(au.fecha_inicio) = '$filtro_anio'";
 $whereSQLMain = implode(' AND ', $whereMain);
@@ -58,6 +62,54 @@ if (!$resultado) die("Error en consulta: " . mysqli_error($conexion));
 $total        = mysqli_num_rows($resultado);
 $fecha_actual = date('Y-m-d');
 $hora_actual  = date('H:i:s');
+
+/* ══════════════════════════════════════
+   EXPORTAR A EXCEL
+   ══════════════════════════════════════ */
+if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
+    $resExport = mysqli_query($conexion, $sql);
+
+    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+    header('Content-Disposition: attachment; filename="historial_autorizaciones_' . $filtro_mes . '_' . $filtro_anio . '.xls"');
+    header('Cache-Control: max-age=0');
+    echo "\xEF\xBB\xBF"; /* BOM UTF-8 para tildes */
+
+    echo '<table border="1">';
+    echo '<thead><tr>
+            <th>Ambiente</th>
+            <th>Instructor</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Fin</th>
+            <th>Hora Inicio</th>
+            <th>Hora Fin</th>
+            <th>Días</th>
+            <th>Estado</th>
+            <th>Autorizado Por</th>
+            <th>Novedades</th>
+          </tr></thead><tbody>';
+
+    while ($row = mysqli_fetch_assoc($resExport)) {
+        $diasNums  = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
+                     ? explode(',', $row['dias_semana']) : [];
+        $diasTexto = implode(', ', array_map(fn($d) => $abrevDias[(int)$d] ?? '?', $diasNums));
+
+        echo '<tr>';
+        echo '<td>' . htmlspecialchars($row['nombre_ambiente'])       . '</td>';
+        echo '<td>' . htmlspecialchars($row['nombre_instructor'])      . '</td>';
+        echo '<td>' . date('d/m/Y', strtotime($row['fecha_inicio']))   . '</td>';
+        echo '<td>' . date('d/m/Y', strtotime($row['fecha_fin']))      . '</td>';
+        echo '<td>' . date('H:i',   strtotime($row['hora_inicio']))    . '</td>';
+        echo '<td>' . date('H:i',   strtotime($row['hora_final']))     . '</td>';
+        echo '<td>' . htmlspecialchars($diasTexto)                    . '</td>';
+        echo '<td>' . htmlspecialchars($row['estado'])                . '</td>';
+        echo '<td>' . htmlspecialchars($row['rol_autorizado'])        . '</td>';
+        echo '<td>' . htmlspecialchars($row['novedades'] ?: '—')     . '</td>';
+        echo '</tr>';
+    }
+
+    echo '</tbody></table>';
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -67,6 +119,73 @@ $hora_actual  = date('H:i:s');
     <title>Historial de Autorizaciones</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ── Chips de estado ── */
+        .filtro-estado-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 2px solid #f0f0f0;
+        }
+        .filtro-estado-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #555;
+            white-space: nowrap;
+        }
+        .chip-estado {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .chip-todos     { background:#f0f0f0; color:#555;    border-color:#ddd; }
+        .chip-aprobado  { background:#e8f5e9; color:#2e7d32; border-color:#a5d6a7; }
+        .chip-pendiente { background:#fff3e0; color:#e65100; border-color:#ffcc80; }
+        .chip-rechazado { background:#ffebee; color:#c62828; border-color:#ef9a9a; }
+
+        .chip-todos.activo     { background:#555;    color:white; border-color:#555; }
+        .chip-aprobado.activo  { background:#2e7d32; color:white; border-color:#2e7d32; }
+        .chip-pendiente.activo { background:#e65100; color:white; border-color:#e65100; }
+        .chip-rechazado.activo { background:#c62828; color:white; border-color:#c62828; }
+
+        .chip-estado:hover { transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.12); }
+
+        /* ── Botón Excel ── */
+        .btn-exportar-excel {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 22px;
+            background: linear-gradient(135deg, #1D6F42 0%, #155230 100%);
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 3px 10px rgba(29,111,66,0.3);
+            white-space: nowrap;
+        }
+        .btn-exportar-excel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(29,111,66,0.4);
+        }
+        .btn-exportar-excel i { font-size: 16px; }
+    </style>
 </head>
 <body>
 
@@ -79,15 +198,18 @@ $hora_actual  = date('H:i:s');
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Subdirección
+        <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
 
 <div class="consultar-container">
 
+    <!-- ══ FILTROS ══ -->
     <div class="search-section">
         <h3><i class="fa-solid fa-filter"></i> Filtrar Autorizaciones</h3>
+
         <form method="GET" class="search-form">
+            <!-- Mes -->
             <select name="mes">
                 <?php for ($m = 1; $m <= 12; $m++):
                     $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT); ?>
@@ -96,18 +218,53 @@ $hora_actual  = date('H:i:s');
                 </option>
                 <?php endfor; ?>
             </select>
+            <!-- Año -->
             <select name="anio">
                 <?php for ($y = date('Y'); $y >= date('Y') - 3; $y--): ?>
                 <option value="<?= $y ?>" <?= $filtro_anio == $y ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endfor; ?>
             </select>
+            <!-- Preservar estado al filtrar con el botón -->
+            <input type="hidden" name="estado" value="<?= htmlspecialchars($filtro_estado) ?>">
             <button type="submit"><i class="fa-solid fa-search"></i> Filtrar</button>
+            <!-- Excel con los mismos filtros activos -->
+            <a href="?mes=<?= $filtro_mes ?>&anio=<?= $filtro_anio ?>&estado=<?= urlencode($filtro_estado) ?>&exportar=excel"
+               class="btn-exportar-excel">
+                <i class="fa-solid fa-file-excel"></i> Exportar Excel
+            </a>
         </form>
+
+        <!-- Chips de filtro por estado -->
+        <div class="filtro-estado-row">
+            <span class="filtro-estado-label"><i class="fa-solid fa-tags"></i> Estado:</span>
+            <?php
+            $chips = [
+                'todos'     => ['label' => 'Todos',     'icon' => 'fa-solid fa-list',           'clase' => 'chip-todos'],
+                'Aprobado'  => ['label' => 'Aprobado',  'icon' => 'fa-solid fa-circle-check',   'clase' => 'chip-aprobado'],
+                'Pendiente' => ['label' => 'Pendiente', 'icon' => 'fa-solid fa-hourglass-half', 'clase' => 'chip-pendiente'],
+                'Rechazado' => ['label' => 'Rechazado', 'icon' => 'fa-solid fa-ban',            'clase' => 'chip-rechazado'],
+            ];
+            foreach ($chips as $val => $info):
+                $activo = ($filtro_estado === $val) ? ' activo' : '';
+            ?>
+            <a href="?mes=<?= $filtro_mes ?>&anio=<?= $filtro_anio ?>&estado=<?= urlencode($val) ?>"
+               class="chip-estado <?= $info['clase'] . $activo ?>">
+                <i class="<?= $info['icon'] ?>"></i> <?= $info['label'] ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
     </div>
 
+    <!-- ══ TABLA ══ -->
     <div class="table-container">
         <div class="table-header">
-            <h3><i class="fa-solid fa-list"></i> Mostrando <?= $total ?> autorizaciones</h3>
+            <h3>
+                <i class="fa-solid fa-list"></i>
+                Mostrando <?= $total ?> autorizaciones
+                <?php if ($filtro_estado != 'todos'): ?>
+                    &mdash; <em><?= htmlspecialchars($filtro_estado) ?></em>
+                <?php endif; ?>
+            </h3>
         </div>
 
         <?php if ($total > 0): ?>
@@ -142,7 +299,7 @@ $hora_actual  = date('H:i:s');
                                     $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
                                 } else {
                                     $estadoActual = 'programado';
-                                    $textoEstado  = 'Programado (' . date('h:i A', strtotime($row['hora_inicio'])) . ' - ' . date('h:i A', strtotime($row['hora_final'])) . ')';
+                                    $textoEstado  = 'Programado (' . date('H:i', strtotime($row['hora_inicio'])) . ' - ' . date('H:i', strtotime($row['hora_final'])) . ')';
                                     $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
                                 }
                             }
@@ -197,9 +354,9 @@ $hora_actual  = date('H:i:s');
                         <td>
                             <span class="cell-horario">
                                 <i class="fa-regular fa-clock"></i>
-                                <?= date('h:i A', strtotime($row['hora_inicio'])) ?>
+                                <?= date('H:i', strtotime($row['hora_inicio'])) ?>
                                 &mdash;
-                                <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                <?= date('H:i', strtotime($row['hora_final'])) ?>
                             </span>
                         </td>
                         <td><?= $diasHtml ?></td>
@@ -241,7 +398,7 @@ $hora_actual  = date('H:i:s');
     </a>
 </div>
 
-<!-- ✅ OVERLAY Y MODAL GLOBAL: fuera de la tabla, directamente en body -->
+<!-- OVERLAY Y MODAL GLOBAL -->
 <div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
 
 <div class="novedades-modal" id="modalNovedades">
@@ -267,13 +424,11 @@ function abrirModal(btn) {
     document.getElementById('modalAvatar').textContent = btn.dataset.inicial;
     document.getElementById('modalNombre').textContent = btn.dataset.instructor;
     document.getElementById('modalTexto').textContent  = btn.dataset.novedad;
-
     document.getElementById('modalOverlay').style.display = 'block';
     const modal = document.getElementById('modalNovedades');
     modal.style.display = 'block';
     requestAnimationFrame(() => modal.classList.add('visible'));
 }
-
 function cerrarModal() {
     const modal = document.getElementById('modalNovedades');
     modal.classList.remove('visible');
@@ -282,7 +437,6 @@ function cerrarModal() {
         document.getElementById('modalOverlay').style.display = 'none';
     }, 200);
 }
-
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
 </script>
 </body>

@@ -174,9 +174,9 @@ $dia_actual_mysql = (int)date('w') + 1;
                         <td>
                             <span class="cell-horario">
                                 <i class="fa-regular fa-clock"></i>
-                                <?= date('h:i A', strtotime($row['hora_inicio'])) ?>
+                                <?= date('H:i', strtotime($row['hora_inicio'])) ?>
                                 &mdash;
-                                <?= date('h:i A', strtotime($row['hora_final'])) ?>
+                                <?= date('H:i', strtotime($row['hora_final'])) ?>
                             </span>
                         </td>
                         <td><?= $diasHtml ?></td>

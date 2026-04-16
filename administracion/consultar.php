@@ -21,7 +21,6 @@ $historialReciente = null;
 if ($ambienteBuscado) {
     $ambienteBuscado = mysqli_real_escape_string($conexion, $ambienteBuscado);
 
-    /* ── hora_inicio / hora_fin reemplazan horario_fijo / horario_disponible ── */
     $sqlAmb = "SELECT a.*,
                       TIME_FORMAT(a.hora_inicio, '%H:%i') AS fmt_hora_inicio,
                       TIME_FORMAT(a.hora_fin,    '%H:%i') AS fmt_hora_fin,
@@ -38,7 +37,6 @@ if ($ambienteBuscado) {
     if ($ambienteInfo) {
         $id_ambiente = $ambienteInfo['id'];
 
-        /* ── Uso actual: también verificamos disponibilidad_ambiente ── */
         $sqlUsoActual = "SELECT au.*, i.nombre AS nombre_instructor
                          FROM autorizaciones_ambientes au
                          JOIN instructores i ON au.id_instructor = i.id
@@ -48,7 +46,6 @@ if ($ambienteBuscado) {
                            AND au.hora_inicio  <= '$hora_actual'
                            AND au.hora_final   >= '$hora_actual'
                            AND au.estado = 'Aprobado'
-                           /* Excluir si el bloque de disponibilidad lo marca Ocupado */
                            AND NOT EXISTS (
                                SELECT 1 FROM disponibilidad_ambiente da
                                WHERE da.id_ambiente = au.id_ambiente
@@ -61,7 +58,6 @@ if ($ambienteBuscado) {
         $resUsoActual = mysqli_query($conexion, $sqlUsoActual);
         $usoActual    = mysqli_fetch_assoc($resUsoActual);
 
-        /* ── Próximos usos ── */
         $sqlProximosUsos = "SELECT
                                 MIN(au.fecha_inicio) AS fecha_inicio,
                                 MAX(au.fecha_fin)    AS fecha_fin,
@@ -87,7 +83,6 @@ if ($ambienteBuscado) {
                             LIMIT 10";
         $proximosUsos = mysqli_query($conexion, $sqlProximosUsos);
 
-        /* ── Historial reciente ── */
         $sqlHistorialReciente = "SELECT au.*, i.nombre AS nombre_instructor
                                  FROM autorizaciones_ambientes au
                                  JOIN instructores i ON au.id_instructor = i.id
@@ -100,6 +95,52 @@ if ($ambienteBuscado) {
                                  ORDER BY au.fecha_inicio DESC, au.hora_inicio DESC
                                  LIMIT 5";
         $historialReciente = mysqli_query($conexion, $sqlHistorialReciente);
+
+        /* ══════════════════════════════════════
+           EXPORTAR PRÓXIMOS USOS A EXCEL
+           ══════════════════════════════════════ */
+        if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
+            $abrevDiasExport = [1=>'Dom',2=>'Lun',3=>'Mar',4=>'Mié',5=>'Jue',6=>'Vie',7=>'Sáb'];
+            $resExport = mysqli_query($conexion, $sqlProximosUsos);
+
+            header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+            header('Content-Disposition: attachment; filename="proximos_usos_' . preg_replace('/\s+/', '_', $ambienteInfo['nombre_ambiente']) . '.xls"');
+            header('Cache-Control: max-age=0');
+            echo "\xEF\xBB\xBF";
+
+            echo '<table border="1">';
+            echo '<thead><tr>
+                    <th>Ambiente</th>
+                    <th>Instructor</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
+                    <th>Hora Inicio</th>
+                    <th>Hora Fin</th>
+                    <th>Días</th>
+                    <th>Observaciones</th>
+                  </tr></thead><tbody>';
+
+            /* Re-ejecutar la consulta de próximos usos para el export */
+            $resProxExport = mysqli_query($conexion, $sqlProximosUsos);
+            while ($row = mysqli_fetch_assoc($resProxExport)) {
+                $diasNums  = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
+                             ? explode(',', $row['dias_semana']) : [];
+                $diasTexto = implode(', ', array_map(fn($d) => $abrevDiasExport[(int)$d] ?? '?', $diasNums));
+
+                echo '<tr>';
+                echo '<td>' . htmlspecialchars($ambienteInfo['nombre_ambiente'])   . '</td>';
+                echo '<td>' . htmlspecialchars($row['nombre_instructor'])           . '</td>';
+                echo '<td>' . date('d/m/Y', strtotime($row['fecha_inicio']))        . '</td>';
+                echo '<td>' . date('d/m/Y', strtotime($row['fecha_fin']))           . '</td>';
+                echo '<td>' . date('H:i',   strtotime($row['hora_inicio']))         . '</td>';
+                echo '<td>' . date('H:i',   strtotime($row['hora_final']))          . '</td>';
+                echo '<td>' . htmlspecialchars($diasTexto)                         . '</td>';
+                echo '<td>' . htmlspecialchars($row['observaciones'] ?: '—')      . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+            exit;
+        }
     }
 }
 ?>
@@ -158,7 +199,6 @@ if ($ambienteBuscado) {
                     <?= htmlspecialchars($ambienteInfo['estado']) ?>
                 </span>
             </div>
-            <!-- hora_inicio / hora_fin en formato 24 h -->
             <div class="info-item">
                 <label>Hora de Inicio</label>
                 <span><?= $ambienteInfo['fmt_hora_inicio'] ?: 'No definida' ?></span>
@@ -285,6 +325,11 @@ if ($ambienteBuscado) {
             <?php endif; ?>
             <a href="editar_ambiente.php?id=<?= $ambienteInfo['id'] ?>" class="btn-action-edit">
                 <i class="fa-solid fa-pen-to-square"></i> Editar
+            </a>
+            <!-- Exportar próximos usos a Excel -->
+            <a href="?ambiente=<?= urlencode($ambienteBuscado) ?>&exportar=excel"
+               class="btn-exportar-excel">
+                <i class="fa-solid fa-file-excel"></i> Exportar Excel
             </a>
         </div>
     </div>

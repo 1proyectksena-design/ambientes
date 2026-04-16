@@ -7,91 +7,91 @@ if ($_SESSION['rol'] != 'subdireccion') {
 
 include("../includes/conexion.php");
 
-/* ===== CREAR AMBIENTE ===== */
-if(isset($_POST['crear_ambiente'])){
-    $nombre = mysqli_real_escape_string($conexion, $_POST['nombre_ambiente']);
-    $estado = mysqli_real_escape_string($conexion, $_POST['estado']);
-    $descripcion = mysqli_real_escape_string($conexion, $_POST['descripcion']);
-    $horario_fijo = mysqli_real_escape_string($conexion, $_POST['horario_fijo']);
-    $horario_disponible = mysqli_real_escape_string($conexion, $_POST['horario_disponible']);
-    $instructor_id = !empty($_POST['instructor_id']) ? mysqli_real_escape_string($conexion, $_POST['instructor_id']) : NULL;
+/* ── CREAR AMBIENTE ── */
+if (isset($_POST['crear_ambiente'])) {
+    $nombre        = mysqli_real_escape_string($conexion, $_POST['nombre_ambiente']);
+    $estado        = mysqli_real_escape_string($conexion, $_POST['estado']);
+    $descripcion   = mysqli_real_escape_string($conexion, $_POST['descripcion']);
+    $instructor_id = !empty($_POST['instructor_id'])
+                     ? mysqli_real_escape_string($conexion, $_POST['instructor_id'])
+                     : null;
+
+    $horario_fijo = $_POST['horario_fijo'] ?? null;
     
-    $checkNombre = mysqli_query($conexion, "SELECT id FROM ambientes WHERE nombre_ambiente = '$nombre'");
-    if(mysqli_num_rows($checkNombre) > 0){
-        echo "<script>alert('Ya existe un ambiente con el nombre \"$nombre\"\\n\\nPor favor, elige otro nombre o verifica si el ambiente ya está registrado.'); window.history.back();</script>";
+
+    $check = mysqli_query($conexion, "SELECT id FROM ambientes WHERE nombre_ambiente = '$nombre'");
+    if (mysqli_num_rows($check) > 0) {
+        echo "<script>alert('Ya existe un ambiente con el nombre \"$nombre\"'); window.history.back();</script>";
         exit;
     }
-    
-    $sql = "INSERT INTO ambientes (nombre_ambiente, estado, descripcion_general, horario_fijo, horario_disponible, instructor_id)
-            VALUES ('$nombre', '$estado', '$descripcion', '$horario_fijo', '$horario_disponible', ".($instructor_id ? "'$instructor_id'" : "NULL").")";
-    
-    if(mysqli_query($conexion, $sql)){
-        $id_ambiente = mysqli_insert_id($conexion);
-        
-        $qr_msg = "Ambiente creado correctamente";
-        try {
-            include_once("../includes/generar_qr.php");
-            generarQR($id_ambiente, $nombre);
-        } catch (Exception $e) {
-            $qr_msg = "Ambiente creado. QR no generado: " . $e->getMessage();
-        } catch (Error $e) {
-            $qr_msg = "Ambiente creado. Error en QR: " . $e->getMessage();
-        }
+    $horario_fijo_val = $horario_fijo ? "'$horario_fijo'" : "NULL";
 
+    $sql = "INSERT INTO ambientes
+        (nombre_ambiente, estado, descripcion_general, horario_fijo, instructor_id)
+    VALUES
+        ('$nombre', '$estado', '$descripcion', $horario_fijo_val,
+        " . ($instructor_id ? "'$instructor_id'" : 'NULL') . ")";
+   
+
+    if (mysqli_query($conexion, $sql)) {
+        $id_ambiente = mysqli_insert_id($conexion);
+        $qr_msg = 'Ambiente creado correctamente';
+        try {
+            include_once('../includes/generar_qr.php');
+            generarQR($id_ambiente, $nombre);
+        } catch (Throwable $e) {
+            $qr_msg = 'Ambiente creado. QR no generado: ' . $e->getMessage();
+        }
         echo "<script>alert('$qr_msg'); window.location.href='registro.php';</script>";
     } else {
-        echo "<script>alert('Error al crear ambiente: ".mysqli_error($conexion)."');</script>";
+        echo "<script>alert('Error al crear ambiente: " . mysqli_error($conexion) . "');</script>";
     }
 }
 
-/* ===== CREAR INSTRUCTOR ===== */
-if(isset($_POST['crear_instructor'])){
-    $nombre = mysqli_real_escape_string($conexion, $_POST['nombre']);
+/* ── CREAR INSTRUCTOR ── */
+if (isset($_POST['crear_instructor'])) {
+    $nombre         = mysqli_real_escape_string($conexion, $_POST['nombre']);
     $identificacion = mysqli_real_escape_string($conexion, $_POST['identificacion']);
-    $fecha_inicio = mysqli_real_escape_string($conexion, $_POST['fecha_inicio']);
-    $fecha_fin = mysqli_real_escape_string($conexion, $_POST['fecha_fin']);
-    $novedades = mysqli_real_escape_string($conexion, $_POST['novedades']);
-    
+    $fecha_inicio   = mysqli_real_escape_string($conexion, $_POST['fecha_inicio']);
+    $fecha_fin      = mysqli_real_escape_string($conexion, $_POST['fecha_fin']);
+    $novedades      = mysqli_real_escape_string($conexion, $_POST['novedades']);
+
     $checkDoc = mysqli_query($conexion, "SELECT id FROM instructores WHERE identificacion = '$identificacion'");
-    if(mysqli_num_rows($checkDoc) > 0){
-        echo "<script>alert('Ya existe un instructor con la identificación \"$identificacion\"\\n\\nPor favor, verifica el número de documento.'); window.history.back();</script>";
+    if (mysqli_num_rows($checkDoc) > 0) {
+        echo "<script>alert('Ya existe un instructor con la identificación \"$identificacion\"'); window.history.back();</script>";
         exit;
     }
-    
+
     $sql = "INSERT INTO instructores (nombre, identificacion, fecha_inicio, fecha_fin, novedades)
-            VALUES ('$nombre', '$identificacion', '$fecha_inicio', ".($fecha_fin ? "'$fecha_fin'" : "NULL").", '$novedades')";
-    
-    if(mysqli_query($conexion, $sql)){
+            VALUES ('$nombre', '$identificacion', '$fecha_inicio',
+                    " . ($fecha_fin ? "'$fecha_fin'" : 'NULL') . ", '$novedades')";
+
+    if (mysqli_query($conexion, $sql)) {
         echo "<script>alert('Instructor creado correctamente'); window.location.href='registro.php';</script>";
     } else {
-        echo "<script>alert('Error al crear instructor: ".mysqli_error($conexion)."');</script>";
+        echo "<script>alert('Error al crear instructor: " . mysqli_error($conexion) . "');</script>";
     }
 }
 
-/* ===== BUSCAR AMBIENTE POR AJAX ===== */
-if(isset($_GET['buscar_qr'])){
-    $termino = mysqli_real_escape_string($conexion, $_GET['buscar_qr']);
+/* ── BUSCAR QR POR AJAX ── */
+if (isset($_GET['buscar_qr'])) {
+    $termino    = mysqli_real_escape_string($conexion, $_GET['buscar_qr']);
     $resultados = [];
-    
     $res = mysqli_query($conexion, "SELECT id, nombre_ambiente FROM ambientes WHERE nombre_ambiente LIKE '%$termino%' ORDER BY nombre_ambiente ASC LIMIT 10");
-    while($row = mysqli_fetch_assoc($res)){
+    while ($row = mysqli_fetch_assoc($res)) {
         $nombre_limpio = preg_replace('/[^A-Za-z0-9_\-]/', '_', $row['nombre_ambiente']);
-        $nombre_limpio = preg_replace('/_+/', '_', $nombre_limpio);
-        $nombre_limpio = trim($nombre_limpio, '_');
-        $qr_path = "../qrs/" . $nombre_limpio . "_" . $row['id'] . ".png";
-        $resultados[] = [
+        $nombre_limpio = trim(preg_replace('/_+/', '_', $nombre_limpio), '_');
+        $resultados[]  = [
             'id'     => $row['id'],
             'nombre' => $row['nombre_ambiente'],
-            'qr'     => $qr_path
+            'qr'     => "../qrs/{$nombre_limpio}_{$row['id']}.png",
         ];
     }
-    
     header('Content-Type: application/json');
     echo json_encode($resultados);
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -111,14 +111,11 @@ if(isset($_GET['buscar_qr'])){
             <span>Ambientes e Instructores</span>
         </div>
     </div>
-    <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Administración
-    </div>
+    <div class="header-user"><i class="fa-solid fa-user user-icon"></i> Subdirección</div>
 </div>
 
 <div class="permisos-container">
 
-    <!-- SELECTOR DE FORMULARIO -->
     <div class="toggle-forms">
         <button class="toggle-btn active" onclick="showForm('ambiente')">
             <i class="fa-solid fa-building"></i> Crear Ambiente
@@ -137,13 +134,11 @@ if(isset($_GET['buscar_qr'])){
             <h2><i class="fa-solid fa-building"></i> Nuevo Ambiente</h2>
             <p>Complete la información del ambiente</p>
         </div>
-        
         <form method="POST">
             <div class="form-group">
                 <label>Nombre del Ambiente *</label>
                 <input type="text" name="nombre_ambiente" placeholder="Ej: Laboratorio 308" required>
             </div>
-            
             <div class="form-group">
                 <label>Estado *</label>
                 <select name="estado" required>
@@ -152,36 +147,30 @@ if(isset($_GET['buscar_qr'])){
                     <option value="Mantenimiento">Mantenimiento</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>Instructor Asignado</label>
                 <select name="instructor_id">
                     <option value="">— Sin asignar —</option>
                     <?php
                     $res = mysqli_query($conexion, "SELECT id, nombre FROM instructores ORDER BY nombre ASC");
-                    while($row = mysqli_fetch_assoc($res)){
-                        echo "<option value='".$row['id']."'>".$row['nombre']."</option>";
+                    while ($row = mysqli_fetch_assoc($res)) {
+                        echo "<option value='{$row['id']}'>" . htmlspecialchars($row['nombre']) . "</option>";
                     }
                     ?>
                 </select>
             </div>
-            
             <div class="form-group">
                 <label>Descripción General</label>
-                <textarea name="descripcion" placeholder="Descripción del ambiente, equipamiento, capacidad..."></textarea>
+                <textarea name="descripcion" placeholder="Equipamiento, capacidad, observaciones..."></textarea>
             </div>
-            
-            <div class="time-grid">
-                <div class="form-group">
-                    <label>Horario Fijo (informativo)</label>
-                    <input type="text" name="horario_fijo" placeholder="Ej: 7AM - 12PM">
-                </div>
-                <div class="form-group">
-                    <label>Horario Disponible</label>
-                    <input type="text" name="horario_disponible" placeholder="Ej: 1PM - 6PM">
-                </div>
+            <div class="form-group">
+                <label>Horario fijo (opcional)</label>
+                <input 
+                    type="text" 
+                    name="horario_fijo" 
+                    placeholder="Ej: Lun - Mié - Vie 06:00 - 12:00"
+                >
             </div>
-            
             <button type="submit" name="crear_ambiente" class="btn-submit">
                 <i class="fa-solid fa-plus-circle"></i> Crear Ambiente
             </button>
@@ -194,18 +183,15 @@ if(isset($_GET['buscar_qr'])){
             <h2><i class="fa-solid fa-chalkboard-user"></i> Nuevo Instructor</h2>
             <p>Complete la información del instructor</p>
         </div>
-        
         <form method="POST">
             <div class="form-group">
                 <label>Nombre Completo *</label>
                 <input type="text" name="nombre" placeholder="Ej: Juan Carlos Pérez" required>
             </div>
-            
             <div class="form-group">
                 <label>Identificación *</label>
                 <input type="text" name="identificacion" placeholder="Número de documento" required>
             </div>
-            
             <div class="time-grid">
                 <div class="form-group">
                     <label>Fecha Inicio *</label>
@@ -216,264 +202,88 @@ if(isset($_GET['buscar_qr'])){
                     <input type="date" name="fecha_fin">
                 </div>
             </div>
-            
             <div class="form-group">
                 <label>Novedades</label>
-                <textarea name="novedades" placeholder="Observaciones, horarios especiales, etc."></textarea>
+                <textarea name="novedades" placeholder="Observaciones, horarios especiales..."></textarea>
             </div>
-            
             <button type="submit" name="crear_instructor" class="btn-submit">
                 <i class="fa-solid fa-plus-circle"></i> Crear Instructor
             </button>
         </form>
     </div>
 
-    <!-- ===== SECCIÓN BUSCAR QR ===== -->
+    <!-- BUSCAR QR -->
     <div class="form-card" id="form-buscar" style="display:none;">
         <div class="form-header">
             <h2><i class="fa-solid fa-qrcode"></i> Buscar QR de Ambiente</h2>
-            <p>Escribe el nombre o número del ambiente para encontrar su QR</p>
+            <p>Escribe el nombre o número del ambiente</p>
         </div>
-
         <div class="form-group">
             <label>Buscar Ambiente</label>
             <div class="qr-search-group">
                 <i class="fa-solid fa-magnifying-glass qr-search-icon"></i>
-                <input
-                    type="text"
-                    id="inputBuscarQR"
-                    placeholder="Ej: 108, Laboratorio, Sistemas..."
+                <input type="text" id="inputBuscarQR"
+                    placeholder="Ej: 108, Laboratorio..."
                     autocomplete="off"
-                    oninput="buscarQR(this.value)"
-                >
+                    oninput="buscarQR(this.value)">
                 <button type="button" class="qr-btn-clear" id="btnLimpiar" onclick="limpiarBusqueda()" style="display:none;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
         </div>
-
         <div id="qr-loading" style="display:none;" class="qr-estado">
             <i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...
         </div>
-
         <div id="qr-empty" style="display:none;" class="qr-estado">
             <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>
             <p>No se encontró ningún ambiente con ese nombre.</p>
         </div>
-
         <div id="qr-resultados" class="qr-resultados"></div>
     </div>
-    <!-- ============================= -->
 
     <a href="index.php" class="btn-volver">
         <i class="fa-solid fa-arrow-left"></i> Volver al Panel
     </a>
-
 </div>
 
 <style>
-/* ===== TOGGLE: 2 botones base, 3 cuando hay QR ===== */
-.toggle-forms {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.toggle-btn {
-    background: white;
-    border: 2px solid #e5e7eb;
-    padding: 15px 20px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.toggle-btn:hover {
-    border-color: #667eea;
-    color: #667eea;
-}
-
-.toggle-btn.active {
-    background: linear-gradient(135deg, #24315e 0%, #6177a0 100%);
-    border-color: #667eea;
-    color: white;
-}
-
-.toggle-btn i {
-    font-size: 1.2rem;
-}
-
-@media (max-width: 600px) {
-    .toggle-forms {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* ===== BUSCADOR QR ===== */
-.qr-search-group {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-/* Reutiliza los estilos de input que ya define permisos.css,
-   solo ajustamos el padding para los íconos */
-.qr-search-group input {
-    padding-left: 40px !important;
-    padding-right: 40px !important;
-}
-
-.qr-search-icon {
-    position: absolute;
-    left: 14px;
-    color: #9ca3af;
-    font-size: 15px;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.qr-btn-clear {
-    position: absolute;
-    right: 12px;
-    background: none;
-    border: none;
-    color: #9ca3af;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    z-index: 1;
-}
-
-.qr-btn-clear:hover { color: #ef4444; }
-
-/* Estado loading / empty */
-.qr-estado {
-    text-align: center;
-    padding: 30px 0;
-    color: #9ca3af;
-    font-size: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.qr-estado i { font-size: 2rem; color: #667eea; }
-
-/* Grid de tarjetas QR */
-.qr-resultados {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
-    margin-top: 10px;
-}
-
-.qr-card {
-    background: #f8f9fc;
-    border: 2px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 20px 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    transition: all 0.25s ease;
-    animation: fadeInCard 0.3s ease;
-}
-
-.qr-card:hover {
-    border-color: #667eea;
-    box-shadow: 0 6px 20px rgba(102,126,234,0.15);
-    transform: translateY(-3px);
-}
-
-@keyframes fadeInCard {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.qr-card-nombre {
-    font-weight: 700;
-    font-size: 15px;
-    color: #24315e;
-    text-align: center;
-    word-break: break-word;
-}
-
-.qr-card img {
-    width: 140px;
-    height: 140px;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    object-fit: contain;
-    background: white;
-}
-
-.qr-card-noimg {
-    width: 140px;
-    height: 140px;
-    border-radius: 8px;
-    border: 2px dashed #d1d5db;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #9ca3af;
-    font-size: 13px;
-    gap: 8px;
-    text-align: center;
-}
-
-.qr-card-noimg i { font-size: 2rem; }
-
-.btn-descargar-qr {
-    background: linear-gradient(135deg, #24315e 0%, #6177a0 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    transition: opacity 0.2s;
-    text-decoration: none;
-}
-
-.btn-descargar-qr:hover { opacity: 0.85; }
+.toggle-forms { display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:25px; }
+.toggle-btn { background:white;border:2px solid #e5e7eb;padding:15px 20px;border-radius:12px;font-size:16px;font-weight:600;color:#666;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:10px; }
+.toggle-btn:hover { border-color:#667eea;color:#667eea; }
+.toggle-btn.active { background:linear-gradient(135deg,#24315e 0%,#6177a0 100%);border-color:#667eea;color:white; }
+.qr-search-group { position:relative;display:flex;align-items:center; }
+.qr-search-group input { padding-left:40px !important;padding-right:40px !important; }
+.qr-search-icon { position:absolute;left:14px;color:#9ca3af;font-size:15px;pointer-events:none;z-index:1; }
+.qr-btn-clear { position:absolute;right:12px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:16px;padding:0;display:flex;align-items:center;z-index:1; }
+.qr-btn-clear:hover { color:#ef4444; }
+.qr-estado { text-align:center;padding:30px 0;color:#9ca3af;font-size:15px;display:flex;flex-direction:column;align-items:center;gap:10px; }
+.qr-estado i { font-size:2rem;color:#667eea; }
+.qr-resultados { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;margin-top:10px; }
+.qr-card { background:#f8f9fc;border:2px solid #e5e7eb;border-radius:14px;padding:20px 15px;display:flex;flex-direction:column;align-items:center;gap:12px;transition:all .25s;animation:fadeInCard .3s ease; }
+.qr-card:hover { border-color:#667eea;box-shadow:0 6px 20px rgba(102,126,234,.15);transform:translateY(-3px); }
+@keyframes fadeInCard { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.qr-card-nombre { font-weight:700;font-size:15px;color:#24315e;text-align:center;word-break:break-word; }
+.qr-card img { width:140px;height:140px;border-radius:8px;border:1px solid #e5e7eb;object-fit:contain;background:white; }
+.qr-card-noimg { width:140px;height:140px;border-radius:8px;border:2px dashed #d1d5db;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;gap:8px;text-align:center; }
+.qr-card-noimg i { font-size:2rem; }
+.btn-descargar-qr { background:linear-gradient(135deg,#24315e 0%,#6177a0 100%);color:white;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:opacity .2s;text-decoration:none; }
+.btn-descargar-qr:hover { opacity:.85; }
+.form-hint { display:block;margin-top:6px;font-size:.82rem;color:#6b7280; }
+@media (max-width:600px) { .toggle-forms { grid-template-columns:1fr; } }
 </style>
 
 <script>
-/* ===== TOGGLE FORMULARIOS ===== */
 function showForm(tipo) {
-    document.getElementById('form-ambiente').style.display   = 'none';
-    document.getElementById('form-instructor').style.display = 'none';
-    document.getElementById('form-buscar').style.display     = 'none';
-
+    ['ambiente','instructor','buscar'].forEach(t => {
+        document.getElementById('form-' + t).style.display = 'none';
+    });
     document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-
-    const map = { ambiente: 0, instructor: 1, buscar: 2 };
+    const map = { ambiente:0, instructor:1, buscar:2 };
     document.querySelectorAll('.toggle-btn')[map[tipo]].classList.add('active');
     document.getElementById('form-' + tipo).style.display = 'block';
-
-    if(tipo === 'buscar'){
-        document.getElementById('inputBuscarQR').focus();
-    }
+    if (tipo === 'buscar') document.getElementById('inputBuscarQR').focus();
 }
 
-/* ===== BÚSQUEDA QR ===== */
 let debounceTimer = null;
 
 function buscarQR(termino) {
@@ -483,42 +293,30 @@ function buscarQR(termino) {
     const resultados = document.getElementById('qr-resultados');
 
     btnLimpiar.style.display = termino.length > 0 ? 'flex' : 'none';
-
     clearTimeout(debounceTimer);
 
-    if(termino.trim().length === 0){
-        loading.style.display  = 'none';
-        empty.style.display    = 'none';
-        resultados.innerHTML   = '';
+    if (termino.trim().length === 0) {
+        loading.style.display = empty.style.display = 'none';
+        resultados.innerHTML = '';
         return;
     }
 
-    loading.style.display  = 'flex';
-    empty.style.display    = 'none';
-    resultados.innerHTML   = '';
+    loading.style.display = 'flex';
+    empty.style.display   = 'none';
+    resultados.innerHTML  = '';
 
     debounceTimer = setTimeout(() => {
         fetch('registro.php?buscar_qr=' + encodeURIComponent(termino.trim()))
             .then(r => r.json())
             .then(data => {
                 loading.style.display = 'none';
-
-                if(data.length === 0){
-                    empty.style.display = 'flex';
-                    return;
-                }
-
+                if (data.length === 0) { empty.style.display = 'flex'; return; }
                 resultados.innerHTML = data.map(item => `
                     <div class="qr-card">
                         <div class="qr-card-nombre">
-                            <i class="fa-solid fa-building" style="color:#6177a0;margin-right:5px;"></i>
-                            ${item.nombre}
+                            <i class="fa-solid fa-building" style="color:#6177a0;margin-right:5px;"></i>${item.nombre}
                         </div>
-                        <img
-                            src="${item.qr}"
-                            alt="QR ${item.nombre}"
-                            onerror="this.outerHTML = sinQrHtml()"
-                        >
+                        <img src="${item.qr}" alt="QR ${item.nombre}" onerror="this.outerHTML='<div class=qr-card-noimg><i class=fa-solid fa-qrcode></i><span>QR no<br>disponible</span></div>'">
                         <a class="btn-descargar-qr" href="${item.qr}" download="QR_${item.nombre}.png">
                             <i class="fa-solid fa-download"></i> Descargar
                         </a>
@@ -532,20 +330,12 @@ function buscarQR(termino) {
     }, 350);
 }
 
-function sinQrHtml(){
-    return `<div class="qr-card-noimg">
-        <i class="fa-solid fa-qrcode"></i>
-        <span>QR no<br>disponible</span>
-    </div>`;
-}
-
-function limpiarBusqueda(){
+function limpiarBusqueda() {
     const input = document.getElementById('inputBuscarQR');
     input.value = '';
     buscarQR('');
     input.focus();
 }
 </script>
-
 </body>
 </html>
