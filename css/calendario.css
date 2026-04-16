@@ -178,8 +178,8 @@ body {
   align-items: center;
   gap: 6px;
   padding: 6px 16px;
-  background: rgba(52,168,83,.12);
-  border: 1px solid rgba(52,168,83,.28);
+  background: rgba(190, 211, 196, 0.12);
+  border: 1px solid rgba(128, 153, 135, 0.28);
   border-radius: var(--r-full);
   font-family: var(--font-ui);
   font-size: .76rem;
@@ -1174,13 +1174,15 @@ body {
 
   .header {
     padding: 0 20px;
-    height: 58px;
   }
 
   .header-title h1 {
-    font-family: var(--font-ui);
-    font-weight: 400;
-  }
+   color: white;
+    font-size: clamp(18px, 3.5vw, 24px);
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+} 
 
   .header-title span {
     display: none;
@@ -1192,7 +1194,7 @@ body {
   }
 
   .btn-volver {
-    padding: 7px 11px;
+    padding: 15px 20px;
   }
 
   /* Ocultar el chip de usuario en tablet */

@@ -309,7 +309,7 @@ body {
 }
 .menu-card.calendario:hover {
     background: linear-gradient(135deg, #e9f6fe 0%, #b7d5f7 100%);
-    border-color: #1a3f85;
+    border-color: #edf0f5;
 }
 .menu-card.calendario:hover .menu-card-title { color: #1a2654; }
 

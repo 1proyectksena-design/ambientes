@@ -11,7 +11,7 @@ if ($_SESSION['rol'] != 'subdireccion') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario de Ambientes</title>
-
+        
     <!-- FullCalendar v6 -->
     <link rel="stylesheet" href="../css/calendario.css">
     <link  href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">

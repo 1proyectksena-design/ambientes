@@ -168,17 +168,19 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
                 <div class="menu-card-description">Ver todas las autorizaciones del sistema</div>
             </a>
 
+            <a href="calendario.php" class="menu-card calendario">
+                <div class="menu-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="menu-card-title">Calendario de Ambientes</div>
+                <div class="menu-card-description">Vista interactiva de reservas y permisos por día, semana o mes</div>
+            </a>
+
             <a href="registro.php" class="menu-card crear">
                 <div class="menu-card-icon"><i class="fa-solid fa-circle-plus"></i></div>
                 <div class="menu-card-title">Crear Registros</div>
                 <div class="menu-card-description">Registrar nuevos ambientes e instructores</div>
             </a>
 
-            <a href="calendario.php" class="menu-card calendario">
-                <div class="menu-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
-                <div class="menu-card-title">Calendario de Ambientes</div>
-                <div class="menu-card-description">Vista interactiva de reservas y permisos por día, semana o mes</div>
-            </a>
+         
 
         </div><!-- /menu-grid -->
     </div><!-- /actions-container -->
