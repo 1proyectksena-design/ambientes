@@ -34,6 +34,20 @@ if (empty($ids) || !in_array($accion, ['aprobar', 'rechazar'])) {
     exit;
 }
 
+// ── Determinar quién está procesando la solicitud
+//    Usa el nombre si está en sesión, si no usa el rol formateado
+$quien = '';
+if (!empty($_SESSION['nombre'])) {
+    $quien = $_SESSION['nombre'];
+} else {
+    $mapa_roles = [
+        'administracion' => 'Administración',
+        'subdireccion'   => 'Subdirección',
+        'coordinacion'   => 'Coordinación',
+    ];
+    $quien = $mapa_roles[$_SESSION['rol']] ?? ucfirst($_SESSION['rol']);
+}
+
 // ── Verificar si existe la columna motivo_rechazo (una sola vez)
 $col_check    = mysqli_query($conexion, "SHOW COLUMNS FROM autorizaciones_ambientes LIKE 'motivo_rechazo'");
 $tiene_motivo = mysqli_num_rows($col_check) > 0;
@@ -43,10 +57,12 @@ $procesados = 0;
 if ($accion === 'aprobar') {
 
     $stmt = $conexion->prepare(
-        "UPDATE autorizaciones_ambientes SET estado = 'Aprobado' WHERE id = ? AND estado = 'Pendiente'"
+        "UPDATE autorizaciones_ambientes
+         SET estado = 'Aprobado', rol_autorizado = ?
+         WHERE id = ? AND estado = 'Pendiente'"
     );
     foreach ($ids as $id) {
-        $stmt->bind_param("i", $id);
+        $stmt->bind_param("si", $quien, $id);
         $stmt->execute();
         $procesados += $stmt->affected_rows;
     }
@@ -58,19 +74,23 @@ if ($accion === 'aprobar') {
 
     if ($tiene_motivo && $motivo !== '') {
         $stmt = $conexion->prepare(
-            "UPDATE autorizaciones_ambientes SET estado = 'Rechazado', motivo_rechazo = ? WHERE id = ? AND estado = 'Pendiente'"
+            "UPDATE autorizaciones_ambientes
+             SET estado = 'Rechazado', rol_autorizado = ?, motivo_rechazo = ?
+             WHERE id = ? AND estado = 'Pendiente'"
         );
         foreach ($ids as $id) {
-            $stmt->bind_param("si", $motivo, $id);
+            $stmt->bind_param("ssi", $quien, $motivo, $id);
             $stmt->execute();
             $procesados += $stmt->affected_rows;
         }
     } else {
         $stmt = $conexion->prepare(
-            "UPDATE autorizaciones_ambientes SET estado = 'Rechazado' WHERE id = ? AND estado = 'Pendiente'"
+            "UPDATE autorizaciones_ambientes
+             SET estado = 'Rechazado', rol_autorizado = ?
+             WHERE id = ? AND estado = 'Pendiente'"
         );
         foreach ($ids as $id) {
-            $stmt->bind_param("i", $id);
+            $stmt->bind_param("si", $quien, $id);
             $stmt->execute();
             $procesados += $stmt->affected_rows;
         }

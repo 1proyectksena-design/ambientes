@@ -119,73 +119,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     <title>Historial de Autorizaciones</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        /* ── Chips de estado ── */
-        .filtro-estado-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 2px solid #f0f0f0;
-        }
-        .filtro-estado-label {
-            font-size: 13px;
-            font-weight: 700;
-            color: #555;
-            white-space: nowrap;
-        }
-        .chip-estado {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            border: 2px solid transparent;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-        .chip-todos     { background:#f0f0f0; color:#555;    border-color:#ddd; }
-        .chip-aprobado  { background:#e8f5e9; color:#2e7d32; border-color:#a5d6a7; }
-        .chip-pendiente { background:#fff3e0; color:#e65100; border-color:#ffcc80; }
-        .chip-rechazado { background:#ffebee; color:#c62828; border-color:#ef9a9a; }
-
-        .chip-todos.activo     { background:#555;    color:white; border-color:#555; }
-        .chip-aprobado.activo  { background:#2e7d32; color:white; border-color:#2e7d32; }
-        .chip-pendiente.activo { background:#e65100; color:white; border-color:#e65100; }
-        .chip-rechazado.activo { background:#c62828; color:white; border-color:#c62828; }
-
-        .chip-estado:hover { transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.12); }
-
-        /* ── Botón Excel ── */
-        .btn-exportar-excel {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 22px;
-            background: linear-gradient(135deg, #1D6F42 0%, #155230 100%);
-            color: white;
-            text-decoration: none;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 3px 10px rgba(29,111,66,0.3);
-            white-space: nowrap;
-        }
-        .btn-exportar-excel:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(29,111,66,0.4);
-        }
-        .btn-exportar-excel i { font-size: 16px; }
-    </style>
+    
 </head>
 <body>
 
@@ -198,7 +132,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Administración
+        <i class="fa-solid fa-user user-icon"></i> Subdirección
     </div>
 </div>
 

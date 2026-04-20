@@ -164,7 +164,7 @@ if ($ambienteBuscado) {
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Administración
+        <i class="fa-solid fa-user user-icon"></i> Subdirección
     </div>
 </div>
 

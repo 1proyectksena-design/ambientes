@@ -21,8 +21,6 @@ if ($_SESSION['rol'] != 'subdireccion') {
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- CSS externo del calendario -->
-    <link rel="stylesheet" href="../css/calendario.css">
 </head>
 <body>
 
@@ -32,12 +30,11 @@ if ($_SESSION['rol'] != 'subdireccion') {
         <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
         <div class="header-title">
             <h1>Calendario de Ambientes</h1>
-            <span>Vista interactiva de reservas y permisos</span>
         </div>
     </div>
     <div class="header-right">
         <div class="header-user">
-            <i class="fa-solid fa-user"></i> Administración
+            <i class="fa-solid fa-user"></i> Subdirección
         </div>
         <a href="index.php" class="btn-volver">
             <i class="fa-solid fa-arrow-left"></i>
