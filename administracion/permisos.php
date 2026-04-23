@@ -10,6 +10,28 @@ if ($_SESSION['rol'] != 'administracion') {
 include("../includes/conexion.php");
 
 /* =========================
+   AJAX: BUSCAR FICHAS
+   ========================= */
+if(isset($_GET['buscar_ficha'])){
+    $termino = mysqli_real_escape_string($conexion, $_GET['buscar_ficha']);
+    $resultado = mysqli_query($conexion, "
+        SELECT DISTINCT numero_ficha, nombre_programa 
+        FROM fichas 
+        WHERE numero_ficha LIKE '$termino%' 
+           OR numero_ficha LIKE '%$termino%'
+        ORDER BY numero_ficha 
+        LIMIT 10
+    ");
+    $fichas_arr = [];
+    while($f = mysqli_fetch_assoc($resultado)){
+        $fichas_arr[] = $f;
+    }
+    header('Content-Type: application/json');
+    echo json_encode($fichas_arr);
+    exit;
+}
+
+/* =========================
    PARSEAR HORA TEXTO A HH:MM
    ========================= */
 function parsearHora($texto) {
@@ -71,6 +93,7 @@ if(isset($_POST['autorizar'])){
     $hora_fin     = mysqli_real_escape_string($conexion, $_POST['hora_fin']);
     $obs          = mysqli_real_escape_string($conexion, $_POST['observaciones']);
     $novedades    = mysqli_real_escape_string($conexion, $_POST['novedades']);
+    $ficha        = mysqli_real_escape_string($conexion, $_POST['ficha'] ?? '');
     
     $modo = $_POST['modo'] ?? 'unico';
     $dias_seleccionados = isset($_POST['dias']) ? $_POST['dias'] : [];
@@ -226,13 +249,15 @@ if(isset($_POST['autorizar'])){
             continue; // Saltar este día
         }
         
-        // INSERTAR
+        // INSERTAR — se incluye ficha en la query
+        // NOTA: Asegúrate de que la columna 'ficha' exista en autorizaciones_ambientes.
+        // Si no existe, ejecuta: ALTER TABLE autorizaciones_ambientes ADD COLUMN ficha VARCHAR(20) DEFAULT NULL;
         $sqlInsert = "INSERT INTO autorizaciones_ambientes
             (id_ambiente, id_instructor, rol_autorizado, fecha_inicio, fecha_fin, 
-             hora_inicio, hora_final, estado, observaciones, novedades)
+             hora_inicio, hora_final, estado, observaciones, novedades, ficha)
             VALUES
             ('$ambiente', '$instructor', 'administracion', '$f_inicio', '$f_fin',
-             '$hora_inicio', '$hora_fin', 'Aprobado', '$obs', '$novedades')";
+             '$hora_inicio', '$hora_fin', 'Aprobado', '$obs', '$novedades', " . ($ficha ? "'$ficha'" : "NULL") . ")";
         
         if(mysqli_query($conexion, $sqlInsert)){
             $insertados++;
@@ -274,6 +299,109 @@ mysqli_data_seek($instructores, 0);
     <title>Autorizar Ambiente - Administración</title>
     <link rel="stylesheet" href="../css/permisos.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* ── FICHA AUTOCOMPLETE ── */
+        .ficha-wrapper {
+            position: relative;
+        }
+        .ficha-wrapper input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ficha-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1.5px solid #ced4da;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            z-index: 999;
+            max-height: 240px;
+            overflow-y: auto;
+            display: none;
+        }
+        .ficha-dropdown.visible {
+            display: block;
+        }
+        .ficha-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+        }
+        .ficha-item:last-child {
+            border-bottom: none;
+        }
+        .ficha-item:hover,
+        .ficha-item.activo {
+            background: #e8f4ff;
+        }
+        .ficha-numero {
+            font-weight: 700;
+            color: #0d6efd;
+            font-size: 14px;
+            min-width: 80px;
+        }
+        .ficha-programa {
+            color: #555;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ficha-item i {
+            color: #aaa;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .ficha-vacia {
+            padding: 12px 14px;
+            color: #888;
+            font-size: 13px;
+            text-align: center;
+        }
+        .ficha-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e8f4ff;
+            color: #0d6efd;
+            border: 1px solid #b8d9ff;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .ficha-badge .btn-limpiar {
+            background: none;
+            border: none;
+            color: #0d6efd;
+            cursor: pointer;
+            padding: 0;
+            font-size: 13px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+        }
+        .ficha-badge .btn-limpiar:hover {
+            color: #dc3545;
+        }
+        .ficha-hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
 </head>
 <body>
 
@@ -443,6 +571,32 @@ mysqli_data_seek($instructores, 0);
                 </select>
             </div>
 
+            <!-- ══════════════════════════════════════════
+                 FICHA CON AUTOCOMPLETADO
+                 ══════════════════════════════════════════ -->
+            <div class="form-group">
+                <label><i class="fa-solid fa-id-card"></i> Ficha <small>(Opcional)</small></label>
+                <div class="ficha-wrapper" id="ficha-wrapper">
+                    <input
+                        type="text"
+                        id="ficha-input"
+                        placeholder="Escribe el número de ficha..."
+                        autocomplete="off"
+                        inputmode="numeric"
+                    >
+                    <!-- Campo oculto que se envía con el form -->
+                    <input type="hidden" name="ficha" id="ficha-hidden" value="">
+                    <!-- Dropdown de sugerencias -->
+                    <div class="ficha-dropdown" id="ficha-dropdown"></div>
+                </div>
+                <!-- Badge de ficha seleccionada -->
+                <div id="ficha-seleccionada" style="display:none;"></div>
+                <div class="ficha-hint">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Escribe los primeros dígitos para buscar fichas disponibles
+                </div>
+            </div>
+
             <!-- FECHAS -->
             <div class="time-grid">
                 <div class="form-group">
@@ -498,6 +652,170 @@ mysqli_data_seek($instructores, 0);
 </div>
 
 <script>
+/* ══════════════════════════════════════════════
+   FICHA AUTOCOMPLETE
+   ══════════════════════════════════════════════ */
+(function(){
+    const input      = document.getElementById('ficha-input');
+    const hidden     = document.getElementById('ficha-hidden');
+    const dropdown   = document.getElementById('ficha-dropdown');
+    const badge      = document.getElementById('ficha-seleccionada');
+
+    let debounce     = null;
+    let indiceActivo = -1;
+    let resultados   = [];
+
+    if(!input) return;
+
+    /* Buscar al escribir */
+    input.addEventListener('input', function(){
+        const val = this.value.trim();
+        clearTimeout(debounce);
+
+        // Si el campo está vacío, limpiar todo
+        if(val === ''){
+            ocultarDropdown();
+            limpiarFicha();
+            return;
+        }
+
+        debounce = setTimeout(() => buscarFichas(val), 220);
+    });
+
+    /* Navegación con teclado */
+    input.addEventListener('keydown', function(e){
+        const items = dropdown.querySelectorAll('.ficha-item');
+        if(e.key === 'ArrowDown'){
+            e.preventDefault();
+            indiceActivo = Math.min(indiceActivo + 1, items.length - 1);
+            actualizarActivo(items);
+        } else if(e.key === 'ArrowUp'){
+            e.preventDefault();
+            indiceActivo = Math.max(indiceActivo - 1, 0);
+            actualizarActivo(items);
+        } else if(e.key === 'Enter'){
+            e.preventDefault();
+            if(indiceActivo >= 0 && items[indiceActivo]){
+                items[indiceActivo].click();
+            } else if(resultados.length === 1){
+                seleccionarFicha(resultados[0]);
+            }
+        } else if(e.key === 'Escape'){
+            ocultarDropdown();
+        }
+    });
+
+    /* Cerrar al hacer clic fuera */
+    document.addEventListener('click', function(e){
+        if(!document.getElementById('ficha-wrapper').contains(e.target)){
+            ocultarDropdown();
+        }
+    });
+
+    function buscarFichas(termino){
+        // Construir la URL del mismo script con parámetro AJAX
+        const url = `?buscar_ficha=${encodeURIComponent(termino)}` +
+                    (<?= json_encode($id_ambiente_seleccionado ?? '') ?> ? `&id_ambiente=<?= $id_ambiente_seleccionado ?>` : '');
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                resultados = data;
+                renderDropdown(data, termino);
+            })
+            .catch(() => ocultarDropdown());
+    }
+
+    function renderDropdown(data, termino){
+        indiceActivo = -1;
+        dropdown.innerHTML = '';
+
+        if(data.length === 0){
+            dropdown.innerHTML = `<div class="ficha-vacia"><i class="fa-solid fa-magnifying-glass"></i> No se encontraron fichas con "<strong>${escHtml(termino)}</strong>"</div>`;
+            dropdown.classList.add('visible');
+            return;
+        }
+
+        data.forEach((f, idx) => {
+            const div = document.createElement('div');
+            div.className = 'ficha-item';
+            div.innerHTML = `
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span class="ficha-numero">${resaltarCoincidencia(f.numero_ficha, termino)}</span>
+                <span class="ficha-programa">${escHtml(f.nombre_programa || '')}</span>
+            `;
+            div.addEventListener('mouseenter', () => {
+                indiceActivo = idx;
+                actualizarActivo(dropdown.querySelectorAll('.ficha-item'));
+            });
+            div.addEventListener('click', () => seleccionarFicha(f));
+            dropdown.appendChild(div);
+        });
+
+        dropdown.classList.add('visible');
+    }
+
+    function seleccionarFicha(f){
+        hidden.value = f.numero_ficha;
+        input.value  = '';
+        input.style.display = 'none';
+
+        // Mostrar badge
+        badge.style.display = 'block';
+        badge.innerHTML = `
+            <span class="ficha-badge">
+                <i class="fa-solid fa-graduation-cap"></i>
+                Ficha ${escHtml(f.numero_ficha)}
+                ${f.nombre_programa ? `<span style="font-weight:400; color:#555;">— ${escHtml(f.nombre_programa)}</span>` : ''}
+                <button type="button" class="btn-limpiar" onclick="limpiarFichaPublic()" title="Quitar ficha">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </span>
+        `;
+
+        ocultarDropdown();
+    }
+
+    function limpiarFicha(){
+        hidden.value = '';
+        badge.style.display = 'none';
+        badge.innerHTML = '';
+        input.style.display = '';
+    }
+
+    // Exponer para el botón del badge
+    window.limpiarFichaPublic = function(){
+        limpiarFicha();
+        input.focus();
+    };
+
+    function ocultarDropdown(){
+        dropdown.classList.remove('visible');
+        dropdown.innerHTML = '';
+        indiceActivo = -1;
+    }
+
+    function actualizarActivo(items){
+        items.forEach((el, i) => el.classList.toggle('activo', i === indiceActivo));
+        if(items[indiceActivo]) items[indiceActivo].scrollIntoView({ block: 'nearest' });
+    }
+
+    function resaltarCoincidencia(texto, termino){
+        const idx = texto.toLowerCase().indexOf(termino.toLowerCase());
+        if(idx === -1) return escHtml(texto);
+        return escHtml(texto.slice(0, idx))
+             + `<mark style="background:#cfe2ff; border-radius:2px;">${escHtml(texto.slice(idx, idx + termino.length))}</mark>`
+             + escHtml(texto.slice(idx + termino.length));
+    }
+
+    function escHtml(str){
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+})();
+
+/* ══════════════════════════════════════════════
+   RESTO DE FUNCIONES ORIGINALES
+   ══════════════════════════════════════════════ */
 function cambiarModo() {
     const modoRecurrente = document.getElementById('modo-recurrente').checked;
     const diasSelector = document.getElementById('dias-selector');
