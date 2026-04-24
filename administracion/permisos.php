@@ -15,7 +15,7 @@ include("../includes/conexion.php");
 if(isset($_GET['buscar_ficha'])){
     $termino = mysqli_real_escape_string($conexion, $_GET['buscar_ficha']);
     $resultado = mysqli_query($conexion, "
-        SELECT DISTINCT numero_ficha, nombre_programa 
+        SELECT id, numero_ficha, programa
         FROM fichas 
         WHERE numero_ficha LIKE '$termino%' 
            OR numero_ficha LIKE '%$termino%'
@@ -72,14 +72,17 @@ $id_ambiente_seleccionado = $_GET['id_ambiente'] ?? null;
 /* =========================
    CONSULTAS BASE
    ========================= */
-$ambientes = mysqli_query($conexion, "SELECT * FROM ambientes WHERE estado = 'Habilitado' ORDER BY nombre_ambiente");
+$resAmbientes  = mysqli_query($conexion, "SELECT * FROM ambientes WHERE estado = 'Habilitado' ORDER BY nombre_ambiente");
+$totalAmbientes = mysqli_num_rows($resAmbientes);
+
 $hoy = date('Y-m-d');
-$instructores = mysqli_query($conexion, "
+$resInstructores = mysqli_query($conexion, "
     SELECT * FROM instructores 
     WHERE (fecha_fin IS NULL OR fecha_fin >= '$hoy')
     AND fecha_inicio <= '$hoy'
     ORDER BY nombre
 ");
+$totalInstructores = mysqli_num_rows($resInstructores);
 
 /* =========================
    AUTORIZAR - CON MODO RECURRENTE
@@ -93,7 +96,10 @@ if(isset($_POST['autorizar'])){
     $hora_fin     = mysqli_real_escape_string($conexion, $_POST['hora_fin']);
     $obs          = mysqli_real_escape_string($conexion, $_POST['observaciones']);
     $novedades    = mysqli_real_escape_string($conexion, $_POST['novedades']);
-    $ficha        = mysqli_real_escape_string($conexion, $_POST['ficha'] ?? '');
+    // id_ficha viene como entero (id de la tabla fichas)
+    $id_ficha     = isset($_POST['id_ficha']) && $_POST['id_ficha'] !== '' 
+                    ? (int)$_POST['id_ficha'] 
+                    : null;
     
     $modo = $_POST['modo'] ?? 'unico';
     $dias_seleccionados = isset($_POST['dias']) ? $_POST['dias'] : [];
@@ -103,11 +109,9 @@ if(isset($_POST['autorizar'])){
     $ambienteData  = mysqli_fetch_assoc($checkAmbiente);
 
     if(!$ambienteData || $ambienteData['estado'] != 'Habilitado'){
-        echo "<script>alert(' No se puede autorizar: El ambiente no está habilitado'); window.history.back();</script>";
+        echo "<script>alert('No se puede autorizar: El ambiente no está habilitado'); window.history.back();</script>";
         exit;
     }
-
-    /* NOTA: El horario fijo es solo informativo, NO bloquea */
 
     /* VALIDAR QUE ESTÉ DENTRO DEL HORARIO DISPONIBLE */
     $horario_disponible = $ambienteData['horario_disponible'];
@@ -116,7 +120,7 @@ if(isset($_POST['autorizar'])){
     if($rangoDisponible){
         if($hora_inicio < $rangoDisponible['inicio'] || $hora_fin > $rangoDisponible['fin']){
             echo "<script>
-                alert(' Horario fuera del rango permitido.\\nEste ambiente solo está disponible de " . addslashes($horario_disponible) . "\\nIngresaste: $hora_inicio - $hora_fin');
+                alert('Horario fuera del rango permitido.\\nEste ambiente solo está disponible de " . addslashes($horario_disponible) . "\\nIngresaste: $hora_inicio - $hora_fin');
                 window.history.back();
             </script>";
             exit;
@@ -131,19 +135,19 @@ if(isset($_POST['autorizar'])){
         AND fecha_inicio <= '$fecha_fin'
     ");
     if(mysqli_num_rows($checkInstructor) == 0){
-        echo "<script>alert(' El instructor no está activo en el período seleccionado'); window.history.back();</script>";
+        echo "<script>alert('El instructor no está activo en el período seleccionado'); window.history.back();</script>";
         exit;
     }
 
     /* VALIDAR FECHAS */
     if($fecha_inicio > $fecha_fin){
-        echo "<script>alert(' La fecha fin debe ser igual o mayor que la fecha inicio'); window.history.back();</script>";
+        echo "<script>alert('La fecha fin debe ser igual o mayor que la fecha inicio'); window.history.back();</script>";
         exit;
     }
 
     /* VALIDAR HORA FIN MAYOR QUE INICIO */
     if($hora_inicio >= $hora_fin){
-        echo "<script>alert(' La hora fin debe ser mayor que la hora inicio'); window.history.back();</script>";
+        echo "<script>alert('La hora fin debe ser mayor que la hora inicio'); window.history.back();</script>";
         exit;
     }
 
@@ -160,7 +164,7 @@ if(isset($_POST['autorizar'])){
         ];
     } else {
         if(empty($dias_seleccionados)){
-            echo "<script>alert(' Debes seleccionar al menos un día de la semana'); window.history.back();</script>";
+            echo "<script>alert('Debes seleccionar al menos un día de la semana'); window.history.back();</script>";
             exit;
         }
         
@@ -181,7 +185,7 @@ if(isset($_POST['autorizar'])){
         }
         
         if(empty($numeros_dias)){
-            echo "<script>alert(' Días seleccionados no válidos'); window.history.back();</script>";
+            echo "<script>alert('Días seleccionados no válidos'); window.history.back();</script>";
             exit;
         }
         
@@ -202,7 +206,7 @@ if(isset($_POST['autorizar'])){
         }
         
         if(empty($fechas_a_autorizar)){
-            echo "<script>alert(' No hay fechas que coincidan con los días seleccionados en el rango especificado'); window.history.back();</script>";
+            echo "<script>alert('No hay fechas que coincidan con los días seleccionados en el rango especificado'); window.history.back();</script>";
             exit;
         }
     }
@@ -218,7 +222,7 @@ if(isset($_POST['autorizar'])){
         $f_inicio = $fecha_item['fecha_inicio'];
         $f_fin    = $fecha_item['fecha_fin'];
         
-        // VALIDAR CHOQUE (con datos del instructor que ya tiene el horario)
+        // VALIDAR CHOQUE
         $sqlChoque = "SELECT au.*, i.nombre AS nombre_instructor
                       FROM autorizaciones_ambientes au
                       JOIN instructores i ON au.id_instructor = i.id
@@ -232,63 +236,54 @@ if(isset($_POST['autorizar'])){
             $choqueData = mysqli_fetch_assoc($resChoque);
             $nombreDia = date('l', strtotime($f_inicio));
             $diasSemana = [
-                'Monday' => 'Lunes',
-                'Tuesday' => 'Martes',
+                'Monday'    => 'Lunes',
+                'Tuesday'   => 'Martes',
                 'Wednesday' => 'Miércoles',
-                'Thursday' => 'Jueves',
-                'Friday' => 'Viernes',
-                'Saturday' => 'Sábado',
-                'Sunday' => 'Domingo'
+                'Thursday'  => 'Jueves',
+                'Friday'    => 'Viernes',
+                'Saturday'  => 'Sábado',
+                'Sunday'    => 'Domingo'
             ];
             $diaEspanol = $diasSemana[$nombreDia] ?? $nombreDia;
             
-            $errores[] = " $diaEspanol " . date('d/m/Y', strtotime($f_inicio)) . 
+            $errores[] = "$diaEspanol " . date('d/m/Y', strtotime($f_inicio)) . 
                          " - Ya ocupado por " . $choqueData['nombre_instructor'] . 
                          " (" . date('h:i A', strtotime($choqueData['hora_inicio'])) . 
                          " - " . date('h:i A', strtotime($choqueData['hora_final'])) . ")";
-            continue; // Saltar este día
+            continue;
         }
         
-        // INSERTAR — se incluye ficha en la query
-        // NOTA: Asegúrate de que la columna 'ficha' exista en autorizaciones_ambientes.
-        // Si no existe, ejecuta: ALTER TABLE autorizaciones_ambientes ADD COLUMN ficha VARCHAR(20) DEFAULT NULL;
+        // INSERTAR con id_ficha (entero FK)
+        $fichaSQL = ($id_ficha !== null) ? $id_ficha : 'NULL';
         $sqlInsert = "INSERT INTO autorizaciones_ambientes
             (id_ambiente, id_instructor, rol_autorizado, fecha_inicio, fecha_fin, 
-             hora_inicio, hora_final, estado, observaciones, novedades, ficha)
+             hora_inicio, hora_final, estado, observaciones, novedades, id_ficha)
             VALUES
             ('$ambiente', '$instructor', 'administracion', '$f_inicio', '$f_fin',
-             '$hora_inicio', '$hora_fin', 'Aprobado', '$obs', '$novedades', " . ($ficha ? "'$ficha'" : "NULL") . ")";
+             '$hora_inicio', '$hora_fin', 'Aprobado', '$obs', '$novedades', $fichaSQL)";
         
         if(mysqli_query($conexion, $sqlInsert)){
             $insertados++;
         } else {
-            $errores[] = " Error en $f_inicio: " . mysqli_error($conexion);
+            $errores[] = "Error en $f_inicio: " . mysqli_error($conexion);
         }
     }
     
-    // RESULTADO FINAL CON REPORTE DETALLADO
+    // RESULTADO FINAL
     if($insertados > 0 && empty($errores)){
         echo "<script>alert('Se autorizaron $insertados días correctamente'); window.location.href='index.php';</script>";
         exit;
     } elseif($insertados > 0 && !empty($errores)){
         $msg_errores = implode("\\n", $errores);
-        $mensajeFinal = " AUTORIZACIONES COMPLETADAS\\n\\n" .
-                        " Días autorizados: $insertados\\n\\n" .
-                        " DÍAS NO AUTORIZADOS (choques detectados):\\n" . 
-                        $msg_errores;
+        $mensajeFinal = "AUTORIZACIONES COMPLETADAS\\n\\nDías autorizados: $insertados\\n\\nDÍAS NO AUTORIZADOS (choques detectados):\\n" . $msg_errores;
         echo "<script>alert('$mensajeFinal'); window.location.href='index.php';</script>";
         exit;
     } else {
         $msg_errores = implode("\\n", $errores);
-        echo "<script>alert(' No se pudo autorizar ningún día:\\n\\n$msg_errores'); window.history.back();</script>";
+        echo "<script>alert('No se pudo autorizar ningún día:\\n\\n$msg_errores'); window.history.back();</script>";
         exit;
     }
 }
-
-$totalAmbientes    = mysqli_num_rows($ambientes);
-$totalInstructores = mysqli_num_rows($instructores);
-mysqli_data_seek($ambientes, 0);
-mysqli_data_seek($instructores, 0);
 ?>
 
 <!DOCTYPE html>
@@ -497,12 +492,13 @@ mysqli_data_seek($instructores, 0);
 
             <!-- AMBIENTE -->
             <div class="form-group">
-                <label><i class="fa-solid fa-building"></i> Ambiente  <small>(Solo habilitados)</small></label>
+                <label><i class="fa-solid fa-building"></i> Ambiente <small>(Solo habilitados)</small></label>
 
                 <?php if($id_ambiente_seleccionado): ?>
                     <?php
+                    $id_amb_esc = mysqli_real_escape_string($conexion, $id_ambiente_seleccionado);
                     $ambiente_unico = mysqli_fetch_assoc(
-                        mysqli_query($conexion, "SELECT * FROM ambientes WHERE id='$id_ambiente_seleccionado' AND estado='Habilitado'")
+                        mysqli_query($conexion, "SELECT * FROM ambientes WHERE id='$id_amb_esc' AND estado='Habilitado'")
                     );
                     if($ambiente_unico):
                     ?>
@@ -533,7 +529,7 @@ mysqli_data_seek($instructores, 0);
                 <?php else: ?>
                     <select name="ambiente" id="select-ambiente" required onchange="mostrarHorario(this)">
                         <option value="">-- Seleccione un ambiente --</option>
-                        <?php while($a = mysqli_fetch_assoc($ambientes)): ?>
+                        <?php while($a = mysqli_fetch_assoc($resAmbientes)): ?>
                             <option value="<?= $a['id'] ?>"
                                     data-horario-fijo="<?= htmlspecialchars($a['horario_fijo'] ?: '') ?>"
                                     data-horario="<?= htmlspecialchars($a['horario_disponible'] ?: '') ?>">
@@ -559,10 +555,10 @@ mysqli_data_seek($instructores, 0);
 
             <!-- INSTRUCTOR -->
             <div class="form-group">
-                <label><i class="fa-solid fa-user"></i> Instructor  <small>(Solo activos)</small></label>
+                <label><i class="fa-solid fa-user"></i> Instructor <small>(Solo activos)</small></label>
                 <select name="instructor" required>
                     <option value="">-- Seleccione un instructor --</option>
-                    <?php while($i = mysqli_fetch_assoc($instructores)): ?>
+                    <?php while($i = mysqli_fetch_assoc($resInstructores)): ?>
                         <option value="<?= $i['id'] ?>">
                             <?= htmlspecialchars($i['nombre']) ?>
                             (<?= htmlspecialchars($i['identificacion']) ?>)
@@ -573,6 +569,7 @@ mysqli_data_seek($instructores, 0);
 
             <!-- ══════════════════════════════════════════
                  FICHA CON AUTOCOMPLETADO
+                 Guarda el ID (int FK) en id_ficha, muestra número+programa al usuario
                  ══════════════════════════════════════════ -->
             <div class="form-group">
                 <label><i class="fa-solid fa-id-card"></i> Ficha <small>(Opcional)</small></label>
@@ -584,8 +581,8 @@ mysqli_data_seek($instructores, 0);
                         autocomplete="off"
                         inputmode="numeric"
                     >
-                    <!-- Campo oculto que se envía con el form -->
-                    <input type="hidden" name="ficha" id="ficha-hidden" value="">
+                    <!-- Campo oculto con el ID real de la ficha (FK) -->
+                    <input type="hidden" name="id_ficha" id="id-ficha-hidden" value="">
                     <!-- Dropdown de sugerencias -->
                     <div class="ficha-dropdown" id="ficha-dropdown"></div>
                 </div>
@@ -600,11 +597,11 @@ mysqli_data_seek($instructores, 0);
             <!-- FECHAS -->
             <div class="time-grid">
                 <div class="form-group">
-                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Inicio </label>
+                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Inicio</label>
                     <input type="date" name="fecha_inicio" id="fecha-inicio" min="<?= date('Y-m-d') ?>" required>
                 </div>
                 <div class="form-group">
-                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Fin </label>
+                    <label><i class="fa-regular fa-calendar-days"></i> Fecha Fin</label>
                     <input type="date" name="fecha_fin" id="fecha-fin" min="<?= date('Y-m-d') ?>" required>
                 </div>
             </div>
@@ -612,11 +609,11 @@ mysqli_data_seek($instructores, 0);
             <!-- HORARIOS -->
             <div class="time-grid">
                 <div class="form-group">
-                    <label><i class="fa-regular fa-clock"></i> Hora Inicio </label>
+                    <label><i class="fa-regular fa-clock"></i> Hora Inicio</label>
                     <input type="time" name="hora_inicio" id="hora_inicio" required onchange="validarHoraEnCliente()">
                 </div>
                 <div class="form-group">
-                    <label><i class="fa-regular fa-clock"></i> Hora Fin </label>
+                    <label><i class="fa-regular fa-clock"></i> Hora Fin</label>
                     <input type="time" name="hora_fin" id="hora_fin" required onchange="validarHoraEnCliente()">
                 </div>
             </div>
@@ -654,10 +651,12 @@ mysqli_data_seek($instructores, 0);
 <script>
 /* ══════════════════════════════════════════════
    FICHA AUTOCOMPLETE
+   - Busca por numero_ficha, muestra programa
+   - Guarda el id (FK) en el campo oculto id_ficha
    ══════════════════════════════════════════════ */
 (function(){
     const input      = document.getElementById('ficha-input');
-    const hidden     = document.getElementById('ficha-hidden');
+    const hidden     = document.getElementById('id-ficha-hidden');   // guarda el id real
     const dropdown   = document.getElementById('ficha-dropdown');
     const badge      = document.getElementById('ficha-seleccionada');
 
@@ -672,7 +671,6 @@ mysqli_data_seek($instructores, 0);
         const val = this.value.trim();
         clearTimeout(debounce);
 
-        // Si el campo está vacío, limpiar todo
         if(val === ''){
             ocultarDropdown();
             limpiarFicha();
@@ -713,9 +711,10 @@ mysqli_data_seek($instructores, 0);
     });
 
     function buscarFichas(termino){
-        // Construir la URL del mismo script con parámetro AJAX
-        const url = `?buscar_ficha=${encodeURIComponent(termino)}` +
-                    (<?= json_encode($id_ambiente_seleccionado ?? '') ?> ? `&id_ambiente=<?= $id_ambiente_seleccionado ?>` : '');
+        const url = `?buscar_ficha=${encodeURIComponent(termino)}`
+                  + (<?= json_encode($id_ambiente_seleccionado ?? '') ?> 
+                     ? `&id_ambiente=<?= (int)($id_ambiente_seleccionado ?? 0) ?>` 
+                     : '');
 
         fetch(url)
             .then(r => r.json())
@@ -742,7 +741,7 @@ mysqli_data_seek($instructores, 0);
             div.innerHTML = `
                 <i class="fa-solid fa-graduation-cap"></i>
                 <span class="ficha-numero">${resaltarCoincidencia(f.numero_ficha, termino)}</span>
-                <span class="ficha-programa">${escHtml(f.nombre_programa || '')}</span>
+                <span class="ficha-programa">${escHtml(f.programa || '')}</span>
             `;
             div.addEventListener('mouseenter', () => {
                 indiceActivo = idx;
@@ -756,17 +755,18 @@ mysqli_data_seek($instructores, 0);
     }
 
     function seleccionarFicha(f){
-        hidden.value = f.numero_ficha;
+        // Guardar el id (FK real) en el campo oculto
+        hidden.value = f.id;
         input.value  = '';
         input.style.display = 'none';
 
-        // Mostrar badge
+        // Mostrar badge con número y programa
         badge.style.display = 'block';
         badge.innerHTML = `
             <span class="ficha-badge">
                 <i class="fa-solid fa-graduation-cap"></i>
                 Ficha ${escHtml(f.numero_ficha)}
-                ${f.nombre_programa ? `<span style="font-weight:400; color:#555;">— ${escHtml(f.nombre_programa)}</span>` : ''}
+                ${f.programa ? `<span style="font-weight:400; color:#555;">— ${escHtml(f.programa)}</span>` : ''}
                 <button type="button" class="btn-limpiar" onclick="limpiarFichaPublic()" title="Quitar ficha">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -783,7 +783,6 @@ mysqli_data_seek($instructores, 0);
         input.style.display = '';
     }
 
-    // Exponer para el botón del badge
     window.limpiarFichaPublic = function(){
         limpiarFicha();
         input.focus();
@@ -814,13 +813,13 @@ mysqli_data_seek($instructores, 0);
 })();
 
 /* ══════════════════════════════════════════════
-   RESTO DE FUNCIONES ORIGINALES
+   RESTO DE FUNCIONES
    ══════════════════════════════════════════════ */
 function cambiarModo() {
     const modoRecurrente = document.getElementById('modo-recurrente').checked;
-    const diasSelector = document.getElementById('dias-selector');
-    const fechaInicio = document.getElementById('fecha-inicio');
-    const fechaFin = document.getElementById('fecha-fin');
+    const diasSelector   = document.getElementById('dias-selector');
+    const fechaInicio    = document.getElementById('fecha-inicio');
+    const fechaFin       = document.getElementById('fecha-fin');
     
     if(modoRecurrente){
         diasSelector.classList.add('active');
@@ -841,9 +840,9 @@ document.getElementById('fecha-inicio')?.addEventListener('change', function(){
 });
 
 function mostrarHorario(sel) {
-    const opcion   = sel.options[sel.selectedIndex];
-    const horario  = opcion.getAttribute('data-horario');
-    const fijo     = opcion.getAttribute('data-horario-fijo');
+    const opcion  = sel.options[sel.selectedIndex];
+    const horario = opcion.getAttribute('data-horario');
+    const fijo    = opcion.getAttribute('data-horario-fijo');
 
     const infoBox  = document.getElementById('horario-info-box');
     const infoTxt  = document.getElementById('horario-info-texto');
@@ -897,7 +896,7 @@ function validarHoraEnCliente() {
             const rd0 = parsearHoraJS(pd[0]);
             const rd1 = parsearHoraJS(pd[1]);
             if(rd0 && rd1 && (hi < rd0 || hf > rd1)){
-                avisoTxt.innerHTML = ` Las horas deben estar dentro del horario disponible <strong>${disTxt}</strong>. Estás ingresando ${hi} - ${hf}.`;
+                avisoTxt.innerHTML = `Las horas deben estar dentro del horario disponible <strong>${disTxt}</strong>. Estás ingresando ${hi} - ${hf}.`;
                 aviso.style.display = 'block';
                 aviso.style.background = '#fff3cd';
                 aviso.style.color = '#856404';
@@ -914,7 +913,7 @@ document.getElementById('form-autorizacion')?.addEventListener('submit', functio
     const aviso = document.getElementById('aviso-horario');
     if(aviso && aviso.style.display === 'block'){
         e.preventDefault();
-        alert(' Corrige el horario antes de continuar.');
+        alert('Corrige el horario antes de continuar.');
     }
 });
 </script>

@@ -58,63 +58,71 @@ if ($ambienteBuscado) {
         $resUsoActual = mysqli_query($conexion, $sqlUsoActual);
         $usoActual    = mysqli_fetch_assoc($resUsoActual);
 
+        /* Próximos usos — incluye ficha (numero_ficha + programa) */
         $sqlProximosUsos = "SELECT
-                                MIN(au.fecha_inicio) AS fecha_inicio,
-                                MAX(au.fecha_fin)    AS fecha_fin,
+                                MIN(au.fecha_inicio)  AS fecha_inicio,
+                                MAX(au.fecha_fin)     AS fecha_fin,
                                 au.hora_inicio,
                                 au.hora_final,
                                 au.id_instructor,
-                                i.nombre             AS nombre_instructor,
+                                i.nombre              AS nombre_instructor,
                                 au.observaciones,
+                                f.numero_ficha,
+                                f.programa,
                                 GROUP_CONCAT(
                                     DISTINCT DAYOFWEEK(au.fecha_inicio)
                                     ORDER BY DAYOFWEEK(au.fecha_inicio)
                                 ) AS dias_semana
                             FROM autorizaciones_ambientes au
                             JOIN instructores i ON au.id_instructor = i.id
+                            LEFT JOIN fichas f  ON au.id_ficha = f.id
                             WHERE au.id_ambiente = '$id_ambiente'
                               AND (
                                   (au.fecha_inicio > '$fecha_actual')
                                   OR (au.fecha_inicio = '$fecha_actual' AND au.hora_inicio > '$hora_actual')
                               )
                               AND au.estado = 'Aprobado'
-                            GROUP BY au.id_instructor, au.hora_inicio, au.hora_final, au.observaciones
+                            GROUP BY au.id_instructor, au.hora_inicio, au.hora_final,
+                                     au.observaciones, f.numero_ficha, f.programa
                             ORDER BY MIN(au.fecha_inicio) ASC
                             LIMIT 10";
         $proximosUsos = mysqli_query($conexion, $sqlProximosUsos);
 
+        /* Historial — incluye ficha (numero_ficha + programa) */
         $sqlHistorialReciente = "SELECT
-                            MIN(au.fecha_inicio)  AS fecha_inicio,
-                            MAX(au.fecha_fin)      AS fecha_fin,
-                            au.hora_inicio,
-                            au.hora_final,
-                            au.estado,
-                            i.nombre              AS nombre_instructor,
-                            au.novedades,
-                            GROUP_CONCAT(
-                                DISTINCT DAYOFWEEK(au.fecha_inicio)
-                                ORDER BY DAYOFWEEK(au.fecha_inicio)
-                            ) AS dias_semana
-                         FROM autorizaciones_ambientes au
-                         JOIN instructores i ON au.id_instructor = i.id
-                         WHERE au.id_ambiente = '$id_ambiente'
-                           AND (
-                               au.fecha_fin < '$fecha_actual'
-                               OR (au.fecha_fin = '$fecha_actual' AND au.hora_final < '$hora_actual')
-                           )
-                         GROUP BY au.id_instructor, au.hora_inicio, au.hora_final,
-                                  au.estado, au.novedades
-                         ORDER BY MIN(au.fecha_inicio) DESC, au.hora_inicio DESC
-                         LIMIT 20";
+                                    MIN(au.fecha_inicio)  AS fecha_inicio,
+                                    MAX(au.fecha_fin)     AS fecha_fin,
+                                    au.hora_inicio,
+                                    au.hora_final,
+                                    au.estado,
+                                    i.nombre              AS nombre_instructor,
+                                    au.novedades,
+                                    f.numero_ficha,
+                                    f.programa,
+                                    GROUP_CONCAT(
+                                        DISTINCT DAYOFWEEK(au.fecha_inicio)
+                                        ORDER BY DAYOFWEEK(au.fecha_inicio)
+                                    ) AS dias_semana
+                                 FROM autorizaciones_ambientes au
+                                 JOIN instructores i ON au.id_instructor = i.id
+                                 LEFT JOIN fichas f  ON au.id_ficha = f.id
+                                 WHERE au.id_ambiente = '$id_ambiente'
+                                   AND (
+                                       au.fecha_fin < '$fecha_actual'
+                                       OR (au.fecha_fin = '$fecha_actual' AND au.hora_final < '$hora_actual')
+                                   )
+                                 GROUP BY au.id_instructor, au.hora_inicio, au.hora_final,
+                                          au.estado, au.novedades, f.numero_ficha, f.programa
+                                 ORDER BY MIN(au.fecha_inicio) DESC, au.hora_inicio DESC
+                                 LIMIT 20";
         $historialReciente = mysqli_query($conexion, $sqlHistorialReciente);
 
         /* ══════════════════════════════════════
-        EXPORTAR PRÓXIMOS USOS A EXCEL
-        ══════════════════════════════════════ */
+           EXPORTAR PRÓXIMOS USOS A EXCEL
+           ══════════════════════════════════════ */
         if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
             $abrevDiasExport = [1=>'Dom',2=>'Lun',3=>'Mar',4=>'Mié',5=>'Jue',6=>'Vie',7=>'Sáb'];
 
-            /* Re-ejecutar ambas consultas para el export */
             $resProxExport  = mysqli_query($conexion, $sqlProximosUsos);
             $resHistExport  = mysqli_query($conexion, $sqlHistorialReciente);
 
@@ -126,20 +134,23 @@ if ($ambienteBuscado) {
             echo '<table border="1">';
 
             /* ── PRÓXIMOS USOS ── */
-            echo '<tr><td colspan="8" style="background:#355d91;color:white;font-weight:bold;padding:8px;">
+            echo '<tr><td colspan="9" style="background:#355d91;color:white;font-weight:bold;padding:8px;">
                     PRÓXIMOS USOS — ' . htmlspecialchars($ambienteInfo['nombre_ambiente']) . '
                 </td></tr>';
             echo '<thead><tr>
                     <th>Ambiente</th><th>Instructor</th>
                     <th>Fecha Inicio</th><th>Fecha Fin</th>
                     <th>Hora Inicio</th><th>Hora Fin</th>
-                    <th>Días</th><th>Observaciones</th>
+                    <th>Días</th><th>Ficha</th><th>Observaciones</th>
                 </tr></thead><tbody>';
 
             while ($row = mysqli_fetch_assoc($resProxExport)) {
                 $diasNums  = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
                             ? explode(',', $row['dias_semana']) : [];
                 $diasTexto = implode(', ', array_map(fn($d) => $abrevDiasExport[(int)$d] ?? '?', $diasNums));
+                $fichaTexto = $row['numero_ficha']
+                            ? $row['numero_ficha'] . ($row['programa'] ? ' — ' . $row['programa'] : '')
+                            : '—';
                 echo '<tr>';
                 echo '<td>' . htmlspecialchars($ambienteInfo['nombre_ambiente']) . '</td>';
                 echo '<td>' . htmlspecialchars($row['nombre_instructor'])        . '</td>';
@@ -148,26 +159,30 @@ if ($ambienteBuscado) {
                 echo '<td>' . date('H:i',   strtotime($row['hora_inicio']))      . '</td>';
                 echo '<td>' . date('H:i',   strtotime($row['hora_final']))       . '</td>';
                 echo '<td>' . htmlspecialchars($diasTexto)                       . '</td>';
+                echo '<td>' . htmlspecialchars($fichaTexto)                      . '</td>';
                 echo '<td>' . htmlspecialchars($row['observaciones'] ?: '—')    . '</td>';
                 echo '</tr>';
             }
 
             /* ── HISTORIAL ── */
-            echo '<tr><td colspan="8">&nbsp;</td></tr>';
-            echo '<tr><td colspan="8" style="background:#355d91;color:white;font-weight:bold;padding:8px;">
+            echo '<tr><td colspan="9">&nbsp;</td></tr>';
+            echo '<tr><td colspan="9" style="background:#355d91;color:white;font-weight:bold;padding:8px;">
                     HISTORIAL — ' . htmlspecialchars($ambienteInfo['nombre_ambiente']) . '
                 </td></tr>';
             echo '<tr>
                     <th>Ambiente</th><th>Instructor</th>
                     <th>Fecha Inicio</th><th>Fecha Fin</th>
                     <th>Hora Inicio</th><th>Hora Fin</th>
-                    <th>Días</th><th>Estado</th>
+                    <th>Días</th><th>Ficha</th><th>Estado</th>
                 </tr>';
 
             while ($row = mysqli_fetch_assoc($resHistExport)) {
                 $diasNums  = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
                             ? explode(',', $row['dias_semana']) : [];
                 $diasTexto = implode(', ', array_map(fn($d) => $abrevDiasExport[(int)$d] ?? '?', $diasNums));
+                $fichaTexto = $row['numero_ficha']
+                            ? $row['numero_ficha'] . ($row['programa'] ? ' — ' . $row['programa'] : '')
+                            : '—';
 
                 switch ($row['estado']) {
                     case 'Aprobado':  $estColor = 'background:#e8f5e9;color:#2e7d32;'; break;
@@ -183,6 +198,7 @@ if ($ambienteBuscado) {
                 echo '<td>' . date('H:i',   strtotime($row['hora_inicio']))      . '</td>';
                 echo '<td>' . date('H:i',   strtotime($row['hora_final']))       . '</td>';
                 echo '<td>' . htmlspecialchars($diasTexto)                       . '</td>';
+                echo '<td>' . htmlspecialchars($fichaTexto)                      . '</td>';
                 echo '<td style="' . $estColor . 'font-weight:bold;text-align:center;">'
                     . htmlspecialchars($row['estado']) . '</td>';
                 echo '</tr>';
@@ -376,9 +392,7 @@ if ($ambienteBuscado) {
             <a href="editar_ambiente.php?id=<?= $ambienteInfo['id'] ?>" class="btn-action-edit">
                 <i class="fa-solid fa-pen-to-square"></i> Editar
             </a>
-            <!-- Exportar próximos usos a Excel -->
-            <a href="?ambiente=<?= urlencode($ambienteBuscado) ?>&exportar=excel"
-               class="btn-exportar-excel">
+            <a href="?ambiente=<?= urlencode($ambienteBuscado) ?>&exportar=excel" class="btn-exportar-excel">
                 <i class="fa-solid fa-file-excel"></i> Exportar Excel
             </a>
         </div>
@@ -402,6 +416,7 @@ if ($ambienteBuscado) {
                         <th>Horario (24 h)</th>
                         <th>Días</th>
                         <th>Instructor</th>
+                        <th>Ficha</th>
                         <th>Observaciones</th>
                     </tr>
                 </thead>
@@ -434,6 +449,18 @@ if ($ambienteBuscado) {
                         </td>
                         <td><?= $diasHtml ?></td>
                         <td><i class="fa-solid fa-user" style="color:#355d91;margin-right:5px;"></i><?= htmlspecialchars($prox['nombre_instructor']) ?></td>
+                        <td>
+                            <?php if($prox['numero_ficha']): ?>
+                                <span style="font-weight:600;color:#0d6efd;">
+                                    <i class="fa-solid fa-graduation-cap" style="margin-right:4px;"></i><?= htmlspecialchars($prox['numero_ficha']) ?>
+                                </span>
+                                <?php if($prox['programa']): ?>
+                                    <br><small style="color:#555;"><?= htmlspecialchars($prox['programa']) ?></small>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span style="color:#999;">—</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= htmlspecialchars($prox['observaciones'] ?: '—') ?></td>
                     </tr>
                     <?php endwhile; ?>
@@ -443,105 +470,116 @@ if ($ambienteBuscado) {
     </div>
     <?php endif; ?>
 
-   <!-- HISTORIAL RECIENTE -->
+    <!-- HISTORIAL RECIENTE -->
     <?php if ($historialReciente && mysqli_num_rows($historialReciente) > 0): ?>
         <div class="table-container">
             <div class="table-header">
-                 <h3>
+                <h3>
                     <i class="fa-solid fa-clock-rotate-left"></i>
                     Historial de "<?= htmlspecialchars($ambienteInfo['nombre_ambiente']) ?>"
                 </h3>
             </div>
             <div class="table-scroll-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Fecha Inicio</th>
-                                <th>Fecha Fin</th>
-                                <th>Horario (24h)</th>
-                                <th>Días</th>
-                                <th>Instructor</th>
-                                <th>Estado</th>
-                                <th>Novedades</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $abrevDias = [1=>'Dom',2=>'Lun',3=>'Mar',4=>'Mié',5=>'Jue',6=>'Vie',7=>'Sáb'];
-                            while ($hist = mysqli_fetch_assoc($historialReciente)):
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Horario (24h)</th>
+                            <th>Días</th>
+                            <th>Instructor</th>
+                            <th>Ficha</th>
+                            <th>Estado</th>
+                            <th>Novedades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $abrevDias = [1=>'Dom',2=>'Lun',3=>'Mar',4=>'Mié',5=>'Jue',6=>'Vie',7=>'Sáb'];
+                        while ($hist = mysqli_fetch_assoc($historialReciente)):
 
-                                /* Días */
-                                $diasNums = ($hist['dias_semana'] !== null && $hist['dias_semana'] !== '')
-                                            ? explode(',', $hist['dias_semana']) : [];
-                                $diasHtml = '';
-                                if (count($diasNums) > 0) {
-                                    $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-                                    foreach ($diasNums as $dn) {
-                                        $dn = (int)$dn;
-                                        $diasHtml .= '<span class="dia-badge">' . ($abrevDias[$dn] ?? '?') . '</span>';
-                                    }
-                                    $diasHtml .= '</div>';
-                                } else {
-                                    $diasHtml = '<span style="color:#999;">—</span>';
+                            $diasNums = ($hist['dias_semana'] !== null && $hist['dias_semana'] !== '')
+                                        ? explode(',', $hist['dias_semana']) : [];
+                            $diasHtml = '';
+                            if (count($diasNums) > 0) {
+                                $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+                                foreach ($diasNums as $dn) {
+                                    $dn = (int)$dn;
+                                    $diasHtml .= '<span class="dia-badge">' . ($abrevDias[$dn] ?? '?') . '</span>';
                                 }
+                                $diasHtml .= '</div>';
+                            } else {
+                                $diasHtml = '<span style="color:#999;">—</span>';
+                            }
 
-                                /* Badge de estado con color */
-                                switch ($hist['estado']) {
-                                    case 'Aprobado':
-                                        $estadoClase = 'aprobado'; $estadoIcono = 'fa-circle-check'; break;
-                                    case 'Rechazado':
-                                        $estadoClase = 'rechazado'; $estadoIcono = 'fa-ban'; break;
-                                    default:
-                                        $estadoClase = 'pendiente'; $estadoIcono = 'fa-hourglass-half'; break;
-                                }
+                            switch ($hist['estado']) {
+                                case 'Aprobado':
+                                    $estadoClase = 'aprobado'; $estadoIcono = 'fa-circle-check'; break;
+                                case 'Rechazado':
+                                    $estadoClase = 'rechazado'; $estadoIcono = 'fa-ban'; break;
+                                default:
+                                    $estadoClase = 'pendiente'; $estadoIcono = 'fa-hourglass-half'; break;
+                            }
 
-                                $novedad_texto = $hist['novedades'];
-                                $fecha_novedad = '';
-                                if ($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)) {
-                                    $fecha_novedad = date('d/m/Y H:i', strtotime($matches[1]));
-                                    $novedad_texto = $matches[2];
-                                }
-                                $instructor_js = htmlspecialchars($hist['nombre_instructor'], ENT_QUOTES);
-                                $novedad_js    = htmlspecialchars($novedad_texto,             ENT_QUOTES);
-                                $fecha_js      = htmlspecialchars($fecha_novedad,             ENT_QUOTES);
-                                $inicial       = strtoupper(substr($hist['nombre_instructor'], 0, 1));
-                            ?>
-                            <tr>
-                                <td><span class="cell-fecha"><i class="fa-regular fa-calendar"></i><?= date('d/m/Y', strtotime($hist['fecha_inicio'])) ?></span></td>
-                                <td><span class="cell-fecha"><i class="fa-regular fa-calendar-check"></i><?= date('d/m/Y', strtotime($hist['fecha_fin'])) ?></span></td>
-                                <td>
-                                    <span class="cell-horario">
-                                        <i class="fa-regular fa-clock"></i>
-                                        <?= date('H:i', strtotime($hist['hora_inicio'])) ?> &mdash; <?= date('H:i', strtotime($hist['hora_final'])) ?>
+                            $novedad_texto = $hist['novedades'];
+                            $fecha_novedad = '';
+                            if ($novedad_texto && preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*(.*)$/s', $novedad_texto, $matches)) {
+                                $fecha_novedad = date('d/m/Y H:i', strtotime($matches[1]));
+                                $novedad_texto = $matches[2];
+                            }
+                            $instructor_js = htmlspecialchars($hist['nombre_instructor'], ENT_QUOTES);
+                            $novedad_js    = htmlspecialchars($novedad_texto,             ENT_QUOTES);
+                            $fecha_js      = htmlspecialchars($fecha_novedad,             ENT_QUOTES);
+                            $inicial       = strtoupper(substr($hist['nombre_instructor'], 0, 1));
+                        ?>
+                        <tr>
+                            <td><span class="cell-fecha"><i class="fa-regular fa-calendar"></i><?= date('d/m/Y', strtotime($hist['fecha_inicio'])) ?></span></td>
+                            <td><span class="cell-fecha"><i class="fa-regular fa-calendar-check"></i><?= date('d/m/Y', strtotime($hist['fecha_fin'])) ?></span></td>
+                            <td>
+                                <span class="cell-horario">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <?= date('H:i', strtotime($hist['hora_inicio'])) ?> &mdash; <?= date('H:i', strtotime($hist['hora_final'])) ?>
+                                </span>
+                            </td>
+                            <td><?= $diasHtml ?></td>
+                            <td><i class="fa-solid fa-user" style="color:#355d91;margin-right:5px;"></i><?= htmlspecialchars($hist['nombre_instructor']) ?></td>
+                            <td>
+                                <?php if($hist['numero_ficha']): ?>
+                                    <span style="font-weight:600;color:#0d6efd;">
+                                        <i class="fa-solid fa-graduation-cap" style="margin-right:4px;"></i><?= htmlspecialchars($hist['numero_ficha']) ?>
                                     </span>
-                                </td>
-                                <td><?= $diasHtml ?></td>
-                                <td><i class="fa-solid fa-user" style="color:#355d91;margin-right:5px;"></i><?= htmlspecialchars($hist['nombre_instructor']) ?></td>
-                                <td>
-                                    <span class="estado-badge estado-<?= $estadoClase ?>">
-                                        <i class="fa-solid <?= $estadoIcono ?>"></i>
-                                        <?= htmlspecialchars($hist['estado']) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <?php if ($hist['novedades']): ?>
-                                        <button
-                                            class="btn-ver-novedades"
-                                            onclick="abrirModal(this)"
-                                            data-instructor="<?= $instructor_js ?>"
-                                            data-inicial="<?= $inicial ?>"
-                                            data-novedad="<?= $novedad_js ?>"
-                                            data-fecha="<?= $fecha_js ?>">
-                                            <i class="fa-solid fa-eye"></i> Ver
-                                        </button>
-                                    <?php else: ?>
-                                        <span style="color:#999;">—</span>
+                                    <?php if($hist['programa']): ?>
+                                        <br><small style="color:#555;"><?= htmlspecialchars($hist['programa']) ?></small>
                                     <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
+                                <?php else: ?>
+                                    <span style="color:#999;">—</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <span class="estado-badge estado-<?= $estadoClase ?>">
+                                    <i class="fa-solid <?= $estadoIcono ?>"></i>
+                                    <?= htmlspecialchars($hist['estado']) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <?php if ($hist['novedades']): ?>
+                                    <button
+                                        class="btn-ver-novedades"
+                                        onclick="abrirModal(this)"
+                                        data-instructor="<?= $instructor_js ?>"
+                                        data-inicial="<?= $inicial ?>"
+                                        data-novedad="<?= $novedad_js ?>"
+                                        data-fecha="<?= $fecha_js ?>">
+                                        <i class="fa-solid fa-eye"></i> Ver
+                                    </button>
+                                <?php else: ?>
+                                    <span style="color:#999;">—</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     <?php endif; ?>
