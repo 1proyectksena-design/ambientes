@@ -13,10 +13,12 @@ $query = "
     SELECT aa.id, aa.fecha_inicio, aa.fecha_fin, aa.hora_inicio, aa.hora_final,
            aa.estado, aa.fecha_registro, aa.observaciones,
            i.nombre AS nombre_instructor, a.nombre_ambiente,
-           aa.id_instructor, aa.id_ambiente
+           aa.id_instructor, aa.id_ambiente,
+           f.numero_ficha, f.programa AS programa_ficha
     FROM autorizaciones_ambientes aa
     INNER JOIN instructores i ON aa.id_instructor = i.id
     INNER JOIN ambientes    a ON aa.id_ambiente   = a.id
+    LEFT  JOIN fichas       f ON aa.id_ficha      = f.id
     WHERE aa.estado = 'Pendiente'
     ORDER BY aa.fecha_registro DESC, aa.fecha_inicio ASC
 ";
@@ -29,11 +31,17 @@ while ($row = mysqli_fetch_assoc($res)) {
            . '_'.date('Ymd', strtotime($row['fecha_registro']));
     if (!isset($grupos[$clave])) {
         $grupos[$clave] = [
-            'tipo'=>'unico','nombre_instructor'=>$row['nombre_instructor'],
-            'nombre_ambiente'=>$row['nombre_ambiente'],
-            'hora_inicio'=>$row['hora_inicio'],'hora_final'=>$row['hora_final'],
-            'observaciones'=>$row['observaciones'],'fecha_registro'=>$row['fecha_registro'],
-            'ids'=>[],'fechas'=>[],
+            'tipo'             => 'unico',
+            'nombre_instructor'=> $row['nombre_instructor'],
+            'nombre_ambiente'  => $row['nombre_ambiente'],
+            'hora_inicio'      => $row['hora_inicio'],
+            'hora_final'       => $row['hora_final'],
+            'observaciones'    => $row['observaciones'],
+            'fecha_registro'   => $row['fecha_registro'],
+            'numero_ficha'     => $row['numero_ficha'],
+            'programa_ficha'   => $row['programa_ficha'],
+            'ids'              => [],
+            'fechas'           => [],
         ];
     }
     $grupos[$clave]['ids'][]    = $row['id'];
@@ -67,7 +75,7 @@ function getDiasActivos(array $fechas): array {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-:root{--bg:#f0f2f8;--surface:#fff;--surface2:#f7f8fc;--border:#e2e6f0;--border2:#c8d0e8;--navy:#1b2a4a;--navy2:#243560;--teal:#0d7f6e;--teal-lt:#e6f5f3;--teal-mid:#9dd4cc;--amber:#c97d10;--amber-lt:#fef6e7;--amber-mid:#f5c96a;--purple:#6b3fa0;--purple-lt:#f3eeff;--purple-mid:#d4b8ff;--red:#b33030;--red-lt:#fdf0f0;--red-mid:#f5b8b8;--text:#1b2a4a;--muted:#6b7c9e;--r:14px;--sh:0 2px 20px rgba(27,42,74,0.08);--sh-lg:0 8px 40px rgba(27,42,74,0.14)}
+:root{--bg:#f0f2f8;--surface:#fff;--surface2:#f7f8fc;--border:#e2e6f0;--border2:#c8d0e8;--navy:#1b2a4a;--navy2:#243560;--teal:#0d7f6e;--teal-lt:#e6f5f3;--teal-mid:#9dd4cc;--amber:#c97d10;--amber-lt:#fef6e7;--amber-mid:#f5c96a;--purple:#6b3fa0;--purple-lt:#f3eeff;--purple-mid:#d4b8ff;--blue:#1155aa;--blue-lt:#e8f4ff;--blue-mid:#b8d9ff;--red:#b33030;--red-lt:#fdf0f0;--red-mid:#f5b8b8;--text:#1b2a4a;--muted:#6b7c9e;--r:14px;--sh:0 2px 20px rgba(27,42,74,0.08);--sh-lg:0 8px 40px rgba(27,42,74,0.14)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;background-image:radial-gradient(ellipse 800px 400px at 0% 0%,rgba(13,127,110,.06) 0%,transparent 70%),radial-gradient(ellipse 600px 600px at 100% 100%,rgba(27,42,74,.06) 0%,transparent 70%)}
 
@@ -126,6 +134,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .info-cell{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px}
 .info-cell-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:4px}
 .info-cell-val{font-size:13.5px;font-weight:400;color:var(--text);font-family:'DM Mono',monospace}
+
+/* Celda de ficha — destaque azul */
+.info-cell.ficha-cell{background:var(--blue-lt);border-color:var(--blue-mid)}
+.info-cell.ficha-cell .info-cell-lbl{color:var(--blue)}
+.info-cell.ficha-cell .info-cell-val{color:var(--blue);font-weight:700}
+.ficha-prog{display:block;font-family:'DM Sans',sans-serif;font-size:11.5px;color:#4477bb;margin-top:3px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
 .dias-section{margin-bottom:1rem}
 .dias-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:5px}
@@ -243,6 +257,7 @@ $i = 0;
     $fechaReg    = date('d/m/Y H:i', strtotime($g['fecha_registro']));
     $dowActivos  = getDiasActivos($g['fechas']);
     $diasNombres = array_map(fn($n)=>$TODOS_DIAS[$n], array_keys($dowActivos));
+    $tieneFicha  = !empty($g['numero_ficha']);
 ?>
 <div class="scard" style="animation-delay:<?= $i*60 ?>ms">
     <div class="scard-inner">
@@ -297,6 +312,19 @@ $i = 0;
                     <div class="info-cell-lbl">Hora fin</div>
                     <div class="info-cell-val"><?= $hFin ?></div>
                 </div>
+                <?php if ($tieneFicha): ?>
+                <div class="info-cell ficha-cell">
+                    <div class="info-cell-lbl"><i class="fa-solid fa-graduation-cap"></i> Ficha</div>
+                    <div class="info-cell-val">
+                        <?= htmlspecialchars($g['numero_ficha']) ?>
+                        <?php if (!empty($g['programa_ficha'])): ?>
+                        <span class="ficha-prog" title="<?= htmlspecialchars($g['programa_ficha']) ?>">
+                            <?= htmlspecialchars($g['programa_ficha']) ?>
+                        </span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
 
             <div class="dias-section">

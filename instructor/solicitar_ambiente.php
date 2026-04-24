@@ -28,6 +28,29 @@ if (isset($_GET['buscar_instructor'])) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   AJAX ▸ Autocompletar fichas
+═══════════════════════════════════════════════════════════════════════ */
+if (isset($_GET['buscar_ficha'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $termino = trim($_GET['buscar_ficha'] ?? '');
+    if (mb_strlen($termino) < 1) { echo json_encode([]); exit; }
+    $like = '%' . $termino . '%';
+    $stmt = $conexion->prepare(
+        "SELECT id, numero_ficha, programa
+         FROM fichas
+         WHERE numero_ficha LIKE ? OR numero_ficha LIKE ?
+         ORDER BY numero_ficha
+         LIMIT 10"
+    );
+    /* misma lógica que el módulo de administración: empieza-con + contiene */
+    $likeStart = $termino . '%';
+    $stmt->bind_param('ss', $likeStart, $like);
+    $stmt->execute();
+    echo json_encode($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
+    exit;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    AJAX ▸ Datos del calendario
 ═══════════════════════════════════════════════════════════════════════ */
 if (isset($_GET['get_cal'])) {
@@ -73,6 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
     $observaciones  = trim($_POST['observaciones']   ?? '');
     $hora_ini       = trim($_POST['hora_ini']        ?? '');
     $hora_fin       = trim($_POST['hora_fin']        ?? '');
+    /* ficha: puede ser NULL si no se seleccionó */
+    $id_ficha       = (isset($_POST['id_ficha']) && $_POST['id_ficha'] !== '')
+                        ? (int)$_POST['id_ficha']
+                        : null;
 
     $err = '';
 
@@ -93,36 +120,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
     }
 
     /* MODO ÚNICO */
+    /* MODO ÚNICO */
     if (!$err && $tipo_solicitud === 'unico') {
+
         $fecha = trim($_POST['fecha'] ?? '');
 
-        if (!$fecha || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha))
+        if (!$fecha || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
             $err = 'Fecha inválida.';
-        elseif ($fecha < date('Y-m-d'))
+        } elseif ($fecha < date('Y-m-d')) {
             $err = 'La fecha no puede ser en el pasado.';
-
-        if (!$err) {
-            $st = $conexion->prepare(
-                "SELECT COUNT(*) cnt FROM autorizaciones_ambientes
-                 WHERE id_ambiente = ? AND estado IN ('Aprobado','Pendiente')
-                   AND hora_inicio < ? AND hora_final > ?
-                   AND fecha_inicio <= ? AND fecha_fin >= ?"
-            );
-            $st->bind_param('issss', $id_ambiente, $hora_fin, $hora_ini, $fecha, $fecha);
-            $st->execute();
-            if ($st->get_result()->fetch_assoc()['cnt'] > 0)
-                $err = 'El ambiente ya tiene una reserva en ese horario. Seleccione otro espacio.';
         }
 
         if (!$err) {
             $st = $conexion->prepare(
-                "INSERT INTO autorizaciones_ambientes
-                   (id_ambiente, id_instructor, rol_autorizado,
-                    fecha_inicio, fecha_fin, hora_inicio, hora_final,
-                    estado, observaciones, novedades)
-                 VALUES (?, ?, 'instructor', ?, ?, ?, ?, 'Pendiente', ?, '')"
+                "SELECT COUNT(*) cnt FROM autorizaciones_ambientes
+                WHERE id_ambiente = ? AND estado IN ('Aprobado','Pendiente')
+                AND hora_inicio < ? AND hora_final > ?
+                AND fecha_inicio <= ? AND fecha_fin >= ?"
             );
-            $st->bind_param('iisssss', $id_ambiente, $id_instructor, $fecha, $fecha, $hora_ini, $hora_fin, $observaciones);
+            $st->bind_param('issss', $id_ambiente, $hora_fin, $hora_ini, $fecha, $fecha);
+            $st->execute();
+
+            if ($st->get_result()->fetch_assoc()['cnt'] > 0) {
+                $err = 'El ambiente ya tiene una reserva en ese horario. Seleccione otro espacio.';
+            }
+        }
+
+        if (!$err) {
+
+            if ($id_ficha !== null) {
+
+                $st = $conexion->prepare(
+                    "INSERT INTO autorizaciones_ambientes
+                    (id_ambiente, id_instructor, rol_autorizado,
+                    fecha_inicio, fecha_fin, hora_inicio, hora_final,
+                    estado, observaciones, novedades, id_ficha)
+                    VALUES (?, ?, 'instructor', ?, ?, ?, ?, 'Pendiente', ?, '', ?)"
+                );
+
+                $st->bind_param(
+                    'iisssssi',
+                    $id_ambiente,
+                    $id_instructor,
+                    $fecha,
+                    $fecha,
+                    $hora_ini,
+                    $hora_fin,
+                    $observaciones,
+                    $id_ficha
+                );
+
+            } else {
+
+                $st = $conexion->prepare(
+                    "INSERT INTO autorizaciones_ambientes
+                    (id_ambiente, id_instructor, rol_autorizado,
+                    fecha_inicio, fecha_fin, hora_inicio, hora_final,
+                    estado, observaciones, novedades, id_ficha)
+                    VALUES (?, ?, 'instructor', ?, ?, ?, ?, 'Pendiente', ?, '', NULL)"
+                );
+
+                $st->bind_param(
+                    'iisssss',
+                    $id_ambiente,
+                    $id_instructor,
+                    $fecha,
+                    $fecha,
+                    $hora_ini,
+                    $hora_fin,
+                    $observaciones
+                );
+            }
+
             if ($st->execute()) {
                 $inserted_count = 1;
                 $msg_success = "Solicitud única enviada exitosamente. Puede revisar su estado en el panel de solicitudes.";
@@ -194,15 +263,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar'])) {
             }
 
             if (!$err) {
+                $sql_ficha_part = ($id_ficha !== null) ? '?' : 'NULL';
                 $st = $conexion->prepare(
                     "INSERT INTO autorizaciones_ambientes
                        (id_ambiente, id_instructor, rol_autorizado,
                         fecha_inicio, fecha_fin, hora_inicio, hora_final,
-                        estado, observaciones, novedades)
-                     VALUES (?, ?, 'instructor', ?, ?, ?, ?, 'Pendiente', ?, '')"
+                        estado, observaciones, novedades, id_ficha)
+                     VALUES (?, ?, 'instructor', ?, ?, ?, ?, 'Pendiente', ?, '', {$sql_ficha_part})"
                 );
                 foreach ($fechas_a_insertar as $f) {
-                    $st->bind_param('iisssss', $id_ambiente, $id_instructor, $f, $f, $hora_ini, $hora_fin, $observaciones);
+                    if ($id_ficha !== null) {
+                        $st->bind_param('iisssssi',
+                            $id_ambiente, $id_instructor,
+                            $f, $f,
+                            $hora_ini, $hora_fin,
+                            $observaciones,
+                            $id_ficha
+                        );
+                    } else {
+                        $st->bind_param('iisssss',
+                            $id_ambiente, $id_instructor,
+                            $f, $f,
+                            $hora_ini, $hora_fin,
+                            $observaciones
+                        );
+                    }
                     if ($st->execute()) $inserted_count++;
                 }
                 if ($inserted_count > 0) {
@@ -433,7 +518,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 
 .day-hdr { display: flex; background: #f4f7fb; border-bottom: 2px solid var(--border); }
 .day-hdr-time { width: 64px; flex-shrink: 0; padding: 10px 8px; border-right: 1px solid var(--border); }
-/* CORREGIDO: mismo flex basis que .cal-cell para que las columnas coincidan */
 .day-hdr-amb {
     flex: 1 1 0; min-width: 120px; max-width: none;
     padding: 10px 10px; font-size: 11px; font-weight: 700; color: var(--navy);
@@ -450,7 +534,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     padding: 0 8px; font-size: 11px; font-weight: 700; color: var(--muted);
     height: 50px; background: #fafbfd;
 }
-/* CORREGIDO: mismo flex basis que .day-hdr-amb */
 .cal-cell {
     flex: 1 1 0; min-width: 120px; max-width: none; height: 50px;
     display: flex; align-items: center; justify-content: center; gap: 4px;
@@ -554,6 +637,10 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 /* ══ FORM ══ */
 .form-group  { margin-bottom: 18px; }
 .form-label  { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
+.form-label .opt-tag {
+    font-weight: 400; font-size: 12px;
+    color: var(--muted); margin-left: 4px;
+}
 .form-ctrl {
     width: 100%; padding: 11px 14px;
     border: 1.5px solid var(--border); border-radius: 10px;
@@ -564,6 +651,74 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .form-ctrl[readonly]{ color: var(--muted); background: #f0f2f7; cursor: default; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+/* ══ FICHA AUTOCOMPLETE ══ */
+.ficha-wrap {
+    position: relative;
+}
+.ficha-input {
+    width: 100%; padding: 11px 14px 11px 40px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 14px; font-family: inherit; background: #f6f8fc;
+    transition: border-color .15s;
+}
+.ficha-input:focus { outline: none; border-color: var(--navy-2); background: #fff; }
+.ficha-input-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 14px; pointer-events: none;
+}
+.ficha-drop {
+    position: absolute; top: calc(100% + 5px); left: 0; right: 0;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 12px; box-shadow: 0 10px 32px rgba(0,0,0,0.13);
+    z-index: 400; max-height: 260px; overflow-y: auto; display: none;
+}
+.ficha-drop.visible { display: block; }
+.ficha-drop-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 15px; cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+}
+.ficha-drop-item:last-child  { border-bottom: none; border-radius: 0 0 10px 10px; }
+.ficha-drop-item:first-child { border-radius: 10px 10px 0 0; }
+.ficha-drop-item:hover,
+.ficha-drop-item.activo      { background: var(--green-lt); }
+.ficha-drop-av {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: #e8f4ff; color: #0d6efd;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+}
+.ficha-drop-num {
+    font-size: 13px; font-weight: 700; color: var(--navy); white-space: nowrap;
+}
+.ficha-drop-prog {
+    font-size: 12px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ficha-drop-empty {
+    padding: 16px; text-align: center;
+    color: var(--muted); font-size: 13px;
+}
+/* Badge de ficha seleccionada */
+.ficha-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #e8f4ff; color: #1155aa;
+    border: 1.5px solid #b8d9ff; border-radius: 20px;
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
+    margin-top: 0;
+}
+.ficha-badge .ficha-badge-prog {
+    font-weight: 400; color: var(--muted); font-size: 12px;
+}
+.ficha-badge-clear {
+    background: none; border: none; cursor: pointer;
+    color: #1155aa; font-size: 13px; padding: 0;
+    display: flex; align-items: center;
+    transition: color .15s;
+}
+.ficha-badge-clear:hover { color: #c0392b; }
 
 /* ══ LOADING ══ */
 .cal-loading { text-align: center; padding: 56px 20px; color: var(--muted); }
@@ -744,7 +899,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 </div>
 <?php endif; ?>
 
-<!-- PASO 1 -->
+<!-- ═══════════════════════════════════════════
+     PASO 1 — INSTRUCTOR
+════════════════════════════════════════════ -->
 <div id="panel-1" class="card">
     <div class="card-title"><i class="fa-solid fa-id-card"></i> Paso 1 — Identificar al Instructor</div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">
@@ -778,7 +935,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </div>
 </div>
 
-<!-- PASO 2 -->
+<!-- ═══════════════════════════════════════════
+     PASO 2 — CALENDARIO
+════════════════════════════════════════════ -->
 <div id="panel-2" class="card hidden">
     <div class="card-title"><i class="fa-solid fa-calendar-days"></i> Paso 2 — Seleccionar espacio disponible</div>
     <div class="inst-bar">
@@ -787,7 +946,6 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
         <a href="#" onclick="goToStep(1);return false;" style="color:var(--green);font-size:12px;font-weight:700;margin-left:4px;">Cambiar</a>
     </div>
 
-    <!-- Instrucción de selección por rango -->
     <div style="background:#f0f8ff;border:1.5px solid #b3d9f7;border-radius:10px;padding:11px 15px;margin-bottom:16px;font-size:13px;color:#1a5276;display:flex;align-items:center;gap:9px;">
         <i class="fa-solid fa-circle-info" style="font-size:15px;flex-shrink:0;"></i>
         <span><strong>Selección por rango:</strong> haga clic en la <strong>hora de inicio</strong> y luego en la <strong>hora final</strong> del mismo ambiente.</span>
@@ -824,7 +982,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </div>
 </div>
 
-<!-- PASO 4 -->
+<!-- ═══════════════════════════════════════════
+     PASO 4 — CONFIRMAR
+════════════════════════════════════════════ -->
 <div id="panel-4" class="card hidden">
     <div class="card-title"><i class="fa-solid fa-paper-plane"></i> Paso 4 — Confirmar solicitud</div>
     <div class="inst-bar">
@@ -832,6 +992,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
         Instructor: <strong id="ibar2-nombre"></strong>
     </div>
 
+    <!-- Resumen -->
     <div class="summary">
         <div class="summary-ttl">Resumen de la reserva</div>
         <div class="sum-row">
@@ -854,13 +1015,21 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
             <div class="sum-icon"><i class="fa-regular fa-clock"></i></div>
             <div><div class="sum-lbl">Horario</div><div class="sum-val" id="sum-horario">—</div></div>
         </div>
+        <!-- Fila ficha en resumen (se actualiza dinámicamente) -->
+        <div class="sum-row" id="sum-ficha-row" style="display:none;">
+            <div class="sum-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+            <div><div class="sum-lbl">Ficha</div><div class="sum-val" id="sum-ficha">—</div></div>
+        </div>
     </div>
 
     <form method="POST" id="form-sol">
         <input type="hidden" name="enviar"        value="1">
         <input type="hidden" name="id_instructor" id="f-id-inst">
         <input type="hidden" name="id_ambiente"   id="f-id-amb">
+        <!-- Campo oculto con el id real de la ficha (FK) -->
+        <input type="hidden" name="id_ficha"      id="f-id-ficha" value="">
 
+        <!-- TIPO DE SOLICITUD -->
         <div class="form-group">
             <label class="form-label"><i class="fa-solid fa-layer-group"></i> Tipo de solicitud</label>
             <div class="tipo-toggle">
@@ -965,10 +1134,54 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
             </div>
         </div>
 
+        <!-- ═══════════════════════════
+             FICHA — AUTOCOMPLETE
+        ════════════════════════════ -->
+        <div class="form-group">
+            <label class="form-label">
+                <i class="fa-solid fa-graduation-cap"></i> Ficha
+                <span class="opt-tag">(opcional)</span>
+            </label>
+
+            <!-- Área del buscador (se oculta al seleccionar) -->
+            <div id="ficha-search-area">
+                <div class="ficha-wrap" id="ficha-wrap">
+                    <i class="fa-solid fa-magnifying-glass ficha-input-icon"></i>
+                    <input
+                        type="text"
+                        id="ficha-text-input"
+                        class="ficha-input"
+                        placeholder="Escribe el número de ficha para buscar..."
+                        autocomplete="off"
+                        inputmode="numeric"
+                    >
+                    <div class="ficha-drop" id="ficha-drop"></div>
+                </div>
+                <p class="form-hint" style="margin-top:6px;">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Escriba los primeros dígitos para buscar fichas registradas.
+                </p>
+            </div>
+
+            <!-- Badge visible al seleccionar una ficha -->
+            <div id="ficha-badge-area" style="display:none; margin-top:4px;">
+                <span class="ficha-badge" id="ficha-badge-inner">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span id="ficha-badge-num"></span>
+                    <span class="ficha-badge-prog" id="ficha-badge-prog"></span>
+                    <button type="button" class="ficha-badge-clear" onclick="clearFicha()" title="Quitar ficha">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </span>
+            </div>
+        </div>
+        <!-- /FICHA -->
+
+        <!-- OBSERVACIONES -->
         <div class="form-group">
             <label class="form-label">
                 <i class="fa-solid fa-comment-dots"></i> Observaciones
-                <span style="font-weight:400;color:var(--muted);">(opcional)</span>
+                <span class="opt-tag">(opcional)</span>
             </label>
             <textarea name="observaciones" class="form-ctrl" rows="3"
                       placeholder="Describa el propósito de la reserva u otras observaciones..."></textarea>
@@ -985,21 +1198,23 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </form>
 </div>
 
-</div>
+</div><!-- /container -->
 
 <script>
-/* ─── GLOBAL STATE ─── */
+/* ══════════════════════════════════════════════════════════
+   ESTADO GLOBAL
+══════════════════════════════════════════════════════════ */
 const S = {
     step: 1, instructor: null, slot: null,
-    rangeStart: null,                   /* ← NUEVO: primer clic del rango */
+    rangeStart: null,
     view: 'day', date: new Date(),
     ambientes: [], reservas: [],
     loaded: false, loading: false
 };
 
-/* ─── UTILITIES ─── */
-const fmt      = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const today    = () => fmt(new Date());
+/* ══ UTILIDADES ══ */
+const fmt   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today = () => fmt(new Date());
 
 function addHour(t, n) {
     const [h, m] = t.split(':').map(Number);
@@ -1015,7 +1230,7 @@ function esc(s) {
 }
 const DIAS_LABELS = { '1':'Lunes','2':'Martes','3':'Miércoles','4':'Jueves','5':'Viernes','6':'Sábado' };
 
-/* ─── STEP NAVIGATION ─── */
+/* ══ NAVEGACIÓN POR PASOS ══ */
 function goToStep(n) {
     if (n >= 2 && !S.instructor) return;
     if (n >= 4 && !S.slot) { alert('Seleccione un rango completo en el calendario (inicio y fin).'); return; }
@@ -1043,7 +1258,7 @@ function updateStepBar(n) {
     }
 }
 
-/* ─── AUTOCOMPLETE ─── */
+/* ══ AUTOCOMPLETE INSTRUCTOR ══ */
 let searchTimer = null;
 function onSearchInput(val) {
     clearTimeout(searchTimer);
@@ -1092,9 +1307,151 @@ function clearInstructor() {
 document.addEventListener('click', e => {
     if (!e.target.closest('.ac-wrap'))
         document.getElementById('ac-drop').classList.add('hidden');
+    if (!e.target.closest('#ficha-wrap'))
+        document.getElementById('ficha-drop').classList.remove('visible');
 });
 
-/* ─── CALENDAR DATA ─── */
+/* ══════════════════════════════════════════════════════════
+   AUTOCOMPLETE FICHA
+══════════════════════════════════════════════════════════ */
+(function initFichaAC() {
+    const input    = document.getElementById('ficha-text-input');
+    const drop     = document.getElementById('ficha-drop');
+    const hiddenId = document.getElementById('f-id-ficha');
+
+    let debounce     = null;
+    let indiceActivo = -1;
+    let resultados   = [];
+
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+        const val = this.value.trim();
+        clearTimeout(debounce);
+        if (val === '') { ocultarDrop(); return; }
+        debounce = setTimeout(() => buscarFichas(val), 240);
+    });
+
+    input.addEventListener('keydown', function (e) {
+        const items = drop.querySelectorAll('.ficha-drop-item');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            indiceActivo = Math.min(indiceActivo + 1, items.length - 1);
+            actualizarActivo(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            indiceActivo = Math.max(indiceActivo - 1, 0);
+            actualizarActivo(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (indiceActivo >= 0 && items[indiceActivo]) {
+                items[indiceActivo].click();
+            } else if (resultados.length === 1) {
+                seleccionarFicha(resultados[0]);
+            }
+        } else if (e.key === 'Escape') {
+            ocultarDrop();
+        }
+    });
+
+    async function buscarFichas(termino) {
+        drop.innerHTML = `<div class="ficha-drop-empty"><i class="fa-solid fa-spinner fa-spin"></i> Buscando...</div>`;
+        drop.classList.add('visible');
+        try {
+            const res  = await fetch(`solicitar_ambiente.php?buscar_ficha=${encodeURIComponent(termino)}`);
+            resultados = await res.json();
+            renderDrop(resultados, termino);
+        } catch (err) {
+            drop.innerHTML = `<div class="ficha-drop-empty">Error al buscar. Intente de nuevo.</div>`;
+        }
+    }
+
+    function renderDrop(data, termino) {
+        indiceActivo = -1;
+        drop.innerHTML = '';
+        if (!data.length) {
+            drop.innerHTML = `<div class="ficha-drop-empty">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Sin resultados para "<strong>${escHtml(termino)}</strong>"
+            </div>`;
+            drop.classList.add('visible');
+            return;
+        }
+        data.forEach((f, idx) => {
+            const div = document.createElement('div');
+            div.className = 'ficha-drop-item';
+            div.innerHTML = `
+                <div class="ficha-drop-av"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div style="min-width:0; flex:1;">
+                    <div class="ficha-drop-num">${resaltar(f.numero_ficha, termino)}</div>
+                    ${f.programa ? `<div class="ficha-drop-prog">${escHtml(f.programa)}</div>` : ''}
+                </div>`;
+            div.addEventListener('mouseenter', () => {
+                indiceActivo = idx;
+                actualizarActivo(drop.querySelectorAll('.ficha-drop-item'));
+            });
+            div.addEventListener('click', () => seleccionarFicha(f));
+            drop.appendChild(div);
+        });
+        drop.classList.add('visible');
+    }
+
+    function seleccionarFicha(f) {
+        /* Guardar el id (FK real) */
+        hiddenId.value = f.id;
+
+        /* Ocultar buscador, mostrar badge */
+        document.getElementById('ficha-search-area').style.display = 'none';
+        document.getElementById('ficha-badge-num').textContent  = 'Ficha ' + f.numero_ficha;
+        document.getElementById('ficha-badge-prog').textContent = f.programa ? '— ' + f.programa : '';
+        document.getElementById('ficha-badge-area').style.display = 'block';
+
+        /* Actualizar fila del resumen */
+        const sumRow  = document.getElementById('sum-ficha-row');
+        const sumVal  = document.getElementById('sum-ficha');
+        sumVal.textContent = 'Ficha ' + f.numero_ficha + (f.programa ? ' — ' + f.programa : '');
+        sumRow.style.display = 'flex';
+
+        ocultarDrop();
+    }
+
+    /* Limpia la selección de ficha (botón × del badge) */
+    window.clearFicha = function () {
+        hiddenId.value = '';
+        input.value    = '';
+        document.getElementById('ficha-search-area').style.display = '';
+        document.getElementById('ficha-badge-area').style.display  = 'none';
+        document.getElementById('sum-ficha-row').style.display     = 'none';
+        input.focus();
+    };
+
+    function ocultarDrop() {
+        drop.classList.remove('visible');
+        drop.innerHTML  = '';
+        indiceActivo    = -1;
+    }
+
+    function actualizarActivo(items) {
+        items.forEach((el, i) => el.classList.toggle('activo', i === indiceActivo));
+        if (items[indiceActivo]) items[indiceActivo].scrollIntoView({ block: 'nearest' });
+    }
+
+    function resaltar(texto, termino) {
+        const idx = texto.toLowerCase().indexOf(termino.toLowerCase());
+        if (idx === -1) return escHtml(texto);
+        return escHtml(texto.slice(0, idx))
+             + `<mark style="background:#cfe2ff;border-radius:2px;">${escHtml(texto.slice(idx, idx + termino.length))}</mark>`
+             + escHtml(texto.slice(idx + termino.length));
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+})();
+
+/* ══ DATOS DEL CALENDARIO ══ */
 async function initCalendar() {
     document.getElementById('ibar-nombre').textContent = S.instructor?.nombre || '';
     if (S.loaded) { renderCalendar(); return; }
@@ -1120,7 +1477,7 @@ async function initCalendar() {
     renderCalendar();
 }
 
-/* ─── CALENDAR RENDER ─── */
+/* ══ RENDER CALENDARIO ══ */
 function renderCalendar() {
     updatePeriodLabel();
     if      (S.view === 'day')   renderDayView();
@@ -1142,7 +1499,6 @@ function updatePeriodLabel() {
     }
 }
 
-/* ─── IS OCCUPIED ─── */
 function isOccupied(ambId, dateStr, hourStr) {
     const hEnd = addHour(hourStr, 1);
     return S.reservas.some(r =>
@@ -1154,7 +1510,7 @@ function isOccupied(ambId, dateStr, hourStr) {
     );
 }
 
-/* ─── DAY VIEW ─── */
+/* ── Vista día ── */
 function renderDayView() {
     const dateStr  = fmt(S.date);
     const todayStr = today();
@@ -1180,15 +1536,12 @@ function renderDayView() {
 
         html += `<div class="day-row"><div class="day-time">${h}</div>`;
         S.ambientes.forEach(a => {
-
-            // ¿Esta celda está dentro del rango ya confirmado?
             const inRange = S.slot &&
                 parseInt(S.slot.id_ambiente) === parseInt(a.id) &&
                 S.slot.fecha === dateStr &&
                 h >= S.slot.hora_ini &&
                 h <  S.slot.hora_fin;
 
-            // ¿Es la celda del primer clic (rango en progreso, aún sin confirmar)?
             const isRangeStart = S.rangeStart && !S.slot &&
                 parseInt(S.rangeStart.id_ambiente) === parseInt(a.id) &&
                 S.rangeStart.fecha === dateStr &&
@@ -1206,9 +1559,7 @@ function renderDayView() {
                             <i class="fa-solid fa-clock"></i> Ini.
                          </div>`;
             } else if (isOccupied(a.id, dateStr, h)) {
-                html += `<div class="cal-cell occupied">
-                            <i class="fa-solid fa-lock"></i> Ocupado
-                         </div>`;
+                html += `<div class="cal-cell occupied"><i class="fa-solid fa-lock"></i> Ocupado</div>`;
             } else {
                 html += `<div class="cal-cell free"
                               onclick="selectSlot(${a.id},'${esc(a.nombre_ambiente)}','${dateStr}','${h}','${hEnd}')">
@@ -1218,13 +1569,12 @@ function renderDayView() {
         });
         html += `</div>`;
     });
-
     html += `</div></div>`;
     document.getElementById('cal-content').innerHTML = html;
     updateSlotBar();
 }
 
-/* ─── WEEK VIEW ─── */
+/* ── Vista semana ── */
 function renderWeekView() {
     const ws       = getWeekStart(S.date);
     const todayStr = today();
@@ -1272,7 +1622,7 @@ function goDayView(dateStr) {
     renderCalendar();
 }
 
-/* ─── MONTH VIEW ─── */
+/* ── Vista mes ── */
 function renderMonthView() {
     const y        = S.date.getFullYear();
     const m        = S.date.getMonth();
@@ -1290,7 +1640,6 @@ function renderMonthView() {
     html += `</div><div class="month-grid">`;
 
     for (let i = 0; i < startOffset; i++) html += `<div class="month-day empty"></div>`;
-
     for (let d = 1; d <= daysInMonth; d++) {
         const ds      = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const isPast  = ds < todayStr;
@@ -1320,11 +1669,8 @@ function renderMonthView() {
     updateSlotBar();
 }
 
-/* ════════════════════════════════════════════════════════════════
-   SLOT — Selección por rango con dos clics
-   ════════════════════════════════════════════════════════════════ */
+/* ══ SELECCIÓN DE SLOT POR RANGO ══ */
 function selectSlot(ambId, ambNombre, fecha, hIni, hFin) {
-    // ── PRIMER CLIC: guarda el inicio del rango ──
     if (!S.rangeStart) {
         S.rangeStart = { id_ambiente: ambId, nombre: ambNombre, fecha, hora: hIni };
         S.slot = null;
@@ -1332,9 +1678,6 @@ function selectSlot(ambId, ambNombre, fecha, hIni, hFin) {
         updateSlotBar();
         return;
     }
-
-    // ── SEGUNDO CLIC ──
-    // Si es diferente ambiente o fecha, reinicia desde este clic
     if (parseInt(S.rangeStart.id_ambiente) !== parseInt(ambId) || S.rangeStart.fecha !== fecha) {
         S.rangeStart = { id_ambiente: ambId, nombre: ambNombre, fecha, hora: hIni };
         S.slot = null;
@@ -1342,14 +1685,9 @@ function selectSlot(ambId, ambNombre, fecha, hIni, hFin) {
         updateSlotBar();
         return;
     }
-
-    // Ordenar horas por si el usuario hizo clic en orden inverso
     const h1 = S.rangeStart.hora <= hIni ? S.rangeStart.hora : hIni;
     const h2 = S.rangeStart.hora <= hIni ? hIni              : S.rangeStart.hora;
-
-    // hora_fin = última hora seleccionada + 1 hora
     const horaFin = addHour(h2, 1);
-
     S.slot = { id_ambiente: ambId, nombre: ambNombre, fecha, hora_ini: h1, hora_fin: horaFin };
     S.rangeStart = null;
     renderDayView();
@@ -1369,7 +1707,6 @@ function updateSlotBar() {
     const btn    = document.getElementById('slot-bar-btn');
     const subTxt = document.getElementById('slot-bar-sub');
 
-    // Primer clic en progreso: mostrar barra informativa, ocultar botón continuar
     if (S.rangeStart && !S.slot) {
         bar.classList.remove('hidden');
         document.getElementById('slot-bar-txt').textContent =
@@ -1378,9 +1715,7 @@ function updateSlotBar() {
         btn.classList.add('hidden');
         return;
     }
-
     if (!S.slot) { bar.classList.add('hidden'); return; }
-
     bar.classList.remove('hidden');
     btn.classList.remove('hidden');
     document.getElementById('slot-bar-txt').textContent =
@@ -1388,7 +1723,7 @@ function updateSlotBar() {
     subTxt.textContent = 'Espacio seleccionado — haga clic en «Nueva solicitud» para continuar';
 }
 
-/* ─── NAV ─── */
+/* ══ NAVEGACIÓN CALENDARIO ══ */
 function setView(v) {
     S.view = v;
     ['day','week','month'].forEach(x => document.getElementById('vb-'+x).classList.toggle('active', x===v));
@@ -1409,9 +1744,9 @@ function getWeekStart(d) {
     return ws;
 }
 
-/* ─── TIPO SOLICITUD ─── */
+/* ══ TIPO SOLICITUD ══ */
 function onTipoChange() {
-    const tipo = document.querySelector('input[name="tipo_solicitud"]:checked')?.value || 'unico';
+    const tipo  = document.querySelector('input[name="tipo_solicitud"]:checked')?.value || 'unico';
     const isRec = tipo === 'recurrente';
     document.getElementById('bloque-unico').classList.toggle('hidden', isRec);
     document.getElementById('bloque-recurrente').classList.toggle('hidden', !isRec);
@@ -1423,21 +1758,21 @@ function onTipoChange() {
     document.getElementById('sum-fecha-row').classList.toggle('hidden', isRec);
     document.getElementById('sum-recurrente-row').classList.toggle('hidden', !isRec);
     if (isRec) updateRecurrenteSummary();
-    else updateUnicoSummary();
+    else       updateUnicoSummary();
 }
 
-/* ─── FILL FORM ─── */
+/* ══ LLENAR FORMULARIO PASO 4 ══ */
 function fillForm() {
     if (!S.instructor || !S.slot) return;
     document.getElementById('ibar2-nombre').textContent = S.instructor.nombre;
     document.getElementById('sum-ambiente').textContent  = S.slot.nombre;
     document.getElementById('f-id-inst').value           = S.instructor.id;
     document.getElementById('f-id-amb').value            = S.slot.id_ambiente;
-    document.getElementById('f-fecha').value    = S.slot.fecha;
-    document.getElementById('f-hora-ini').value = S.slot.hora_ini;
-    document.getElementById('f-hora-fin').value = S.slot.hora_fin;
-    document.getElementById('f-hora-ini-r').value = S.slot.hora_ini;
-    document.getElementById('f-hora-fin-r').value = S.slot.hora_fin;
+    document.getElementById('f-fecha').value             = S.slot.fecha;
+    document.getElementById('f-hora-ini').value          = S.slot.hora_ini;
+    document.getElementById('f-hora-fin').value          = S.slot.hora_fin;
+    document.getElementById('f-hora-ini-r').value        = S.slot.hora_ini;
+    document.getElementById('f-hora-fin-r').value        = S.slot.hora_fin;
     if (!document.getElementById('f-fecha-inicio').value)
         document.getElementById('f-fecha-inicio').value = S.slot.fecha;
     updateUnicoSummary();
@@ -1467,7 +1802,7 @@ function updateRecurrenteSummary() {
     document.getElementById('sum-horario').textContent    = (hIni && hFin) ? `${hIni} – ${hFin}` : '—';
 }
 
-/* ─── FORM VALIDATION ─── */
+/* ══ VALIDACIÓN DEL FORMULARIO ══ */
 document.getElementById('form-sol').addEventListener('submit', function(e) {
     const tipo = document.querySelector('input[name="tipo_solicitud"]:checked')?.value || 'unico';
     if (tipo === 'unico') {
@@ -1480,19 +1815,19 @@ document.getElementById('form-sol').addEventListener('submit', function(e) {
         const hIni = document.getElementById('f-hora-ini-r').value;
         const hFin = document.getElementById('f-hora-fin-r').value;
         const dias = document.querySelectorAll('input[name="dias[]"]:checked');
-        if (!fi)         { e.preventDefault(); alert('Ingrese la fecha inicio de la recurrencia.'); return; }
-        if (!ff)         { e.preventDefault(); alert('Ingrese la fecha fin de la recurrencia.'); return; }
-        if (fi > ff)     { e.preventDefault(); alert('La fecha fin debe ser mayor o igual a la fecha inicio.'); return; }
+        if (!fi)          { e.preventDefault(); alert('Ingrese la fecha inicio de la recurrencia.'); return; }
+        if (!ff)          { e.preventDefault(); alert('Ingrese la fecha fin de la recurrencia.'); return; }
+        if (fi > ff)      { e.preventDefault(); alert('La fecha fin debe ser mayor o igual a la fecha inicio.'); return; }
         if (fi < '<?= date('Y-m-d') ?>') { e.preventDefault(); alert('La fecha inicio no puede ser en el pasado.'); return; }
-        if (hIni >= hFin){ e.preventDefault(); alert('La hora fin debe ser mayor que la hora inicio.'); return; }
-        if (!dias.length){ e.preventDefault(); alert('Seleccione al menos un día de la semana.'); return; }
+        if (hIni >= hFin) { e.preventDefault(); alert('La hora fin debe ser mayor que la hora inicio.'); return; }
+        if (!dias.length) { e.preventDefault(); alert('Seleccione al menos un día de la semana.'); return; }
     }
 });
 
 document.getElementById('f-hora-ini').addEventListener('input', updateUnicoSummary);
 document.getElementById('f-hora-fin').addEventListener('input', updateUnicoSummary);
 
-/* ─── INIT ─── */
+/* ══ INIT ══ */
 (function init() {
     updateStepBar(1);
     <?php if ($msg_success || $msg_error): ?>

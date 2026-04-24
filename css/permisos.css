@@ -464,8 +464,109 @@ form {
     color: white;
     box-shadow: 0 4px 14px rgba(11,36,73,0.3);
 }
-
 .toggle-btn i { font-size: 1.1rem; }
+        
+/* ── FICHA AUTOCOMPLETE ── */
+        .ficha-wrapper {
+            position: relative;
+        }
+        .ficha-wrapper input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ficha-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1.5px solid #ced4da;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            z-index: 999;
+            max-height: 240px;
+            overflow-y: auto;
+            display: none;
+        }
+        .ficha-dropdown.visible {
+            display: block;
+        }
+        .ficha-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+        }
+        .ficha-item:last-child {
+            border-bottom: none;
+        }
+        .ficha-item:hover,
+        .ficha-item.activo {
+            background: #e8f4ff;
+        }
+        .ficha-numero {
+            font-weight: 700;
+            color: #0d6efd;
+            font-size: 14px;
+            min-width: 80px;
+        }
+        .ficha-programa {
+            color: #555;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ficha-item i {
+            color: #aaa;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .ficha-vacia {
+            padding: 12px 14px;
+            color: #888;
+            font-size: 13px;
+            text-align: center;
+        }
+        .ficha-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e8f4ff;
+            color: #0d6efd;
+            border: 1px solid #b8d9ff;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .ficha-badge .btn-limpiar {
+            background: none;
+            border: none;
+            color: #0d6efd;
+            cursor: pointer;
+            padding: 0;
+            font-size: 13px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+        }
+        .ficha-badge .btn-limpiar:hover {
+            color: #dc3545;
+        }
+        .ficha-hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 640px) {
