@@ -20,8 +20,37 @@ if ($_SESSION['rol'] != 'administracion') {
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- CSS del calendario (incluye @import de DM Sans + Lora) -->
+    <!-- CSS del calendario -->
     <link rel="stylesheet" href="../css/calendario.css">
+
+    <style>
+        /* ── Ficha dentro del modal ── */
+        .modal-ficha-block {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: #eef4ff;
+            border: 1px solid #c3d8ff;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 0 0 4px;
+        }
+        .modal-ficha-block .modal-row-icon {
+            color: #0d6efd;
+            font-size: 1rem;
+            margin-top: 2px;
+        }
+        .modal-ficha-numero {
+            font-weight: 700;
+            color: #0d6efd;
+            font-size: .97rem;
+        }
+        .modal-ficha-programa {
+            font-size: .82rem;
+            color: #444;
+            margin-top: 2px;
+        }
+    </style>
 </head>
 <body>
 
@@ -140,6 +169,8 @@ if ($_SESSION['rol'] != 'administracion') {
         <span class="modal-estado-badge" id="mEstadoBadge"></span>
     </div>
     <div class="modal-body">
+
+        <!-- Instructor -->
         <div class="modal-row">
             <div class="modal-row-icon"><i class="fa-solid fa-chalkboard-user"></i></div>
             <div>
@@ -147,6 +178,8 @@ if ($_SESSION['rol'] != 'administracion') {
                 <div class="modal-row-value" id="mInstructor"></div>
             </div>
         </div>
+
+        <!-- Período -->
         <div class="modal-row">
             <div class="modal-row-icon"><i class="fa-regular fa-calendar"></i></div>
             <div>
@@ -154,6 +187,8 @@ if ($_SESSION['rol'] != 'administracion') {
                 <div class="modal-row-value" id="mPeriodo"></div>
             </div>
         </div>
+
+        <!-- Horario -->
         <div class="modal-row">
             <div class="modal-row-icon"><i class="fa-regular fa-clock"></i></div>
             <div>
@@ -161,6 +196,18 @@ if ($_SESSION['rol'] != 'administracion') {
                 <div class="modal-row-value" id="mHorario"></div>
             </div>
         </div>
+
+        <!-- Ficha (visible solo si existe) -->
+        <div class="modal-row modal-ficha-block" id="mFichaRow" style="display:none;">
+            <div class="modal-row-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+            <div>
+                <div class="modal-row-label">Ficha</div>
+                <div class="modal-ficha-numero" id="mFichaNumero"></div>
+                <div class="modal-ficha-programa" id="mFichaPrograma"></div>
+            </div>
+        </div>
+
+        <!-- Observaciones (visible solo si existe) -->
         <div class="modal-row" id="mObsRow" style="display:none;">
             <div class="modal-row-icon"><i class="fa-regular fa-comment"></i></div>
             <div>
@@ -168,6 +215,7 @@ if ($_SESSION['rol'] != 'administracion') {
                 <div class="modal-row-value" id="mObs"></div>
             </div>
         </div>
+
     </div>
     <div class="modal-footer">
         <button class="modal-btn-close" onclick="cerrarModales()">
@@ -273,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function () {
             center: 'title',
             right:  'dayGridMonth,timeGridWeek,timeGridDay',
         },
-        buttonText: { today:'Hoy', month:'Mes', week:'Semana', day:'Día' },
+        buttonText: { today:'Hoy', month:'Mes', week:'Semana', día:'Día' },
         height:       'auto',
         slotMinTime:  '05:00:00',
         slotMaxTime:  '22:00:00',
@@ -293,17 +341,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 end:        info.endStr,
             });
 
-            console.log("📡 Enviando params:", params.toString());
-
             fetch('eventos.php?' + params)
                 .then(r => {
-                    console.log("📥 Response status:", r.status);
                     if (!r.ok) throw new Error("Error HTTP " + r.status);
                     return r.json();
                 })
                 .then(data => {
                     if (data.error) {
-                        console.error("❌ Error en eventos.php:", data.error);
+                        console.error("Error en eventos.php:", data.error);
                         fail(data.error);
                     } else {
                         actualizarStats(data);
@@ -311,31 +356,51 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(err => {
-                    console.error('❌ ERROR eventos.php:', err);
+                    console.error('ERROR eventos.php:', err);
                     fail(err);
                 })
                 .finally(() => showLoading(false));
         },
 
-        /* ── Clic en evento ── */
+        /* ── Clic en evento: muestra modal con ficha ── */
         eventClick: function (info) {
             info.jsEvent.preventDefault();
             const p = info.event.extendedProps;
 
+            /* Stripe de color según estado */
             $('modalStripe').style.background = info.event.backgroundColor;
-            $('mAmbiente').textContent         = p.ambiente;
-            $('mInstructor').textContent       = p.instructor;
-            $('mHorario').textContent          = `${p.hora_inicio} — ${p.hora_fin}`;
 
+            /* Datos básicos */
+            $('mAmbiente').textContent   = p.ambiente;
+            $('mInstructor').textContent = p.instructor;
+            $('mHorario').textContent    = `${p.hora_inicio} — ${p.hora_fin}`;
+
+            /* Período */
             const fi = fmtFecha(info.event.startStr);
             const ff = fmtFecha(info.event.endStr);
             $('mPeriodo').textContent = fi === ff ? fi : `${fi} → ${ff}`;
 
-            const cls = { Aprobado:'badge-aprobado', Pendiente:'badge-pendiente', Rechazado:'badge-rechazado' };
+            /* Badge de estado */
+            const cls = {
+                Aprobado:  'badge-aprobado',
+                Pendiente: 'badge-pendiente',
+                Rechazado: 'badge-rechazado'
+            };
             const badge = $('mEstadoBadge');
             badge.className   = 'modal-estado-badge ' + (cls[p.estado] || '');
             badge.textContent = p.estado;
 
+            /* ── Ficha ── */
+            if (p.numero_ficha) {
+                $('mFichaNumero').textContent  = p.numero_ficha;
+                $('mFichaPrograma').textContent = p.programa || '';
+                $('mFichaPrograma').style.display = p.programa ? 'block' : 'none';
+                $('mFichaRow').style.display = 'flex';
+            } else {
+                $('mFichaRow').style.display = 'none';
+            }
+
+            /* ── Observaciones ── */
             if (p.obs) {
                 $('mObs').textContent      = p.obs;
                 $('mObsRow').style.display = 'flex';
@@ -343,37 +408,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 $('mObsRow').style.display = 'none';
             }
 
+            /* Botón Ver ambiente */
             $('mBtnEditar').href = `consultar.php?ambiente=${encodeURIComponent(p.ambiente)}`;
+
             abrirModal('event');
         },
 
-        /* ── Clic en espacio vacío ── */
+        /* ── Clic en espacio vacío → modal nueva reserva ── */
         dateClick: function (info) {
             const d   = new Date(info.dateStr);
             const txt = d.toLocaleDateString('es-CO', {
                 weekday:'long', year:'numeric', month:'long', day:'numeric'
             });
-            $('newFechaTexto').textContent  = txt.charAt(0).toUpperCase() + txt.slice(1);
+            $('newFechaTexto').textContent   = txt.charAt(0).toUpperCase() + txt.slice(1);
             $('newFechaDisplay').textContent = 'Fecha seleccionada:';
             abrirModal('new');
         },
 
         eventMouseEnter: function (info) {
             const p = info.event.extendedProps;
-            info.el.title = `${p.ambiente}\n${p.instructor}\n${p.hora_inicio} - ${p.hora_fin}`;
+            const ficha = p.numero_ficha ? ` | Ficha: ${p.numero_ficha}` : '';
+            info.el.title = `${p.ambiente}\n${p.instructor}${ficha}\n${p.hora_inicio} - ${p.hora_fin}`;
         },
     });
 
     calendar.render();
 
-    /* ── Filtros disparan refetch con debounce ── */
+    /* ── Filtros con debounce ── */
     let timeout;
-
     function refetchSeguro() {
         clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            calendar.refetchEvents();
-        }, 300);
+        timeout = setTimeout(() => calendar.refetchEvents(), 300);
     }
 
     ['filtroAmbiente', 'filtroInstructor', 'filtroEstado'].forEach(id =>

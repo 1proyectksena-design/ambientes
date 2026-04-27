@@ -33,7 +33,7 @@ $whereMain[] = "MONTH(au.fecha_inicio) = '$filtro_mes'";
 $whereMain[] = "YEAR(au.fecha_inicio) = '$filtro_anio'";
 $whereSQLMain = implode(' AND ', $whereMain);
 
-$sql = "SELECT 
+$sql = "SELECT
             MIN(au.fecha_inicio)  AS fecha_inicio,
             MAX(au.fecha_inicio)  AS fecha_fin,
             au.hora_inicio,
@@ -45,15 +45,20 @@ $sql = "SELECT
             au.rol_autorizado,
             au.observaciones,
             au.novedades,
+            f.numero_ficha,
+            f.programa,
             GROUP_CONCAT(
                 DISTINCT DAYOFWEEK(au.fecha_inicio)
                 ORDER BY DAYOFWEEK(au.fecha_inicio)
             ) AS dias_semana
         FROM autorizaciones_ambientes au
-        JOIN ambientes a ON au.id_ambiente = a.id
+        JOIN ambientes a    ON au.id_ambiente   = a.id
         JOIN instructores i ON au.id_instructor = i.id
+        LEFT JOIN fichas f  ON au.id_ficha      = f.id
         WHERE $whereSQLMain
-        GROUP BY au.id_instructor, au.id_ambiente, au.hora_inicio, au.hora_final, au.estado, au.rol_autorizado, au.observaciones, au.novedades
+        GROUP BY au.id_instructor, au.id_ambiente, au.hora_inicio, au.hora_final,
+                 au.estado, au.rol_autorizado, au.observaciones, au.novedades,
+                 f.numero_ficha, f.programa
         ORDER BY MIN(au.fecha_inicio) DESC";
 
 $resultado = mysqli_query($conexion, $sql);
@@ -81,6 +86,8 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
             <th>Hora Inicio</th>
             <th>Hora Fin</th>
             <th>Días</th>
+            <th>Ficha</th>
+            <th>Programa</th>
             <th>Estado</th>
             <th>Autorizado Por</th>
             <th>Novedades</th>
@@ -92,16 +99,18 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
         $diasTexto = implode(', ', array_map(fn($d) => $abrevDias[(int)$d] ?? '?', $diasNums));
 
         echo '<tr>';
-        echo '<td>' . htmlspecialchars($row['nombre_ambiente'])       . '</td>';
-        echo '<td>' . htmlspecialchars($row['nombre_instructor'])      . '</td>';
-        echo '<td>' . date('d/m/Y', strtotime($row['fecha_inicio']))   . '</td>';
-        echo '<td>' . date('d/m/Y', strtotime($row['fecha_fin']))      . '</td>';
-        echo '<td>' . date('H:i',   strtotime($row['hora_inicio']))    . '</td>';
-        echo '<td>' . date('H:i',   strtotime($row['hora_final']))     . '</td>';
-        echo '<td>' . htmlspecialchars($diasTexto)                    . '</td>';
-        echo '<td>' . htmlspecialchars($row['estado'])                . '</td>';
-        echo '<td>' . htmlspecialchars($row['rol_autorizado'])        . '</td>';
-        echo '<td>' . htmlspecialchars($row['novedades'] ?: '—')     . '</td>';
+        echo '<td>' . htmlspecialchars($row['nombre_ambiente'])                   . '</td>';
+        echo '<td>' . htmlspecialchars($row['nombre_instructor'])                  . '</td>';
+        echo '<td>' . date('d/m/Y', strtotime($row['fecha_inicio']))               . '</td>';
+        echo '<td>' . date('d/m/Y', strtotime($row['fecha_fin']))                  . '</td>';
+        echo '<td>' . date('H:i',   strtotime($row['hora_inicio']))                . '</td>';
+        echo '<td>' . date('H:i',   strtotime($row['hora_final']))                 . '</td>';
+        echo '<td>' . htmlspecialchars($diasTexto)                                 . '</td>';
+        echo '<td>' . htmlspecialchars($row['numero_ficha'] ?: '—')               . '</td>';
+        echo '<td>' . htmlspecialchars($row['programa']     ?: '—')               . '</td>';
+        echo '<td>' . htmlspecialchars($row['estado'])                             . '</td>';
+        echo '<td>' . htmlspecialchars($row['rol_autorizado'])                     . '</td>';
+        echo '<td>' . htmlspecialchars($row['novedades']    ?: '—')               . '</td>';
         echo '</tr>';
     }
 
@@ -117,6 +126,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     <title>Historial de Autorizaciones</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<<<<<<< HEAD
     <style>
         .btn-volver-header {
             display: flex;
@@ -138,6 +148,8 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
             color: #fff;
         }
     </style>
+=======
+>>>>>>> b3c7a92a0bb973ed5fa7f4f71a2a8e7de98fab7e
 </head>
 <body>
 
@@ -228,6 +240,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                         <th>Fecha Fin</th>
                         <th>Horario</th>
                         <th>Días</th>
+                        <th>Ficha</th>
                         <th>Estado Actual</th>
                         <th>Autorizado Por</th>
                         <th>Novedades</th>
@@ -277,6 +290,21 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                             $diasHtml = '<span style="color:#999;">—</span>';
                         }
 
+                        /* --- Ficha HTML --- */
+                        if ($row['numero_ficha']) {
+                            $fichaHtml = '<span style="font-weight:600;color:#0d6efd;">'
+                                       . '<i class="fa-solid fa-graduation-cap" style="margin-right:4px;"></i>'
+                                       . htmlspecialchars($row['numero_ficha'])
+                                       . '</span>';
+                            if ($row['programa']) {
+                                $fichaHtml .= '<br><small style="color:#555;">'
+                                            . htmlspecialchars($row['programa'])
+                                            . '</small>';
+                            }
+                        } else {
+                            $fichaHtml = '<span style="color:#999;">—</span>';
+                        }
+
                         $instructor_js = htmlspecialchars($row['nombre_instructor'], ENT_QUOTES);
                         $novedad_js    = htmlspecialchars($row['novedades'],         ENT_QUOTES);
                         $inicial       = strtoupper(substr($row['nombre_instructor'], 0, 1));
@@ -308,6 +336,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                             </span>
                         </td>
                         <td><?= $diasHtml ?></td>
+                        <td><?= $fichaHtml ?></td>
                         <td>
                             <span class="estado-badge estado-<?= $estadoActual ?>">
                                 <?= $iconoEstado ?> <?= $textoEstado ?>
