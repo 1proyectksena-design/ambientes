@@ -173,7 +173,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     font-family:inherit; text-decoration:none; border:none; cursor:pointer;
     transition:all .15s; white-space: nowrap;
 }
-.btn-ghost { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:rgba(255,255,255,.75); }
+.btn-ghost { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#ffffff; }
 .btn-ghost:hover { background:rgba(255,255,255,.13); color:#fff; }
 .btn-green { background:var(--green); color:#fff; border:1px solid var(--green); }
 .btn-green:hover { background:#0a7050; }

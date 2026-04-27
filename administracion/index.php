@@ -35,12 +35,10 @@ $ambientes_mantenimiento = mysqli_fetch_row($resMantenimiento)[0];
 $total_ambientes = $ambientes_habilitados + $ambientes_deshabilitados + $ambientes_mantenimiento;
 
 /* ── Disponibles ahora ── */
-/* ── Disponibles ahora (versión actualizada) ── */
 $resDisponibles = mysqli_query($conexion, "
     SELECT COUNT(DISTINCT a.id)
     FROM ambientes a
     WHERE a.estado = 'Habilitado'
-      /* sin reserva activa */
       AND a.id NOT IN (
           SELECT au.id_ambiente
           FROM autorizaciones_ambientes au
@@ -50,7 +48,6 @@ $resDisponibles = mysqli_query($conexion, "
             AND au.hora_final   >= '$hora_actual'
             AND au.estado = 'Aprobado'
       )
-      /* sin bloque 'Ocupado' activo */
       AND a.id NOT IN (
           SELECT da.id_ambiente
           FROM disponibilidad_ambiente da
@@ -111,7 +108,7 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
 <!-- ═══════════════════════ DASHBOARD ═══════════════════════ -->
 <div class="dashboard-container">
 
-    <!-- STAT CARDS (4 columnas) -->
+    <!-- STAT CARDS (5 columnas) -->
     <div class="stats-grid">
 
         <!-- 1. Total ambientes -->
@@ -162,35 +159,28 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
                 </a>
             </div>
         </div>
+
+        <!-- 5. Gestión de Fichas -->
         <div class="card-fichas">
-            <div class="card-fichas__icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                    <rect x="9" y="3" width="6" height="4" rx="1"/>
-                    <line x1="9" y1="12" x2="15" y2="12"/>
-                    <line x1="9" y1="16" x2="13" y2="16"/>
-                </svg>
+            <div class="card-fichas__header">
+                <div class="card-fichas__icon">
+                    <i class="fa-regular fa-clipboard"></i>
+                </div>
+                <h3 class="card-fichas__title">Gestión de Fichas</h3>
             </div>
             <div class="card-fichas__body">
-                <h3 class="card-fichas__title">Gestión de Fichas</h3>
-                <p class="card-fichas__desc">Consultar programación de ambientes o registrar nuevas fichas en el sistema.</p>
                 <div class="card-fichas__actions">
                     <a href="programacion_fichas.php" class="btn-ficha btn-ficha--search">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-                        </svg>
+                        <i class="fa-solid fa-magnifying-glass"></i>
                         Buscar Programación
                     </a>
                     <a href="gestionar_fichas.php" class="btn-ficha btn-ficha--add">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
+                        <i class="fa-solid fa-plus"></i>
                         Ingresar Fichas
                     </a>
                 </div>
             </div>
         </div>
-
 
     </div><!-- /stats-grid -->
 
@@ -217,12 +207,13 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
                 <div class="menu-card-title">Calendario de Ambientes</div>
                 <div class="menu-card-description">Vista interactiva de reservas y permisos por día, semana o mes</div>
             </a>
-              <a href="registro.php" class="menu-card crear">
+
+            <a href="registro.php" class="menu-card crear">
                 <div class="menu-card-icon"><i class="fa-solid fa-circle-plus"></i></div>
                 <div class="menu-card-title">Crear Registros</div>
                 <div class="menu-card-description">Registrar nuevos ambientes e instructores</div>
             </a>
-            
+
         </div><!-- /menu-grid -->
     </div><!-- /actions-container -->
 
@@ -268,7 +259,7 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
     </div>
     <div class="footer-divider"></div>
     <div class="footer-bottom">
-        <p>© <?= date('Y') ?> <strong>SENA</strong> — Gestión de Ambientes. Todos los derechos reservados.</p>
+        <p>© <?= date('Y') ?> <strong>SENA</strong> — Gestión de Ambientes. Todos los dereccios reservados.</p>
         <div class="footer-status">
             <span class="footer-status-dot"></span>
             Sistema operativo

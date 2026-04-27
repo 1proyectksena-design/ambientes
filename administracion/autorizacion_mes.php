@@ -76,6 +76,9 @@ $dia_actual_mysql = (int)date('w') + 1;
         </div>
     </div>
     <div class="header-user">
+        <a href="index.php" class="btn-volver-header">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
         <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
@@ -194,10 +197,6 @@ $dia_actual_mysql = (int)date('w') + 1;
         </div>
         <?php endif; ?>
     </div>
-
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
 
 </div>
 </body>

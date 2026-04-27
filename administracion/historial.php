@@ -63,16 +63,14 @@ $total        = mysqli_num_rows($resultado);
 $fecha_actual = date('Y-m-d');
 $hora_actual  = date('H:i:s');
 
-/* ══════════════════════════════════════
-   EXPORTAR A EXCEL
-   ══════════════════════════════════════ */
+/* ══ EXPORTAR A EXCEL ══ */
 if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     $resExport = mysqli_query($conexion, $sql);
 
     header('Content-Type: application/vnd.ms-excel; charset=utf-8');
     header('Content-Disposition: attachment; filename="historial_autorizaciones_' . $filtro_mes . '_' . $filtro_anio . '.xls"');
     header('Cache-Control: max-age=0');
-    echo "\xEF\xBB\xBF"; /* BOM UTF-8 para tildes */
+    echo "\xEF\xBB\xBF";
 
     echo '<table border="1">';
     echo '<thead><tr>
@@ -119,7 +117,27 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     <title>Historial de Autorizaciones</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+    <style>
+        .btn-volver-header {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            padding: 8px 16px;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.35);
+            color: rgba(255,255,255,0.9);
+            font-size: .82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s, color .2s;
+            white-space: nowrap;
+        }
+        .btn-volver-header:hover {
+            background: rgba(255,255,255,0.28);
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
 
@@ -132,6 +150,9 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
         </div>
     </div>
     <div class="header-user">
+        <a href="index.php" class="btn-volver-header">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
         <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
@@ -143,7 +164,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
         <h3><i class="fa-solid fa-filter"></i> Filtrar Autorizaciones</h3>
 
         <form method="GET" class="search-form">
-            <!-- Mes -->
             <select name="mes">
                 <?php for ($m = 1; $m <= 12; $m++):
                     $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT); ?>
@@ -152,23 +172,19 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                 </option>
                 <?php endfor; ?>
             </select>
-            <!-- Año -->
             <select name="anio">
                 <?php for ($y = date('Y'); $y >= date('Y') - 3; $y--): ?>
                 <option value="<?= $y ?>" <?= $filtro_anio == $y ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endfor; ?>
             </select>
-            <!-- Preservar estado al filtrar con el botón -->
             <input type="hidden" name="estado" value="<?= htmlspecialchars($filtro_estado) ?>">
             <button type="submit"><i class="fa-solid fa-search"></i> Filtrar</button>
-            <!-- Excel con los mismos filtros activos -->
             <a href="?mes=<?= $filtro_mes ?>&anio=<?= $filtro_anio ?>&estado=<?= urlencode($filtro_estado) ?>&exportar=excel"
                class="btn-exportar-excel">
                 <i class="fa-solid fa-file-excel"></i> Exportar Excel
             </a>
         </form>
 
-        <!-- Chips de filtro por estado -->
         <div class="filtro-estado-row">
             <span class="filtro-estado-label"><i class="fa-solid fa-tags"></i> Estado:</span>
             <?php
@@ -220,7 +236,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                 <tbody>
                     <?php while ($row = mysqli_fetch_assoc($resultado)):
 
-                        /* --- Estado visual --- */
                         $estadoActual = 'desocupado';
                         $textoEstado  = 'Desocupado';
                         $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
@@ -247,7 +262,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                             $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                         }
 
-                        /* --- Días de la semana --- */
                         $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
                                     ? explode(',', $row['dias_semana']) : [];
                         $diasHtml = '';
@@ -327,12 +341,9 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
         <?php endif; ?>
     </div>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
 </div>
 
-<!-- OVERLAY Y MODAL GLOBAL -->
+<!-- OVERLAY Y MODAL -->
 <div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
 
 <div class="novedades-modal" id="modalNovedades">
