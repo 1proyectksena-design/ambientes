@@ -15,12 +15,7 @@ $historial       = null;
 $fecha_actual    = date('Y-m-d');
 $hora_actual     = date('H:i:s');
 
-/*
- * PHP date('w') → 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
- * MySQL DAYOFWEEK → 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb
- * Conversión: $dia_mysql = date('w') + 1
- */
-$dia_actual_mysql = (int)date('w') + 1;   // día de hoy en formato DAYOFWEEK de MySQL
+$dia_actual_mysql = (int)date('w') + 1;
 
 if ($nombre_ambiente) {
     $nombre_ambiente = mysqli_real_escape_string($conexion, $nombre_ambiente);
@@ -30,7 +25,6 @@ if ($nombre_ambiente) {
     $ambiente_info = mysqli_fetch_assoc($resAmb);
 
     if ($ambiente_info) {
-        // ── FIX 1: MAX(au.fecha_fin) para el extremo final del rango ──────────
         $sqlHist = "SELECT 
                         MIN(au.fecha_inicio)  AS fecha_inicio,
                         MAX(au.fecha_fin)     AS fecha_fin,
@@ -59,7 +53,6 @@ if ($nombre_ambiente) {
     }
 }
 
-/* DAYOFWEEK MySQL: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb */
 $abrevDias = [
     1 => 'Dom', 2 => 'Lun', 3 => 'Mar',
     4 => 'Mié', 5 => 'Jue', 6 => 'Vie', 7 => 'Sáb',
@@ -73,6 +66,7 @@ $abrevDias = [
     <title>Historial de Ambiente</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+   
 </head>
 <body>
 
@@ -85,6 +79,9 @@ $abrevDias = [
         </div>
     </div>
     <div class="header-user">
+        <a href="index.php" class="btn-volver">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
         <i class="fa-solid fa-chalkboard-user user-icon"></i> Instructor
     </div>
 </div>
@@ -156,12 +153,10 @@ $abrevDias = [
                     <tbody>
                         <?php while ($row = mysqli_fetch_assoc($historial)):
 
-                            // ── Construir array de días registrados (formato DAYOFWEEK MySQL) ──
                             $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
                                         ? array_map('intval', explode(',', $row['dias_semana']))
                                         : [];
 
-                            // ── FIX 2: validar fecha + hora + DÍA DE LA SEMANA ────────────────
                             $estadoActual = 'desocupado';
                             $textoEstado  = 'Desocupado';
                             $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
@@ -174,17 +169,14 @@ $abrevDias = [
                                 $enRangoHora  = ($hora_actual >= $row['hora_inicio'])
                                              && ($hora_actual <= $row['hora_final']);
 
-                                // ¿El día de hoy (en formato DAYOFWEEK) está entre los días registrados?
                                 $diaCoincide  = in_array($dia_actual_mysql, $diasNums);
 
                                 if ($enRangoFecha && $enRangoHora && $diaCoincide) {
-                                    // Fecha ✓  Hora ✓  Día ✓  → ocupado en este momento
                                     $estadoActual = 'ocupado-ahora';
                                     $textoEstado  = 'Ocupado Ahora';
                                     $iconoEstado  = '<i class="fa-solid fa-circle-dot"></i>';
 
                                 } elseif ($enRangoFecha && $diaCoincide) {
-                                    // Fecha ✓  Día ✓  pero fuera del horario → programado para hoy
                                     $estadoActual = 'programado';
                                     $textoEstado  = 'Programado ('
                                         . date('H:i', strtotime($row['hora_inicio']))
@@ -193,7 +185,6 @@ $abrevDias = [
                                     $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
 
                                 } elseif ($enRangoFecha) {
-                                    // Dentro del rango de fechas pero no es el día de la semana
                                     $estadoActual = 'programado';
                                     $textoEstado  = 'Programado';
                                     $iconoEstado  = '<i class="fa-regular fa-clock"></i>';
@@ -210,13 +201,11 @@ $abrevDias = [
                                 $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                             }
 
-                            // ── Badges de días de la semana ───────────────────────────────────
                             $diasHtml = '';
                             if (count($diasNums) > 0) {
                                 $diasHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">';
                                 foreach ($diasNums as $dn) {
                                     $abrev     = $abrevDias[$dn] ?? '?';
-                                    // Resaltar el día actual
                                     $highlight = ($dn === $dia_actual_mysql)
                                                  ? ' style="background:#172f63;color:white;border-color:#172f63;"'
                                                  : '';
@@ -301,9 +290,6 @@ $abrevDias = [
         </div>
     <?php endif; ?>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
 </div>
 
 <div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>

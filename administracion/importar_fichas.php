@@ -1,5 +1,11 @@
 <?php
-// VERSIÓN 4 — Jornadas: Diurna, Mixta, Noche
+/**
+ * IMPORTAR FICHAS DESDE EXCEL/CSV
+ * Solo lee: IDENTIFICACION_FICHA, NOMBRE_PROGRAMA_FORMACION, 
+ *            FECHA_INICIO_FICHA, FECHA_TERMINACION_FICHA, jornada
+ * Ignora todas las demás columnas sin errores.
+ */
+
 session_start();
 include("../includes/conexion.php");
 
@@ -31,6 +37,26 @@ $filas_leidas = 0;
 $filas        = [];
 
 // ══════════════════════════════════════════════════════════════
+// MAPEO DE COLUMNAS (nombres exactos del Excel)
+// ══════════════════════════════════════════════════════════════
+$COLUMNAS_REQUERIDAS = [
+    'IDENTIFICACION_FICHA',
+    'NOMBRE_PROGRAMA_FORMACION', 
+    'FECHA_INICIO_FICHA',
+    'FECHA_TERMINACION_FICHA',
+    'jornada'
+];
+
+// Nombres de columnas en la BD
+$MAPEO_BD = [
+    'IDENTIFICACION_FICHA'        => 'numero_ficha',
+    'NOMBRE_PROGRAMA_FORMACION'   => 'programa',
+    'FECHA_INICIO_FICHA'          => 'fecha_inicio',
+    'FECHA_TERMINACION_FICHA'     => 'fecha_fin',
+    'jornada'                     => 'jornada'
+];
+
+// ══════════════════════════════════════════════════════════════
 // LEER CSV
 // ══════════════════════════════════════════════════════════════
 if ($ext === 'csv') {
@@ -40,18 +66,47 @@ if ($ext === 'csv') {
         exit;
     }
 
+    // Detectar delimitador
     $primera     = fgets($handle);
     rewind($handle);
     $delimitador = (substr_count($primera, ';') > substr_count($primera, ',')) ? ';' : ',';
 
     $cabecera = null;
-    while (($row = fgetcsv($handle, 1000, $delimitador)) !== false) {
+    $colIndex = []; // Mapeo: nombre_columna => indice
+
+    while (($row = fgetcsv($handle, 2000, $delimitador)) !== false) {
+        // Saltar filas vacías
+        if (count(array_filter($row, 'trim')) === 0) continue;
+
         if ($cabecera === null) {
-            $cabecera = array_map('strtolower', array_map('trim', $row));
+            // Primera fila = encabezados
+            $cabecera = array_map(function($v) {
+                return strtoupper(trim($v));
+            }, $row);
+
+            // Crear mapeo de índices solo para las columnas que necesitamos
+            foreach ($COLUMNAS_REQUERIDAS as $colReq) {
+                $idx = array_search(strtoupper($colReq), $cabecera);
+                if ($idx !== false) {
+                    $colIndex[$colReq] = $idx;
+                }
+            }
             continue;
         }
-        if (count($row) < 5) continue;
-        $filas[] = array_combine($cabecera, array_map('trim', $row));
+
+        // Extraer solo las columnas necesarias por nombre
+        $filaFiltrada = [];
+        foreach ($COLUMNAS_REQUERIDAS as $colReq) {
+            if (isset($colIndex[$colReq])) {
+                $filaFiltrada[$MAPEO_BD[$colReq]] = isset($row[$colIndex[$colReq]]) 
+                    ? trim($row[$colIndex[$colReq]]) 
+                    : '';
+            } else {
+                $filaFiltrada[$MAPEO_BD[$colReq]] = '';
+            }
+        }
+
+        $filas[] = $filaFiltrada;
     }
     fclose($handle);
 }
@@ -73,14 +128,41 @@ if ($ext === 'xlsx') {
     if ($xlsx = \Shuchkin\SimpleXLSX::parse($file['tmp_name'])) {
         $rows_raw = $xlsx->rows(0);
         $cabecera = null;
+        $colIndex = [];
+
         foreach ($rows_raw as $row) {
             $row = array_map('trim', $row);
+
+            // Saltar filas vacías
+            if (count(array_filter($row, 'strlen')) === 0) continue;
+
             if ($cabecera === null) {
-                $cabecera = array_map('strtolower', $row);
+                // Primera fila = encabezados
+                $cabecera = array_map('strtoupper', $row);
+
+                // Crear mapeo de índices
+                foreach ($COLUMNAS_REQUERIDAS as $colReq) {
+                    $idx = array_search(strtoupper($colReq), $cabecera);
+                    if ($idx !== false) {
+                        $colIndex[$colReq] = $idx;
+                    }
+                }
                 continue;
             }
-            if (count($row) < 5) continue;
-            $filas[] = array_combine($cabecera, $row);
+
+            // Extraer solo las columnas necesarias por nombre
+            $filaFiltrada = [];
+            foreach ($COLUMNAS_REQUERIDAS as $colReq) {
+                if (isset($colIndex[$colReq])) {
+                    $filaFiltrada[$MAPEO_BD[$colReq]] = isset($row[$colIndex[$colReq]]) 
+                        ? trim($row[$colIndex[$colReq]]) 
+                        : '';
+                } else {
+                    $filaFiltrada[$MAPEO_BD[$colReq]] = '';
+                }
+            }
+
+            $filas[] = $filaFiltrada;
         }
     } else {
         header('Location: gestionar_fichas.php?tab=importar&error=xlsx_parse');
@@ -89,14 +171,14 @@ if ($ext === 'xlsx') {
 }
 
 // ══════════════════════════════════════════════════════════════
-// FUNCIÓN PARA NORMALIZAR FECHA — acepta CUALQUIER formato común
+// FUNCIÓN PARA NORMALIZAR FECHA
 // ══════════════════════════════════════════════════════════════
 function normalizarFecha($valor) {
     $valor = trim((string)$valor);
 
-    if ($valor === '') return false;
+    if ($valor === '' || $valor === null) return null;
 
-    // ── 1. Número serial de Excel (ej. 45678) ────────────────
+    // Número serial de Excel
     if (is_numeric($valor)) {
         $serial = (float)$valor;
         $unix   = ($serial - 25569) * 86400;
@@ -104,28 +186,13 @@ function normalizarFecha($valor) {
         if ($fecha >= '1900-01-01' && $fecha <= '2100-12-31') {
             return $fecha;
         }
-        return false;
+        return null;
     }
 
-    // ── 2. Lista de formatos a probar ────────────────────────
     $formatos = [
-        'Y-m-d',
-        'd/m/Y',
-        'j/n/Y',
-        'd-m-Y',
-        'j-n-Y',
-        'd.m.Y',
-        'j.n.Y',
-        'd/m/y',
-        'j/n/y',
-        'd-m-y',
-        'Y/m/d',
-        'Y/n/j',
-        'm/d/Y',
-        'n/j/Y',
-        'd M Y',
-        'd F Y',
-        'F d, Y',
+        'Y-m-d', 'd/m/Y', 'j/n/Y', 'd-m-Y', 'j-n-Y',
+        'd.m.Y', 'j.n.Y', 'd/m/y', 'j/n/y', 'd-m-y',
+        'Y/m/d', 'Y/n/j', 'm/d/Y', 'n/j/Y',
     ];
 
     foreach ($formatos as $fmt) {
@@ -143,7 +210,6 @@ function normalizarFecha($valor) {
         }
     }
 
-    // ── 3. Último recurso: strtotime ─────────────────────────
     $ts = @strtotime($valor);
     if ($ts !== false && $ts > 0) {
         $resultado = date('Y-m-d', $ts);
@@ -152,40 +218,31 @@ function normalizarFecha($valor) {
         }
     }
 
-    return false;
+    return null;
 }
 
 // ══════════════════════════════════════════════════════════════
 // FUNCIÓN PARA NORMALIZAR JORNADA
-// Valores canónicos en BD: Diurna | Mixta | Noche
 // ══════════════════════════════════════════════════════════════
 function normalizarJornada($valor) {
     $v = mb_strtolower(trim($valor), 'UTF-8');
 
     $mapa = [
-        // → Diurna
         'diurna'     => 'Diurna',
         'dia'        => 'Diurna',
         'día'        => 'Diurna',
         'mañana'     => 'Diurna',
         'manana'     => 'Diurna',
-        // → Mixta
         'mixta'      => 'Mixta',
         'tarde'      => 'Mixta',
         'vespertina' => 'Mixta',
-        // → Noche
         'noche'      => 'Noche',
         'nocturna'   => 'Noche',
         'nocturno'   => 'Noche',
     ];
 
-    return $mapa[$v] ?? null;  // null = jornada no reconocida
+    return $mapa[$v] ?? null;
 }
-
-// ══════════════════════════════════════════════════════════════
-// CAMPOS REQUERIDOS
-// ══════════════════════════════════════════════════════════════
-$campos_req = ['numero_ficha', 'programa', 'jornada', 'fecha_inicio', 'fecha_fin'];
 
 // ══════════════════════════════════════════════════════════════
 // PREPARED STATEMENTS
@@ -196,45 +253,42 @@ $stmtIns   = $conexion->prepare("
     VALUES (?, ?, ?, ?, ?)
 ");
 
+// ══════════════════════════════════════════════════════════════
+// PROCESAR FILAS
+// ══════════════════════════════════════════════════════════════
 foreach ($filas as $i => $fila) {
     $filas_leidas++;
-    $linea = $i + 2;
+    $linea = $i + 2; // +2 porque fila 1 es encabezado
 
-    // ── Verificar campos requeridos ──
-    $faltantes = [];
-    foreach ($campos_req as $campo) {
-        if (!isset($fila[$campo]) || trim($fila[$campo]) === '') {
-            $faltantes[] = $campo;
-        }
+    // ── Extraer valores ──
+    $numero_ficha = isset($fila['numero_ficha']) ? trim($fila['numero_ficha']) : '';
+    $programa     = isset($fila['programa'])     ? trim($fila['programa'])     : '';
+    $fecha_inicio = isset($fila['fecha_inicio']) ? trim($fila['fecha_inicio']) : '';
+    $fecha_fin    = isset($fila['fecha_fin'])    ? trim($fila['fecha_fin'])    : '';
+    $jornada_raw  = isset($fila['jornada'])      ? trim($fila['jornada'])      : '';
+
+    // ── Validar campos obligatorios ──
+    if ($numero_ficha === '') {
+        $errores[] = "Fila {$linea}: IDENTIFICACION_FICHA está vacía";
+        continue;
     }
-    if ($faltantes) {
-        $errores[] = "Fila {$linea}: faltan columnas – " . implode(', ', $faltantes);
+    if ($programa === '') {
+        $errores[] = "Fila {$linea}: NOMBRE_PROGRAMA_FORMACION está vacía";
         continue;
     }
 
-    // ── Normalizar fechas ──
-    $f_ini = normalizarFecha($fila['fecha_inicio']);
-    $f_fin = normalizarFecha($fila['fecha_fin']);
+    // ── Normalizar fechas (permiten null si vienen vacías) ──
+    $f_ini = normalizarFecha($fecha_inicio);
+    $f_fin = normalizarFecha($fecha_fin);
 
-    if (!$f_ini) {
-        $errores[] = "Fila {$linea}: fecha_inicio inválida – '{$fila['fecha_inicio']}'";
-        continue;
-    }
-    if (!$f_fin) {
-        $errores[] = "Fila {$linea}: fecha_fin inválida – '{$fila['fecha_fin']}'";
-        continue;
-    }
-
-    // ── Normalizar jornada ──
-    $jorn = normalizarJornada($fila['jornada']);
+    // ── Normalizar jornada (default Mixta si viene vacía) ──
+    $jorn = normalizarJornada($jornada_raw);
     if ($jorn === null) {
-        $errores[] = "Fila {$linea}: jornada no reconocida – '{$fila['jornada']}' (use Diurna, Mixta o Noche)";
-        continue;
+        $jorn = 'Mixta'; // Valor por defecto
     }
 
     // ── Verificar duplicado ──
-    $num = trim($fila['numero_ficha']);
-    $stmtCheck->bind_param("s", $num);
+    $stmtCheck->bind_param("s", $numero_ficha);
     $stmtCheck->execute();
     $result = $stmtCheck->get_result();
 
@@ -243,9 +297,12 @@ foreach ($filas as $i => $fila) {
         continue;
     }
 
-    // ── Insertar ──
-    $prog = trim($fila['programa']);
-    $stmtIns->bind_param("sssss", $num, $prog, $jorn, $f_ini, $f_fin);
+    // ── Insertar con prepared statement ──
+    // Manejo de valores nulos para fechas
+    if ($f_ini === null) $f_ini = null;
+    if ($f_fin === null) $f_fin = null;
+
+    $stmtIns->bind_param("sssss", $numero_ficha, $programa, $jorn, $f_ini, $f_fin);
 
     if ($stmtIns->execute()) {
         $insertados++;
@@ -253,6 +310,10 @@ foreach ($filas as $i => $fila) {
         $errores[] = "Fila {$linea}: error de base de datos – " . $stmtIns->error;
     }
 }
+
+// ── Cerrar statements ──
+$stmtCheck->close();
+$stmtIns->close();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -340,4 +401,4 @@ foreach ($filas as $i => $fila) {
     </div>
 </div>
 </body>
-</html> 
+</html>

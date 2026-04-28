@@ -230,6 +230,10 @@ if ($ambienteBuscado) {
         </div>
     </div>
     <div class="header-user">
+        <a href="index.php" class="btn-volver">
+         <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
+
         <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
@@ -594,9 +598,6 @@ if ($ambienteBuscado) {
     </div>
     <?php endif; ?>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
 
 </div>
 

@@ -336,12 +336,15 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 
 /* ══ HEADER ══ */
 .hdr {
-    background: var(--navy);
-    height: 76px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 32px;
-    position: sticky; top: 0; z-index: 200;
-    box-shadow: 0 3px 20px rgba(0,0,0,0.32);
+    background: #0b2449;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-md);
+    animation: slideDown 0.6s ease-out;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 .hdr-left { display: flex; align-items: center; gap: 16px; }
 .hdr-logo { height: 40px; }
@@ -352,7 +355,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .hdr-title h1 { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
 .hdr-title p  { font-size: 12px; color: rgba(255,255,255,0.42); margin-top: 2px; }
 .hdr-back {
-    color: rgba(255,255,255,0.78); text-decoration: none;
+    color: #ffffff ;text-decoration: none;
     font-size: 13px; font-weight: 600;
     padding: 9px 18px; border-radius: 9px;
     border: 1.5px solid rgba(255,255,255,0.18);
@@ -381,7 +384,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; transition: all .25s;
 }
-.step-lbl { font-size: 13px; font-weight: 600; color: var(--muted); transition: color .25s; }
+.step-lbl { font-size: 13px; font-weight: 600; transition: color .25s; }
 .step-connector { flex: 1; min-width: 20px; height: 2px; background: var(--border); margin: 0 8px; transition: background .3s; }
 .step-item.active .step-num  { background: var(--green); color: #fff; }
 .step-item.active .step-lbl  { color: var(--text); }
@@ -795,8 +798,8 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 /* ══ RESPONSIVE ══ */
 @media (max-width: 768px) {
     .hdr { height: 68px; padding: 0 16px; }
-    .hdr-logo { height: 34px; }
-    .hdr-title h1 { font-size: 14px; }
+    .hdr-logo { height: 55px; }
+    .hdr-title h1 { font-size: 20px; }
     .hdr-title p  { font-size: 11px; }
     .hdr-back span { display: none; }
     .hdr-back { padding: 8px 12px; gap: 0; }

@@ -1,7 +1,9 @@
 <?php
 session_start();
-if ($_SESSION['rol'] != 'administracion') {
-    header("Location: ../login.php");
+
+// Verificación de rol con redirección absoluta desde la raíz
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'administracion') {
+    header("Location: /login.php");
     exit;
 }
 
@@ -68,7 +70,13 @@ $total     = mysqli_num_rows($resultado);
         </div>
     </div>
     <div class="header-user">
-        <i class="fa-solid fa-user user-icon"></i> Administración
+        <a href="index.php" class="btn-volver">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
+        <div class="user-info">
+            <i class="fa-solid fa-user user-icon"></i>
+            <span>Administración</span>
+        </div>
     </div>
 </div>
 
@@ -132,12 +140,38 @@ $total     = mysqli_num_rows($resultado);
         <?php endif; ?>
     </div>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
+    
 </div>
 
 <style>
+/* Estilos para el header */
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+
+
+/* Info del usuario - ahora en su propio recuadro */
+.user-info {
+    background: rgba(255,255,255,0.15);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.user-icon {
+    font-size: 16px;
+}
+
+/* Estilos existentes */
 .badge-disponible { background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px; }
 .badge-horario { background:#e3f2fd;color:#1565c0;padding:5px 12px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px; }
 .btn-accion { background:#43a047;color:white;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:0.3s; }

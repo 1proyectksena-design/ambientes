@@ -68,9 +68,7 @@ $total        = mysqli_num_rows($resultado);
 $fecha_actual = date('Y-m-d');
 $hora_actual  = date('H:i:s');
 
-/* ══════════════════════════════════════
-   EXPORTAR A EXCEL
-   ══════════════════════════════════════ */
+/* ══ EXPORTAR A EXCEL ══ */
 if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     $resExport = mysqli_query($conexion, $sql);
 
@@ -128,6 +126,27 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     <title>Historial de Autorizaciones</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .btn-volver-header {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            padding: 8px 16px;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.35);
+            color: rgba(255,255,255,0.9);
+            font-size: .82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s, color .2s;
+            white-space: nowrap;
+        }
+        .btn-volver-header:hover {
+            background: rgba(255,255,255,0.28);
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
 
@@ -140,6 +159,9 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
         </div>
     </div>
     <div class="header-user">
+        <a href="index.php" class="btn-volver-header">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
         <i class="fa-solid fa-user user-icon"></i> Administración
     </div>
 </div>
@@ -172,7 +194,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
             </a>
         </form>
 
-        <!-- Chips de filtro por estado -->
         <div class="filtro-estado-row">
             <span class="filtro-estado-label"><i class="fa-solid fa-tags"></i> Estado:</span>
             <?php
@@ -225,7 +246,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                 <tbody>
                     <?php while ($row = mysqli_fetch_assoc($resultado)):
 
-                        /* --- Estado visual --- */
                         $estadoActual = 'desocupado';
                         $textoEstado  = 'Desocupado';
                         $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
@@ -252,7 +272,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                             $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                         }
 
-                        /* --- Días de la semana --- */
                         $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
                                     ? explode(',', $row['dias_semana']) : [];
                         $diasHtml = '';
@@ -348,12 +367,9 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
         <?php endif; ?>
     </div>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
 </div>
 
-<!-- OVERLAY Y MODAL GLOBAL -->
+<!-- OVERLAY Y MODAL -->
 <div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
 
 <div class="novedades-modal" id="modalNovedades">

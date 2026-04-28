@@ -3,18 +3,20 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 session_start();
 
-// ── Conexión ─────────────────────────────────────
 include("../includes/conexion.php");
 
-// ── Restricción de acceso ─────────────────────────
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'administracion') {
     header('Location: ../login.php');
     exit;
 }
 
+/* ── Solicitudes pendientes (campana header) ── */
+$resPendientes = mysqli_query($conexion, "SELECT COUNT(*) FROM autorizaciones_ambientes WHERE estado = 'Pendiente'");
+$solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
+
 $mensaje   = '';
 $tipo_msg  = '';
-$tab_activo = $_GET['tab'] ?? 'manual'; // 'manual' | 'importar'
+$tab_activo = $_GET['tab'] ?? 'manual';
 
 // ── Proceso: Registro manual ──────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'manual') {
@@ -26,19 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     $fecha_fin    = trim($_POST['fecha_fin']    ?? '');
     $tab_activo   = 'manual';
 
-    // Validaciones
     if (empty($numero_ficha) || empty($programa) || empty($jornada) || empty($fecha_inicio) || empty($fecha_fin)) {
         $mensaje  = 'Todos los campos son obligatorios.';
         $tipo_msg = 'error';
     } else {
-
         $numero_ficha = mysqli_real_escape_string($conexion, $numero_ficha);
         $programa     = mysqli_real_escape_string($conexion, $programa);
         $jornada      = mysqli_real_escape_string($conexion, $jornada);
         $fecha_inicio = mysqli_real_escape_string($conexion, $fecha_inicio);
         $fecha_fin    = mysqli_real_escape_string($conexion, $fecha_fin);
 
-        // ── Verificar duplicado ─────────────────────
         $query_check  = "SELECT id FROM fichas WHERE numero_ficha = '$numero_ficha'";
         $result_check = mysqli_query($conexion, $query_check);
 
@@ -46,11 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
             $mensaje  = "La ficha <strong>{$numero_ficha}</strong> ya existe en el sistema.";
             $tipo_msg = 'warning';
         } else {
-
-            $query_insert = "INSERT INTO fichas
-                (numero_ficha, programa, jornada, fecha_inicio, fecha_fin)
-                VALUES
-                ('$numero_ficha', '$programa', '$jornada', '$fecha_inicio', '$fecha_fin')";
+            $query_insert = "INSERT INTO fichas (numero_ficha, programa, jornada, fecha_inicio, fecha_fin)
+                             VALUES ('$numero_ficha', '$programa', '$jornada', '$fecha_inicio', '$fecha_fin')";
 
             if (mysqli_query($conexion, $query_insert)) {
                 $mensaje  = "Ficha <strong>{$numero_ficha}</strong> registrada exitosamente.";
@@ -63,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     }
 }
 
-// ── Fichas existentes para tabla de resumen ───────
+// ── Fichas recientes ──────────────────────────────
 $query_fichas  = "SELECT * FROM fichas ORDER BY id DESC LIMIT 20";
 $result_fichas = mysqli_query($conexion, $query_fichas);
 
@@ -80,96 +76,149 @@ if ($result_fichas) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestionar Fichas</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+        /* ══════════════ VARIABLES ══════════════ */
         :root {
-            --bg: #f6f7fb;
-            --surface: #ffffff;
-            --border: #e4e8ef;
-            --text-primary: #0f172a;
-            --text-secondary: #64748b;
-            --accent: #4f46e5;
-            --accent-light: #eef2ff;
-            --success: #059669;
-            --success-light: #d1fae5;
-            --warning: #d97706;
-            --warning-light: #fef3c7;
-            --danger: #dc2626;
-            --danger-light: #fee2e2;
-            --sans: 'DM Sans', sans-serif;
-            --mono: 'DM Mono', monospace;
-            --radius: 10px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,.07);
+            --primary:    #0b2449;
+            --primary-mid:#355d91;
+            --primary-lt: #e8eef7;
+            --primary-bd: #c8d6ea;
+            --surface:    #ffffff;
+            --bg:         #f5f7fa;
+            --border:     #e5e7eb;
+            --text:       #1f2937;
+            --muted:      #64748b;
+            --success:    #2e7d32;
+            --success-lt: #e8f5e9;
+            --success-bd: #a5d6a7;
+            --warning:    #ef6c00;
+            --warning-lt: #fff3e0;
+            --warning-bd: #ffe0b2;
+            --danger:     #c62828;
+            --danger-lt:  #ffebee;
+            --danger-bd:  #ef9a9a;
+            --radius:     16px;
+            --shadow:     0 2px 8px rgba(0,0,0,0.06);
         }
 
-        body { font-family: var(--sans); background: var(--bg); color: var(--text-primary); min-height: 100vh; padding: 2rem 1.5rem; }
+        /* ══════════════ RESET EXTRA ══════════════ */
+        *, *::before, *::after { box-sizing: border-box; }
 
-        /* ── Page header ── */
-        .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem; }
-        .page-header__left { display: flex; align-items: center; gap: .75rem; }
-        .page-header__icon { width: 44px; height: 44px; background: var(--accent-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); }
-        .page-header__icon svg { width: 22px; height: 22px; }
-        .page-header h1 { font-size: 1.35rem; font-weight: 700; }
-        .page-header__sub { font-size: .82rem; color: var(--text-secondary); margin-top: .1rem; }
-        .btn-back { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; color: var(--text-secondary); font-size: .82rem; font-weight: 500; text-decoration: none; transition: background .15s; }
-        .btn-back:hover { background: var(--bg); }
+        /* ══════════════ ALERT ══════════════ */
+        .alert {
+            padding: .9rem 1.2rem;
+            border-radius: 10px;
+            margin-bottom: 1.4rem;
+            font-size: .88rem;
+            display: flex; align-items: flex-start; gap: .6rem;
+        }
+        .alert--success { background: var(--success-lt); color: var(--success); border: 1px solid var(--success-bd); }
+        .alert--warning { background: var(--warning-lt); color: var(--warning); border: 1px solid var(--warning-bd); }
+        .alert--error   { background: var(--danger-lt);  color: var(--danger);  border: 1px solid var(--danger-bd); }
+        .alert i { margin-top: 1px; flex-shrink: 0; }
 
-        /* ── Alert ── */
-        .alert { padding: .85rem 1.1rem; border-radius: 8px; margin-bottom: 1.4rem; font-size: .88rem; display: flex; align-items: flex-start; gap: .6rem; }
-        .alert--success { background: var(--success-light); color: #065f46; border: 1px solid #a7f3d0; }
-        .alert--warning { background: var(--warning-light); color: #92400e; border: 1px solid #fde68a; }
-        .alert--error   { background: var(--danger-light);  color: #991b1b; border: 1px solid #fca5a5; }
+        /* ══════════════ PAGE CONTENT WRAPPER ══════════════ */
+        .dashboard-container { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
 
-        /* ── Tabs ── */
-        .tabs { display: flex; gap: .25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .35rem; width: fit-content; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); }
+        /* ══════════════ TABS ══════════════ */
+        .tabs-bar {
+            display: flex; gap: .3rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: .35rem;
+            width: fit-content;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            flex-wrap: wrap;
+        }
         .tab-btn {
-            padding: .55rem 1.4rem; border-radius: 7px; border: none;
-            font-family: var(--sans); font-size: .88rem; font-weight: 600;
-            cursor: pointer; transition: background .15s, color .15s;
-            display: flex; align-items: center; gap: .5rem;
-            color: var(--text-secondary); background: transparent;
+            padding: .55rem 1.3rem;
+            border-radius: 9px; border: none;
+            font-size: .88rem; font-weight: 600;
+            cursor: pointer;
+            display: flex; align-items: center; gap: .45rem;
+            color: var(--muted); background: transparent;
+            transition: background .15s, color .15s;
+            white-space: nowrap;
         }
-        .tab-btn.active { background: var(--accent); color: #fff; }
-        .tab-btn:not(.active):hover { background: var(--bg); color: var(--text-primary); }
+        .tab-btn.active { background: var(--primary); color: #fff; }
+        .tab-btn:not(.active):hover { background: var(--bg); color: var(--text); }
 
-        /* ── Tab content ── */
+        /* ══════════════ TAB CONTENT ══════════════ */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* ── Card ── */
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; box-shadow: var(--shadow-sm); margin-bottom: 1.5rem; }
-        .card__title { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: .5rem; color: var(--text-primary); }
-        .card__title svg { width: 18px; height: 18px; color: var(--accent); }
+        /* ══════════════ CARD ══════════════ */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+        .card__title {
+            font-size: .92rem; font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 1.25rem;
+            display: flex; align-items: center; gap: .45rem;
+        }
+        .card__title i { color: var(--primary); }
 
-        /* ── Form grid ── */
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem 1.25rem; }
+        /* ══════════════ FORM ══════════════ */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1rem 1.25rem;
+        }
         .form-group { display: flex; flex-direction: column; gap: .35rem; }
-        .form-group--full { grid-column: 1 / -1; }
-        .form-group label { font-size: .78rem; font-weight: 600; color: var(--text-secondary); letter-spacing: .04em; text-transform: uppercase; }
+        .form-group label {
+            font-size: .76rem; font-weight: 700;
+            color: var(--muted);
+            letter-spacing: .05em; text-transform: uppercase;
+        }
         .form-group input,
         .form-group select {
             padding: .6rem .9rem;
             border: 1px solid var(--border);
-            border-radius: 7px;
-            font-family: var(--sans); font-size: .9rem;
-            background: var(--bg); color: var(--text-primary);
+            border-radius: 8px;
+            font-size: .9rem;
+            background: var(--bg); color: var(--text);
             transition: border-color .15s, box-shadow .15s;
+            font-family: inherit;
         }
         .form-group input:focus,
         .form-group select:focus {
-            outline: none; border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(11,36,73,.12);
         }
+
         .form-actions { margin-top: 1.5rem; display: flex; gap: .75rem; flex-wrap: wrap; }
-        .btn-submit { padding: .65rem 1.6rem; background: var(--accent); color: #fff; border: none; border-radius: 7px; font-family: var(--sans); font-size: .9rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: .45rem; transition: background .15s; }
-        .btn-submit:hover { background: #4338ca; }
-        .btn-reset { padding: .65rem 1.1rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 7px; font-family: var(--sans); font-size: .88rem; cursor: pointer; transition: background .15s; }
+
+        .btn-submit {
+            padding: .62rem 1.5rem;
+            background: var(--primary); color: #fff;
+            border: none; border-radius: 8px;
+            font-size: .9rem; font-weight: 600;
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: .45rem;
+            transition: background .15s;
+        }
+        .btn-submit:hover { background: var(--primary-mid); }
+
+        .btn-reset {
+            padding: .62rem 1.1rem;
+            background: transparent; color: var(--muted);
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: .88rem; cursor: pointer;
+            transition: background .15s; font-family: inherit;
+        }
         .btn-reset:hover { background: var(--bg); }
 
-        /* ── Upload zone ── */
+        /* ══════════════ UPLOAD ZONE ══════════════ */
         .upload-zone {
             border: 2px dashed var(--border);
             border-radius: var(--radius); padding: 2.5rem 1.5rem;
@@ -177,266 +226,392 @@ if ($result_fichas) {
             transition: border-color .2s, background .2s;
             background: var(--bg);
         }
-        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-light); }
-        .upload-zone svg { width: 40px; height: 40px; color: var(--text-secondary); margin-bottom: .75rem; }
-        .upload-zone p { font-size: .9rem; color: var(--text-secondary); margin-bottom: .4rem; }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: var(--primary); background: var(--primary-lt);
+        }
+        .upload-zone i { font-size: 2.5rem; color: var(--muted); margin-bottom: .75rem; display: block; }
+        .upload-zone p { font-size: .9rem; color: var(--muted); margin-bottom: .4rem; }
         .upload-zone small { font-size: .78rem; color: #94a3b8; }
         .upload-zone input[type="file"] { display: none; }
 
         .file-selected {
             display: none; margin-top: 1rem;
-            padding: .6rem 1rem; background: var(--success-light);
-            border: 1px solid #a7f3d0; border-radius: 7px;
-            font-size: .85rem; color: #065f46;
+            padding: .6rem 1rem;
+            background: var(--success-lt);
+            border: 1px solid var(--success-bd);
+            border-radius: 8px;
+            font-size: .85rem; color: var(--success);
             align-items: center; gap: .5rem;
         }
         .file-selected.visible { display: flex; }
 
-        /* ── Formato hint ── */
+        /* ══════════════ FORMAT TABLE ══════════════ */
         .format-hint { margin-top: 1.25rem; }
-        .format-hint__title { font-size: .8rem; color: var(--text-secondary); margin-bottom: .5rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-        .format-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-        .format-table th, .format-table td { padding: .4rem .75rem; text-align: left; border: 1px solid var(--border); }
-        .format-table th { background: var(--bg); font-weight: 600; color: var(--text-secondary); }
-        .format-table td:first-child { font-family: var(--mono); color: var(--accent); }
-        .format-note { margin-top: .75rem; font-size: .79rem; color: var(--text-secondary); background: var(--accent-light); border: 1px solid #c7d2fe; border-radius: 6px; padding: .5rem .8rem; line-height: 1.5; }
-        .format-note strong { color: var(--accent); }
+        .format-hint__title {
+            font-size: .78rem; font-weight: 700;
+            color: var(--muted);
+            letter-spacing: .05em; text-transform: uppercase;
+            margin-bottom: .6rem;
+        }
+        .format-table { width: 100%; border-collapse: collapse; font-size: .82rem; overflow-x: auto; }
+        .format-table th,
+        .format-table td { padding: .45rem .75rem; text-align: left; border: 1px solid var(--border); }
+        .format-table th { background: var(--bg); font-weight: 700; color: var(--muted); }
+        .format-table td:first-child { font-family: 'Courier New', monospace; color: var(--primary); font-weight: 600; }
+        .format-note {
+            margin-top: .75rem; font-size: .8rem; color: var(--muted);
+            background: var(--primary-lt); border: 1px solid var(--primary-bd);
+            border-radius: 8px; padding: .6rem .9rem; line-height: 1.6;
+        }
+        .format-note strong { color: var(--primary); }
 
-        /* ── Recent fichas table ── */
-        .section-title { font-size: .95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
-        .section-title span { font-size: .8rem; font-weight: 500; color: var(--text-secondary); background: var(--bg); border: 1px solid var(--border); padding: .15rem .55rem; border-radius: 20px; }
-        .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
-        table { width: 100%; border-collapse: collapse; }
-        thead tr { background: var(--bg); }
-        thead th { padding: .7rem 1rem; font-size: .76rem; font-weight: 700; color: var(--text-secondary); letter-spacing: .05em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-        tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
-        tbody tr:last-child { border-bottom: none; }
-        tbody tr:hover { background: #f8f9ff; }
-        tbody td { padding: .8rem 1rem; font-size: .88rem; vertical-align: middle; }
-        .ficha-num { font-family: var(--mono); background: var(--accent-light); color: var(--accent); padding: .15rem .5rem; border-radius: 4px; font-size: .82rem; }
-
-        /* ── Progress bar (upload) ── */
+        /* ══════════════ PROGRESS ══════════════ */
         .progress-wrap { display: none; margin-top: 1rem; }
         .progress-wrap.visible { display: block; }
         .progress-bar-bg { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; width: 0%; }
-        .progress-label { font-size: .78rem; color: var(--text-secondary); margin-top: .4rem; }
+        .progress-bar-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width .3s; width: 0%; }
+        .progress-label { font-size: .78rem; color: var(--muted); margin-top: .4rem; }
+
+        /* ══════════════ SECTION LABEL ══════════════ */
+        .section-label {
+            font-size: .78rem; font-weight: 700;
+            color: var(--muted); letter-spacing: .06em;
+            text-transform: uppercase; margin-bottom: .85rem;
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .section-label .badge {
+            background: var(--primary-lt); color: var(--primary);
+            border: 1px solid var(--primary-bd);
+            padding: .1rem .55rem; border-radius: 20px;
+            font-size: .75rem; font-weight: 700;
+        }
+
+        /* ══════════════ TABLE ══════════════ */
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden; overflow-x: auto;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 560px; }
+        thead tr { background: var(--bg); }
+        thead th {
+            padding: .7rem 1rem;
+            font-size: .74rem; font-weight: 700;
+            color: var(--muted); letter-spacing: .05em;
+            text-transform: uppercase; border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #f0f4fa; }
+        tbody td { padding: .85rem 1rem; font-size: .88rem; color: var(--text); vertical-align: middle; }
+
+        .ficha-num {
+            display: inline-flex; align-items: center; gap: .35rem;
+            background: var(--primary-lt); color: var(--primary);
+            border: 1px solid var(--primary-bd);
+            padding: .18rem .6rem; border-radius: 5px;
+            font-size: .82rem; font-weight: 700;
+        }
+
+        .empty-state {
+            text-align: center; padding: 3rem 2rem;
+            color: var(--muted);
+        }
+        .empty-state i { font-size: 2.5rem; opacity: .2; margin-bottom: .8rem; display: block; }
+        .empty-state p { font-size: .9rem; }
+
+        /* ══════════════ HEADER BTN (volver) ══════════════ */
+        .btn-volver-header {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .45rem .9rem;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 7px; color: #fff;
+            font-size: .82rem; font-weight: 600;
+            text-decoration: none;
+            transition: background .15s; white-space: nowrap;
+        }
+        .btn-volver-header:hover { background: rgba(255,255,255,0.25); }
+
+        /* ══════════════ RESPONSIVE ══════════════ */
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1rem; }
+            .form-grid { grid-template-columns: 1fr; }
+            .tabs-bar { width: 100%; }
+            .tab-btn { flex: 1; justify-content: center; }
+        }
+        @media (max-width: 480px) {
+            .form-actions { flex-direction: column; }
+            .btn-submit, .btn-reset { width: 100%; justify-content: center; }
+            .header-user { flex-wrap: wrap; gap: .5rem; }
+        }
     </style>
 </head>
 <body>
 
-<div class="page-header">
-    <div class="page-header__left">
-        <div class="page-header__icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                <rect x="9" y="3" width="6" height="4" rx="1"/>
-                <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
-            </svg>
-        </div>
-        <div>
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<div class="header">
+    <div class="header-left">
+        <img src="../css/img/senab.png" alt="Logo SENA" class="logo-sena">
+        <div class="header-title">
             <h1>Gestionar Fichas</h1>
-            <div class="page-header__sub">Registro manual o importación masiva</div>
+            <span>Registro manual o importación masiva</span>
         </div>
     </div>
-    <a href="index.php" class="btn-back">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        Volver
-    </a>
+    <div class="header-user">
+        <a href="index.php" class="btn-volver-header">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+        <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+    </div>
 </div>
 
-<?php if ($mensaje): ?>
-<div class="alert alert--<?= $tipo_msg ?>">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" flex-shrink="0">
+<!-- ═══════════════════════ CONTENIDO ═══════════════════════ -->
+<div class="dashboard-container">
+
+    <?php if ($mensaje): ?>
+    <div class="alert alert--<?= $tipo_msg ?>">
         <?php if ($tipo_msg === 'success'): ?>
-            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            <i class="fa-solid fa-circle-check"></i>
         <?php elseif ($tipo_msg === 'warning'): ?>
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            <i class="fa-solid fa-triangle-exclamation"></i>
         <?php else: ?>
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            <i class="fa-solid fa-circle-xmark"></i>
         <?php endif; ?>
-    </svg>
-    <span><?= $mensaje ?></span>
-</div>
-<?php endif; ?>
-
-<!-- ── Tabs ── -->
-<div class="tabs">
-    <button type="button" class="tab-btn <?= $tab_activo === 'manual' ? 'active' : '' ?>" onclick="switchTab('manual')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Manual
-    </button>
-    <button type="button" class="tab-btn <?= $tab_activo === 'importar' ? 'active' : '' ?>" onclick="switchTab('importar')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Importar Excel / CSV
-    </button>
-</div>
-
-<!-- ══════════════════════════════════════ TAB: MANUAL ═══════ -->
-<div id="tab-manual" class="tab-content <?= $tab_activo === 'manual' ? 'active' : '' ?>">
-    <div class="card">
-        <div class="card__title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Registrar nueva ficha
-        </div>
-        <form method="POST" action="?tab=manual">
-            <input type="hidden" name="accion" value="manual">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="numero_ficha">Número de Ficha *</label>
-                    <input type="text" id="numero_ficha" name="numero_ficha" placeholder="Ej. 2895621" required maxlength="20" value="<?= htmlspecialchars($_POST['numero_ficha'] ?? '') ?>">
-                </div>
-                <div class="form-group">
-                    <label for="programa">Programa *</label>
-                    <input type="text" id="programa" name="programa" placeholder="Ej. Técnico en Sistemas" required maxlength="150" value="<?= htmlspecialchars($_POST['programa'] ?? '') ?>">
-                </div>
-                <div class="form-group">
-                    <label for="jornada">Jornada *</label>
-                    <select id="jornada" name="jornada" required>
-                        <option value="">— Seleccionar —</option>
-                        <?php foreach (['Diurna', 'Mixta', 'Noche'] as $j): ?>
-                            <option value="<?= $j ?>" <?= ($_POST['jornada'] ?? '') === $j ? 'selected' : '' ?>><?= $j ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="fecha_inicio">Fecha Inicio *</label>
-                    <input type="date" id="fecha_inicio" name="fecha_inicio" required value="<?= htmlspecialchars($_POST['fecha_inicio'] ?? '') ?>">
-                </div>
-                <div class="form-group">
-                    <label for="fecha_fin">Fecha Fin *</label>
-                    <input type="date" id="fecha_fin" name="fecha_fin" required value="<?= htmlspecialchars($_POST['fecha_fin'] ?? '') ?>">
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn-submit">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    Guardar Ficha
-                </button>
-                <button type="reset" class="btn-reset">Limpiar</button>
-            </div>
-        </form>
+        <span><?= $mensaje ?></span>
     </div>
-</div>
-
-<!-- ══════════════════════════════════════ TAB: IMPORTAR ═════ -->
-<div id="tab-importar" class="tab-content <?= $tab_activo === 'importar' ? 'active' : '' ?>">
-    <div class="card">
-        <div class="card__title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Importar fichas desde archivo
-        </div>
-
-        <form method="POST" action="importar_fichas.php" enctype="multipart/form-data" id="form-import">
-            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('archivo').click()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="12" y1="18" x2="12" y2="12"/>
-                    <line x1="9" y1="15" x2="15" y2="15"/>
-                </svg>
-                <p><strong>Haz clic para seleccionar</strong> o arrastra el archivo aquí</p>
-                <small>Formatos aceptados: .csv, .xlsx &nbsp;·&nbsp; Tamaño máximo: 5 MB</small>
-                <input type="file" id="archivo" name="archivo" accept=".csv,.xlsx">
-            </div>
-
-            <div class="file-selected" id="file-selected">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <span id="file-name-label">Archivo seleccionado</span>
-            </div>
-
-            <div class="progress-wrap" id="progress-wrap">
-                <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
-                <div class="progress-label" id="progress-label">Procesando…</div>
-            </div>
-
-            <div class="format-hint">
-                <p class="format-hint__title">Formato esperado del archivo</p>
-                <table class="format-table">
-                    <thead>
-                        <tr>
-                            <th>Columna</th><th>Tipo</th><th>Ejemplos aceptados</th><th>Obligatorio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>numero_ficha</td>
-                            <td>Texto / Número</td>
-                            <td>2895621</td>
-                            <td>✓</td>
-                        </tr>
-                        <tr>
-                            <td>programa</td>
-                            <td>Texto</td>
-                            <td>Técnico en Sistemas</td>
-                            <td>✓</td>
-                        </tr>
-                        <tr>
-                            <td>jornada</td>
-                            <td>Texto</td>
-                            <td>  Diurna  Mixta Noche </td>
-                            <td>✓</td>
-                        </tr>
-                        <tr>
-                            <td>fecha_inicio</td>
-                            <td>Fecha</td>
-                            <td>15/01/2026 · 1/1/2026 · 2026-01-15 · 15-01-2026</td>
-                            <td>✓</td>
-                        </tr>
-                        <tr>
-                            <td>fecha_fin</td>
-                            <td>Fecha</td>
-                            <td>30/11/2026 · 1/12/2026 · 2026-11-30 · serial Excel</td>
-                            <td>✓</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="format-note">
-                    <strong>Fechas flexibles:</strong> se aceptan DD/MM/YYYY, D/M/YYYY, YYYY-MM-DD, DD-MM-YYYY, DD.MM.YYYY y el serial numérico de Excel (ej. 45678). Con o sin ceros iniciales en día y mes.<br>
-                    <strong>Jornada:</strong> "Diurna" se registra como <em>Diurna</em>; "Mixta" como <em>Mixta</em>; "Noche" como <em>Noche</em>. Sin distinción de mayúsculas.
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn-submit" id="btn-import">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Importar Fichas
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- ── Fichas recientes ── -->
-<div class="section-title">
-    Fichas registradas recientemente
-    <span><?= count($fichas_recientes) ?> últimas</span>
-</div>
-<div class="table-wrap">
-    <?php if ($fichas_recientes): ?>
-    <table>
-        <thead>
-            <tr>
-                <th>N° Ficha</th><th>Programa</th><th>Jornada</th>
-                <th>Fecha inicio</th><th>Fecha fin</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($fichas_recientes as $f): ?>
-            <tr>
-                <td><span class="ficha-num"><?= htmlspecialchars($f['numero_ficha']) ?></span></td>
-                <td><?= htmlspecialchars($f['programa']) ?></td>
-                <td><?= htmlspecialchars($f['jornada']) ?></td>
-                <td><?= htmlspecialchars(date('d/m/Y', strtotime($f['fecha_inicio']))) ?></td>
-                <td><?= htmlspecialchars(date('d/m/Y', strtotime($f['fecha_fin']))) ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php else: ?>
-    <div style="text-align:center;padding:2rem;color:var(--text-secondary);font-size:.88rem;">No hay fichas registradas aún.</div>
     <?php endif; ?>
-</div>
+
+    <!-- ── Tabs ── -->
+    <div class="tabs-bar">
+        <button type="button" class="tab-btn <?= $tab_activo === 'manual' ? 'active' : '' ?>" onclick="switchTab('manual')">
+            <i class="fa-solid fa-pen-to-square"></i> Manual
+        </button>
+        <button type="button" class="tab-btn <?= $tab_activo === 'importar' ? 'active' : '' ?>" onclick="switchTab('importar')">
+            <i class="fa-solid fa-file-arrow-up"></i> Importar Excel / CSV
+        </button>
+    </div>
+
+    <!-- ══════════ TAB: MANUAL ══════════ -->
+    <div id="tab-manual" class="tab-content <?= $tab_activo === 'manual' ? 'active' : '' ?>">
+        <div class="card">
+            <div class="card__title">
+                <i class="fa-solid fa-circle-plus"></i>
+                Registrar nueva ficha
+            </div>
+            <form method="POST" action="?tab=manual">
+                <input type="hidden" name="accion" value="manual">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="numero_ficha"><i class="fa-solid fa-hashtag"></i> Número de Ficha *</label>
+                        <input type="text" id="numero_ficha" name="numero_ficha"
+                               placeholder="Ej. 2895621" required maxlength="20"
+                               value="<?= htmlspecialchars($_POST['numero_ficha'] ?? '') ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="programa"><i class="fa-solid fa-graduation-cap"></i> Programa *</label>
+                        <input type="text" id="programa" name="programa"
+                               placeholder="Ej. Técnico en Sistemas" required maxlength="150"
+                               value="<?= htmlspecialchars($_POST['programa'] ?? '') ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="jornada"><i class="fa-regular fa-clock"></i> Jornada *</label>
+                        <select id="jornada" name="jornada" required>
+                            <option value="">— Seleccionar —</option>
+                            <?php foreach (['Diurna', 'Mixta', 'Noche'] as $j): ?>
+                                <option value="<?= $j ?>" <?= ($_POST['jornada'] ?? '') === $j ? 'selected' : '' ?>><?= $j ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha_inicio"><i class="fa-regular fa-calendar"></i> Fecha Inicio *</label>
+                        <input type="date" id="fecha_inicio" name="fecha_inicio" required
+                               value="<?= htmlspecialchars($_POST['fecha_inicio'] ?? '') ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha_fin"><i class="fa-regular fa-calendar-check"></i> Fecha Fin *</label>
+                        <input type="date" id="fecha_fin" name="fecha_fin" required
+                               value="<?= htmlspecialchars($_POST['fecha_fin'] ?? '') ?>">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Ficha
+                    </button>
+                    <button type="reset" class="btn-reset">
+                        <i class="fa-solid fa-rotate-left"></i> Limpiar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ TAB: IMPORTAR ══════════ -->
+    <div id="tab-importar" class="tab-content <?= $tab_activo === 'importar' ? 'active' : '' ?>">
+        <div class="card">
+            <div class="card__title">
+                <i class="fa-solid fa-file-arrow-up"></i>
+                Importar fichas desde archivo
+            </div>
+
+            <form method="POST" action="importar_fichas.php" enctype="multipart/form-data" id="form-import">
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('archivo').click()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p><strong>Haz clic para seleccionar</strong> o arrastra el archivo aquí</p>
+                    <small>Formatos aceptados: .csv, .xlsx &nbsp;·&nbsp; Tamaño máximo: 5 MB</small>
+                    <input type="file" id="archivo" name="archivo" accept=".csv,.xlsx">
+                </div>
+
+                <div class="file-selected" id="file-selected">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span id="file-name-label">Archivo seleccionado</span>
+                </div>
+
+                <div class="progress-wrap" id="progress-wrap">
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+                    <div class="progress-label" id="progress-label">Procesando…</div>
+                </div>
+
+                <div class="format-hint">
+                    <p class="format-hint__title"><i class="fa-solid fa-table"></i> &nbsp;Formato esperado del archivo</p>
+                    <div style="overflow-x:auto;">
+                        <table class="format-table">
+                            <thead>
+                                <tr><th>Columna</th><th>Tipo</th><th>Ejemplos aceptados</th><th>Obligatorio</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>numero_ficha</td><td>Texto / Número</td><td>2895621</td><td>✓</td></tr>
+                                <tr><td>programa</td><td>Texto</td><td>Técnico en Sistemas</td><td>✓</td></tr>
+                                <tr><td>jornada</td><td>Texto</td><td>Diurna &nbsp; Mixta &nbsp; Noche</td><td>✓</td></tr>
+                                <tr><td>fecha_inicio</td><td>Fecha</td><td>15/01/2026 · 2026-01-15 · 15-01-2026</td><td>✓</td></tr>
+                                <tr><td>fecha_fin</td><td>Fecha</td><td>30/11/2026 · 2026-11-30 · serial Excel</td><td>✓</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="format-note">
+                        <strong>Fechas flexibles:</strong> se aceptan DD/MM/YYYY, D/M/YYYY, YYYY-MM-DD, DD-MM-YYYY, DD.MM.YYYY y el serial numérico de Excel (ej. 45678).<br>
+                        <strong>Jornada:</strong> "Diurna", "Mixta" o "Noche" — sin distinción de mayúsculas.
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit" id="btn-import">
+                        <i class="fa-solid fa-file-import"></i> Importar Fichas
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ FICHAS RECIENTES ══════════ -->
+    <div class="section-label">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        Fichas registradas recientemente
+        <span class="badge"><?= count($fichas_recientes) ?> últimas</span>
+    </div>
+
+    <div class="table-wrap">
+        <?php if ($fichas_recientes): ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>N° Ficha</th>
+                    <th>Programa</th>
+                    <th>Jornada</th>
+                    <th>Fecha inicio</th>
+                    <th>Fecha fin</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($fichas_recientes as $f): ?>
+                <tr>
+                    <td>
+                        <span class="ficha-num">
+                            <i class="fa-solid fa-graduation-cap" style="font-size:.75rem;"></i>
+                            <?= htmlspecialchars($f['numero_ficha']) ?>
+                        </span>
+                    </td>
+                    <td><?= htmlspecialchars($f['programa']) ?></td>
+                    <td>
+                        <span style="display:inline-flex;align-items:center;gap:.35rem;color:var(--muted);font-size:.85rem;">
+                            <i class="fa-regular fa-clock"></i>
+                            <?= htmlspecialchars($f['jornada']) ?>
+                        </span>
+                    </td>
+                    <td>
+                        <span style="display:inline-flex;align-items:center;gap:.35rem;color:var(--muted);font-size:.85rem;">
+                            <i class="fa-regular fa-calendar"></i>
+                            <?= htmlspecialchars(date('d/m/Y', strtotime($f['fecha_inicio']))) ?>
+                        </span>
+                    </td>
+                    <td>
+                        <span style="display:inline-flex;align-items:center;gap:.35rem;color:var(--muted);font-size:.85rem;">
+                            <i class="fa-regular fa-calendar-check"></i>
+                            <?= htmlspecialchars(date('d/m/Y', strtotime($f['fecha_fin']))) ?>
+                        </span>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php else: ?>
+        <div class="empty-state">
+            <i class="fa-solid fa-inbox"></i>
+            <p>No hay fichas registradas aún.</p>
+        </div>
+        <?php endif; ?>
+    </div>
+
+</div><!-- /dashboard-container -->
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer class="footer">
+    <div class="footer-top-line"></div>
+    <div class="footer-container">
+        <div class="footer-brand">
+            <div class="footer-logo"><span>&#94;</span></div>
+            <div class="footer-brand-text">
+                <span class="footer-label">INSTITUCIONAL</span>
+                <h3 class="footer-title">Sistema de Gestión<br>de Ambientes</h3>
+            </div>
+        </div>
+        <div class="footer-description">
+            <p>Plataforma institucional para la administración y control de ambientes de aprendizaje.</p>
+        </div>
+        <div class="footer-nav">
+            <span class="footer-section-title">NAVEGACIÓN</span>
+            <ul>
+                <li><a href="index.php">Inicio</a></li>
+                <li><a href="consultar.php">Consultar Ambiente</a></li>
+                <li><a href="historial.php">Historial Autorizaciones</a></li>
+                <li><a href="registro.php">Crear Registros</a></li>
+                <li><a href="calendario.php">Calendario de Ambientes</a></li>
+            </ul>
+        </div>
+        <div class="footer-location">
+            <span class="footer-section-title">UBICACIÓN</span>
+            <ul>
+                <li><span class="footer-icon">&#9679;</span>Centro de Industria y Servicios del Meta</li>
+                <li><span class="footer-icon">&#9711;</span>Villavicencio, Meta — Colombia</li>
+                <li><span class="footer-icon">&#9993;</span>sena.edu.co</li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-bottom">
+        <p>© <?= date('Y') ?> <strong>SENA</strong> — Gestión de Ambientes. Todos los derechos reservados.</p>
+        <div class="footer-status">
+            <span class="footer-status-dot"></span>
+            Sistema operativo
+        </div>
+    </div>
+</footer>
 
 <script>
 function switchTab(name) {
@@ -444,7 +619,9 @@ function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     document.querySelectorAll('.tab-btn').forEach(b => {
-        if (b.textContent.trim().toLowerCase().startsWith(name === 'manual' ? 'manual' : 'importar')) {
+        const txt = b.textContent.trim().toLowerCase();
+        if ((name === 'manual' && txt.includes('manual')) ||
+            (name === 'importar' && txt.includes('importar'))) {
             b.classList.add('active');
         }
     });
@@ -463,7 +640,6 @@ fileInput.addEventListener('change', () => {
     }
 });
 
-// Drag and drop
 uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
 uploadZone.addEventListener('drop', e => {
@@ -473,7 +649,6 @@ uploadZone.addEventListener('drop', e => {
     fileInput.dispatchEvent(new Event('change'));
 });
 
-// Submit feedback
 document.getElementById('form-import').addEventListener('submit', function() {
     if (!fileInput.files.length) { alert('Selecciona un archivo primero.'); return false; }
     document.getElementById('progress-wrap').classList.add('visible');
