@@ -580,27 +580,22 @@ body {
 
 /* ---- Volver ---- */
 .btn-volver {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 11px 22px;
-    background: white;
-    color: #2c5282;
-    text-decoration: none;
-    border-radius: var(--radius-sm);
+    gap: .45rem;
+    padding: 8px 16px;
+    border-radius: 25px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.9);
+    font-size: .82rem;
     font-weight: 600;
-    font-size: 14px;
-    border: 2px solid var(--navy-mid);
-    transition: all 0.25s ease;
+    text-decoration: none;
     white-space: nowrap;
 }
-
-.btn-volver:hover {
-    background: #172f63;
-    color: white;
-    border-color: #172f63;
-    transform: translateX(-3px);
-    box-shadow: 0 4px 14px rgba(23,47,99,0.3);
+.btn-volver  {
+    background: rgba(255,255,255,0.28);
+    color: #fff;
 }
 
 /* ================= ALERTAS ================= */

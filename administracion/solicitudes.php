@@ -82,11 +82,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .hdr{background:var(--navy);height:89px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(255,255,255,.07),0 4px 20px rgba(0,0,0,.22)}
 .hdr-left{display:flex;align-items:center;gap:14px}
 .hdr-logo{height:50px}
-.hdr-title h1{font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.hdr-title h1{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.01em}
 .hdr-title p{font-size:11.5px;color:rgba(255,255,255,.4)}
 .hdr-right{display:flex;align-items:center;gap:10px}
 .btn-hdr{display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border-radius:9px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-decoration:none;border:none;transition:all .15s}
-.btn-hdr-ghost{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.7)}
+.btn-hdr-ghost{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color: #ffff}
 .btn-hdr-ghost:hover{background:rgba(255,255,255,.13);color:#fff}
 .btn-hdr-icon{width:36px;height:36px;padding:0;justify-content:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.55);border-radius:9px}
 .btn-hdr-icon:hover{background:rgba(179,48,48,.22);border-color:rgba(179,48,48,.4);color:#f87171}

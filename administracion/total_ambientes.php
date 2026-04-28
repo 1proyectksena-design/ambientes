@@ -35,6 +35,7 @@ $mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM
         <title>Total de Ambientes</title>
         <link rel="stylesheet" href="../css/consultar.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        
     </head>
     <body>
 
@@ -47,6 +48,9 @@ $mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM
                 </div>
             </div>
             <div class="header-user">
+                <a href="index.php" class="btn-volver">
+                  <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+                </a>
                 <i class="fa-solid fa-user user-icon"></i> Administración
             </div>
         </div>
@@ -145,9 +149,6 @@ $mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM
                 <?php endif; ?>
             </div>
 
-            <a href="index.php" class="btn-volver">
-                <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-            </a>
 
         </div>
 

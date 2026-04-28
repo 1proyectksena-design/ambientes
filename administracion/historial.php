@@ -126,7 +126,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     <title>Historial de Autorizaciones</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<<<<<<< HEAD
     <style>
         .btn-volver-header {
             display: flex;
@@ -148,8 +147,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
             color: #fff;
         }
     </style>
-=======
->>>>>>> b3c7a92a0bb973ed5fa7f4f71a2a8e7de98fab7e
 </head>
 <body>
 

@@ -173,33 +173,7 @@ body {
   white-space: nowrap;
 }
 
-.btn-volver {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  background: rgba(190, 211, 196, 0.12);
-  border: 1px solid rgba(128, 153, 135, 0.28);
-  border-radius: var(--r-full);
-  font-family: var(--font-ui);
-  font-size: .76rem;
-  font-weight: 600;
-  color: #ffffff;
-  text-decoration: none;
-  letter-spacing: .01em;
-  white-space: nowrap;
-  transition: background var(--dur) var(--ease),
-              border-color var(--dur) var(--ease),
-              color var(--dur) var(--ease),
-              transform var(--dur) var(--ease);
-}
 
-.btn-volver:hover {
-  background: rgba(52,168,83,.2);
-  border-color: rgba(52,168,83,.45);
-  color: #a5d6a7;
-  transform: translateX(-2px);
-}
 
 /* ── Wrapper ────────────────────────────────────────────────────────── */
 .cal-wrapper {
