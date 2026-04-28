@@ -126,27 +126,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     <title>Historial de Autorizaciones</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        .btn-volver-header {
-            display: flex;
-            align-items: center;
-            gap: .45rem;
-            padding: 8px 16px;
-            border-radius: 25px;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.35);
-            color: rgba(255,255,255,0.9);
-            font-size: .82rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: background .2s, color .2s;
-            white-space: nowrap;
-        }
-        .btn-volver-header:hover {
-            background: rgba(255,255,255,0.28);
-            color: #fff;
-        }
-    </style>
+
 </head>
 <body>
 
