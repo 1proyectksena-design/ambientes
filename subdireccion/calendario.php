@@ -34,12 +34,15 @@ if ($_SESSION['rol'] != 'subdireccion') {
     </div>
     <div class="header-right">
         <div class="header-user">
-            <i class="fa-solid fa-user"></i> Subdirección
-        </div>
-        <a href="index.php" class="btn-volver">
+             <a href="index.php" class="btn-volver">
             <i class="fa-solid fa-arrow-left"></i>
             <span>Volver al Panel</span>
         </a>
+            <i class="fa-solid fa-user">
+                
+            </i> Subdirección
+        </div>
+       
     </div>
 </div>
 
