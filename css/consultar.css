@@ -584,13 +584,11 @@ body {
     align-items: center;
     gap: 8px;
     padding: 11px 22px;
-    background: white;
-    color: #2c5282;
+    color: #ffffff;
     text-decoration: none;
     border-radius: var(--radius-sm);
     font-weight: 600;
     font-size: 14px;
-    border: 2px solid var(--navy-mid);
     transition: all 0.25s ease;
     white-space: nowrap;
 }

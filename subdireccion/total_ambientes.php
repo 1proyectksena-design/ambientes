@@ -47,6 +47,10 @@ $mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM
         </div>
     </div>
     <div class="header-user">
+         <a href="index.php" class="btn-volver">
+        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+    </a>
+
         <i class="fa-solid fa-user user-icon"></i> Subdirección
     </div>
 </div>
@@ -145,10 +149,7 @@ $mantenimiento  = mysqli_fetch_row(mysqli_query($conexion, "SELECT COUNT(*) FROM
         <?php endif; ?>
     </div>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
-
+   
 </div>
 
 <style>

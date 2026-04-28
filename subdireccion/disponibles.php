@@ -50,6 +50,9 @@ $total = mysqli_num_rows($resultado);
         </div>
     </div>
     <div class="header-user">
+        <a href="index.php" class="btn-volver">
+        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+    </a>
         <i class="fa-solid fa-user user-icon"></i> Subdirección
     </div>
 </div>
@@ -112,9 +115,7 @@ $total = mysqli_num_rows($resultado);
         <?php endif; ?>
     </div>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
+    
 
 </div>
 
