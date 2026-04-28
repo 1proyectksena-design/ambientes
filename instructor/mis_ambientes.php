@@ -80,6 +80,9 @@ if($identificacion_buscada){
         </div>
     </div>
     <div class="header-user">
+        <a href="index.php" class="btn-volver">
+         <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
         <i class="fa-solid fa-chalkboard-user user-icon"></i> Instructor
     </div>
 </div>
@@ -219,9 +222,7 @@ if($identificacion_buscada){
         </div>
     <?php endif; ?>
 
-    <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
+  
 
 </div>
 

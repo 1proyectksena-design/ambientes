@@ -584,9 +584,6 @@ body {
     align-items: center;
     gap: .45rem;
     padding: 8px 16px;
-    border-radius: 25px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.35);
     color: rgba(255,255,255,0.9);
     font-size: .82rem;
     font-weight: 600;
@@ -594,7 +591,6 @@ body {
     white-space: nowrap;
 }
 .btn-volver  {
-    background: rgba(255,255,255,0.28);
     color: #fff;
 }
 

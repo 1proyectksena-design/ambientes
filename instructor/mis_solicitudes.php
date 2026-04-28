@@ -152,13 +152,13 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 
 /* ══ TOPBAR — más alto ══ */
 .topbar {
-    background:var(--navy); height:92px; padding:0 2rem;
+    background:var(--navy); height:100px; padding:0 2rem;
     display:flex; align-items:center; justify-content:space-between;
     position:sticky; top:0; z-index:200;
     box-shadow:0 3px 20px rgba(0,0,0,0.26);
 }
 .topbar-left { display:flex; align-items:center; gap:16px; }
-.logo-sena   { height:40px; }
+.logo-sena   { height:50px; }
 .topbar-divider {
     width: 1.5px; height: 38px;
     background: rgba(255,255,255,0.15);
@@ -601,30 +601,30 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
                         <?php if (!$esRec): ?>
                         <div class="info-cell">
                             <div class="info-lbl">Fecha</div>
-                            <div class="info-val"><i class="ic fa-regular fa-calendar"></i><?= $primerFecha ?></div>
+                            <div class="info-val"><?= $primerFecha ?></div>
                         </div>
                         <?php else: ?>
                         <div class="info-cell">
                             <div class="info-lbl">Desde</div>
-                            <div class="info-val"><i class="ic fa-regular fa-calendar"></i><?= $primerFecha ?></div>
+                            <div class="info-val"><?= $primerFecha ?></div>
                         </div>
                         <div class="info-cell">
                             <div class="info-lbl">Hasta</div>
-                            <div class="info-val"><i class="ic fa-regular fa-calendar-check"></i><?= $ultimaFecha ?></div>
+                            <div class="info-val"><?= $ultimaFecha ?></div>
                         </div>
                         <?php endif; ?>
                         <div class="info-cell">
                             <div class="info-lbl">Hora inicio</div>
-                            <div class="info-val"><i class="ic fa-regular fa-clock"></i><?= $hIni ?></div>
+                            <div class="info-val"><?= $hIni ?></div>
                         </div>
                         <div class="info-cell">
                             <div class="info-lbl">Hora fin</div>
-                            <div class="info-val"><i class="ic fa-regular fa-clock"></i><?= $hFin ?></div>
+                            <div class="info-val"><?= $hFin ?></div>
                         </div>
                         <?php if ($esRec): ?>
                         <div class="info-cell">
                             <div class="info-lbl">Sesiones</div>
-                            <div class="info-val"><i class="ic fa-solid fa-layer-group"></i><?= count($g['ids']) ?></div>
+                            <div class="info-val"><?= count($g['ids']) ?></div>
                         </div>
                         <?php endif; ?>
                     </div>
