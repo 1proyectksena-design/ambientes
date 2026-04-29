@@ -200,7 +200,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="hdr-right">
         <a href="index.php" class="btn-hdr btn-hdr-ghost"><i class="fa-solid fa-arrow-left"></i> Volver</a>
-        <a href="../logout.php" class="btn-hdr btn-hdr-icon"><i class="fa-solid fa-right-from-bracket"></i></a>
     </div>
 </div>
 

@@ -366,9 +366,7 @@ if ($result_fichas) {
         <a href="index.php" class="btn-volver-header">
             <i class="fa-solid fa-arrow-left"></i> Volver
         </a>
-        <a href="../logout.php" class="btn-logout-header" title="Cerrar sesión">
-            <i class="fa-solid fa-right-from-bracket"></i>
-        </a>
+       
     </div>
 </div>
 
