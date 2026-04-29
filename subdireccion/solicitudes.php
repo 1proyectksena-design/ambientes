@@ -77,8 +77,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .hdr-title h1{font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em}
 .hdr-title p{font-size:11.5px;color:rgba(255,255,255,.4)}
 .hdr-right{display:flex;align-items:center;gap:10px}
-.btn-hdr{display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border-radius:9px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-decoration:none;border:none;transition:all .15s}
-.btn-hdr-ghost{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.7)}
+.btn-hdr{display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border-radius:9px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;text-decoration:none;border:none;transition:all .15s}
+.btn-hdr-ghost{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:rgb(255, 255, 255)}
 .btn-hdr-ghost:hover{background:rgba(255,255,255,.13);color:#fff}
 .btn-hdr-icon{width:36px;height:36px;padding:0;justify-content:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.55);border-radius:9px}
 .btn-hdr-icon:hover{background:rgba(179,48,48,.22);border-color:rgba(179,48,48,.4);color:#f87171}
@@ -186,7 +186,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="hdr-right">
         <a href="index.php" class="btn-hdr btn-hdr-ghost"><i class="fa-solid fa-arrow-left"></i> Volver</a>
-        <a href="../logout.php" class="btn-hdr btn-hdr-icon"><i class="fa-solid fa-right-from-bracket"></i></a>
     </div>
 </div>
 
