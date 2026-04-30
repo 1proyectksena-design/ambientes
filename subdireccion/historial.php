@@ -10,9 +10,10 @@ if ($_SESSION['rol'] != 'subdireccion') {
 include("../includes/conexion.php");
 
 $meses_espanol = [
-    '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
-    '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto',
-    '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
+    '01' => 'Enero',    '02' => 'Febrero',  '03' => 'Marzo',
+    '04' => 'Abril',    '05' => 'Mayo',     '06' => 'Junio',
+    '07' => 'Julio',    '08' => 'Agosto',   '09' => 'Septiembre',
+    '10' => 'Octubre',  '11' => 'Noviembre','12' => 'Diciembre'
 ];
 
 $abrevDias = [
@@ -30,10 +31,10 @@ if ($filtro_estado != 'todos') {
     $whereMain[] = "au.estado = '$estadoSeguro'";
 }
 $whereMain[] = "MONTH(au.fecha_inicio) = '$filtro_mes'";
-$whereMain[] = "YEAR(au.fecha_inicio) = '$filtro_anio'";
+$whereMain[] = "YEAR(au.fecha_inicio)  = '$filtro_anio'";
 $whereSQLMain = implode(' AND ', $whereMain);
 
-$sql = "SELECT 
+$sql = "SELECT
             MIN(au.fecha_inicio)  AS fecha_inicio,
             MAX(au.fecha_inicio)  AS fecha_fin,
             au.hora_inicio,
@@ -45,15 +46,20 @@ $sql = "SELECT
             au.rol_autorizado,
             au.observaciones,
             au.novedades,
+            f.numero_ficha,
+            f.programa,
             GROUP_CONCAT(
                 DISTINCT DAYOFWEEK(au.fecha_inicio)
                 ORDER BY DAYOFWEEK(au.fecha_inicio)
             ) AS dias_semana
         FROM autorizaciones_ambientes au
-        JOIN ambientes a ON au.id_ambiente = a.id
+        JOIN ambientes    a ON au.id_ambiente   = a.id
         JOIN instructores i ON au.id_instructor = i.id
+        LEFT JOIN fichas  f ON au.id_ficha      = f.id
         WHERE $whereSQLMain
-        GROUP BY au.id_instructor, au.id_ambiente, au.hora_inicio, au.hora_final, au.estado, au.rol_autorizado, au.observaciones, au.novedades
+        GROUP BY au.id_instructor, au.id_ambiente, au.hora_inicio, au.hora_final,
+                 au.estado, au.rol_autorizado, au.observaciones, au.novedades,
+                 f.numero_ficha, f.programa
         ORDER BY MIN(au.fecha_inicio) DESC";
 
 $resultado = mysqli_query($conexion, $sql);
@@ -62,54 +68,189 @@ if (!$resultado) die("Error en consulta: " . mysqli_error($conexion));
 $total        = mysqli_num_rows($resultado);
 $fecha_actual = date('Y-m-d');
 $hora_actual  = date('H:i:s');
+$nombre_mes   = $meses_espanol[$filtro_mes] ?? 'Mes';
 
-/* ══════════════════════════════════════
-   EXPORTAR A EXCEL
-   ══════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   EXPORTAR A EXCEL CON DISEÑO
+   ══════════════════════════════════════════════════════ */
 if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     $resExport = mysqli_query($conexion, $sql);
 
-    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
-    header('Content-Disposition: attachment; filename="historial_autorizaciones_' . $filtro_mes . '_' . $filtro_anio . '.xls"');
-    header('Cache-Control: max-age=0');
-    echo "\xEF\xBB\xBF"; /* BOM UTF-8 para tildes */
+    /* Conteos para estadísticas */
+    $cnt_aprobado  = mysqli_fetch_row(mysqli_query($conexion,
+        "SELECT COUNT(*) FROM autorizaciones_ambientes
+         WHERE MONTH(fecha_inicio)='$filtro_mes' AND YEAR(fecha_inicio)='$filtro_anio'
+           AND estado='Aprobado'"))[0];
+    $cnt_pendiente = mysqli_fetch_row(mysqli_query($conexion,
+        "SELECT COUNT(*) FROM autorizaciones_ambientes
+         WHERE MONTH(fecha_inicio)='$filtro_mes' AND YEAR(fecha_inicio)='$filtro_anio'
+           AND estado='Pendiente'"))[0];
+    $cnt_rechazado = mysqli_fetch_row(mysqli_query($conexion,
+        "SELECT COUNT(*) FROM autorizaciones_ambientes
+         WHERE MONTH(fecha_inicio)='$filtro_mes' AND YEAR(fecha_inicio)='$filtro_anio'
+           AND estado='Rechazado'"))[0];
 
-    echo '<table border="1">';
-    echo '<thead><tr>
-            <th>Ambiente</th>
-            <th>Instructor</th>
-            <th>Fecha Inicio</th>
-            <th>Fecha Fin</th>
-            <th>Hora Inicio</th>
-            <th>Hora Fin</th>
-            <th>Días</th>
-            <th>Estado</th>
-            <th>Autorizado Por</th>
-            <th>Novedades</th>
-          </tr></thead><tbody>';
+    $filename = "Historial_Autorizaciones_{$nombre_mes}_{$filtro_anio}.xls";
+    header("Content-Type: application/vnd.ms-excel; charset=UTF-8");
+    header("Content-Disposition: attachment; filename=\"$filename\"");
+    header("Pragma: no-cache");
+    header("Expires: 0");
+    echo "\xEF\xBB\xBF";
+?>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--[if gte mso 9]>
+<xml>
+  <x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+    <x:Name>Historial</x:Name>
+    <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+  </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook>
+</xml><![endif]-->
+<style>
+  body { font-family: Arial, sans-serif; font-size: 10pt; }
 
-    while ($row = mysqli_fetch_assoc($resExport)) {
-        $diasNums  = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
-                     ? explode(',', $row['dias_semana']) : [];
-        $diasTexto = implode(', ', array_map(fn($d) => $abrevDias[(int)$d] ?? '?', $diasNums));
+  .titulo    { font-family:Arial; font-size:16pt; font-weight:bold; color:#FFFFFF;
+               background-color:#355d91; text-align:center; vertical-align:middle;
+               border:1px solid #2a4a75; }
+  .subtitulo { font-family:Arial; font-size:9pt; color:#666666;
+               text-align:center; border:1px solid #dddddd; }
 
-        echo '<tr>';
-        echo '<td>' . htmlspecialchars($row['nombre_ambiente'])       . '</td>';
-        echo '<td>' . htmlspecialchars($row['nombre_instructor'])      . '</td>';
-        echo '<td>' . date('d/m/Y', strtotime($row['fecha_inicio']))   . '</td>';
-        echo '<td>' . date('d/m/Y', strtotime($row['fecha_fin']))      . '</td>';
-        echo '<td>' . date('H:i',   strtotime($row['hora_inicio']))    . '</td>';
-        echo '<td>' . date('H:i',   strtotime($row['hora_final']))     . '</td>';
-        echo '<td>' . htmlspecialchars($diasTexto)                    . '</td>';
-        echo '<td>' . htmlspecialchars($row['estado'])                . '</td>';
-        echo '<td>' . htmlspecialchars($row['rol_autorizado'])        . '</td>';
-        echo '<td>' . htmlspecialchars($row['novedades'] ?: '—')     . '</td>';
-        echo '</tr>';
-    }
+  .stat-lbl-total { font-family:Arial;font-weight:bold;background-color:#dce6f1;color:#1f3864;border:1px solid #9dc3e6;padding:5px 10px; }
+  .stat-val-total { font-family:Arial;background-color:#dce6f1;color:#1f3864;border:1px solid #9dc3e6;text-align:center; }
+  .stat-lbl-pend  { font-family:Arial;font-weight:bold;background-color:#fff2cc;color:#7d6608;border:1px solid #ffc000;padding:5px 10px; }
+  .stat-val-pend  { font-family:Arial;background-color:#fff2cc;color:#7d6608;border:1px solid #ffc000;text-align:center; }
+  .stat-lbl-apro  { font-family:Arial;font-weight:bold;background-color:#e2efda;color:#375623;border:1px solid #70ad47;padding:5px 10px; }
+  .stat-val-apro  { font-family:Arial;background-color:#e2efda;color:#375623;border:1px solid #70ad47;text-align:center; }
+  .stat-lbl-rech  { font-family:Arial;font-weight:bold;background-color:#fce4d6;color:#843c0c;border:1px solid #ff5252;padding:5px 10px; }
+  .stat-val-rech  { font-family:Arial;background-color:#fce4d6;color:#843c0c;border:1px solid #ff5252;text-align:center; }
 
-    echo '</tbody></table>';
+  .th { font-family:Arial;font-size:10pt;font-weight:bold;color:#FFFFFF;
+        background-color:#355d91;text-align:center;vertical-align:middle;
+        border:1px solid #2a4a75;white-space:nowrap; }
+
+  .td-par   { font-family:Arial;font-size:9pt;background-color:#dce6f1;border:1px solid #9dc3e6;vertical-align:middle; }
+  .td-impar { font-family:Arial;font-size:9pt;background-color:#FFFFFF;border:1px solid #bdd7ee;vertical-align:middle; }
+  .td-ctr   { text-align:center; }
+  .td-bold  { font-weight:bold; }
+  .td-dias  { text-align:center;color:#1f3864;font-weight:bold; }
+  .td-num   { text-align:center;color:#888888; }
+
+  .estado-aprobado  { font-family:Arial;font-size:9pt;font-weight:bold;background-color:#e2efda;color:#375623;border:1px solid #70ad47;text-align:center;vertical-align:middle; }
+  .estado-rechazado { font-family:Arial;font-size:9pt;font-weight:bold;background-color:#fce4d6;color:#843c0c;border:1px solid #ff5252;text-align:center;vertical-align:middle; }
+  .estado-pendiente { font-family:Arial;font-size:9pt;font-weight:bold;background-color:#fff2cc;color:#7d6608;border:1px solid #ffc000;text-align:center;vertical-align:middle; }
+
+  .footer { font-family:Arial;font-size:9pt;font-weight:bold;
+            background-color:#355d91;color:#FFFFFF;
+            text-align:right;border:1px solid #2a4a75; }
+</style>
+</head>
+<body>
+
+<!-- TÍTULO -->
+<table border="0" cellpadding="6" cellspacing="0" width="100%">
+  <tr height="36">
+    <td colspan="13" class="titulo">
+      Historial de Autorizaciones &mdash; <?= $nombre_mes ?> <?= $filtro_anio ?>
+    </td>
+  </tr>
+  <tr height="20">
+    <td colspan="13" class="subtitulo">
+      Generado el <?= date('d/m/Y H:i') ?> &nbsp;&bull;&nbsp; Sistema de Gestión SENA
+      <?php if ($filtro_estado != 'todos'): ?>
+        &nbsp;&bull;&nbsp; Filtro: <?= htmlspecialchars($filtro_estado) ?>
+      <?php endif; ?>
+    </td>
+  </tr>
+  <tr><td colspan="13" height="8">&nbsp;</td></tr>
+</table>
+
+<!-- ESTADÍSTICAS -->
+<table border="0" cellpadding="5" cellspacing="2">
+  <tr height="28">
+    <td class="stat-lbl-total">&nbsp;Total&nbsp;</td>
+    <td class="stat-val-total" width="40"><b><?= $total ?></b></td>
+    <td width="10"></td>
+    <td class="stat-lbl-pend">&nbsp;Pendientes&nbsp;</td>
+    <td class="stat-val-pend" width="40"><b><?= $cnt_pendiente ?></b></td>
+    <td width="10"></td>
+    <td class="stat-lbl-apro">&nbsp;Aprobados&nbsp;</td>
+    <td class="stat-val-apro" width="40"><b><?= $cnt_aprobado ?></b></td>
+    <td width="10"></td>
+    <td class="stat-lbl-rech">&nbsp;Rechazados&nbsp;</td>
+    <td class="stat-val-rech" width="40"><b><?= $cnt_rechazado ?></b></td>
+  </tr>
+</table>
+<table><tr><td height="10">&nbsp;</td></tr></table>
+
+<!-- TABLA PRINCIPAL -->
+<table border="0" cellpadding="7" cellspacing="0" width="100%">
+  <thead>
+    <tr height="30">
+      <th class="th" width="35">#</th>
+      <th class="th" width="140">Ambiente</th>
+      <th class="th" width="140">Instructor</th>
+      <th class="th" width="85">Fecha Inicio</th>
+      <th class="th" width="85">Fecha Fin</th>
+      <th class="th" width="75">Hora Inicio</th>
+      <th class="th" width="75">Hora Fin</th>
+      <th class="th" width="110">Días</th>
+      <th class="th" width="80">Ficha</th>
+      <th class="th" width="160">Programa</th>
+      <th class="th" width="90">Estado</th>
+      <th class="th" width="120">Autorizado Por</th>
+      <th class="th" width="160">Novedades</th>
+    </tr>
+  </thead>
+  <tbody>
+  <?php
+  $fila = 0;
+  while ($row = mysqli_fetch_assoc($resExport)):
+      $fila++;
+      $clase = ($fila % 2 === 0) ? 'td-par' : 'td-impar';
+
+      switch ($row['estado']) {
+          case 'Aprobado':  $claseEstado = 'estado-aprobado';  break;
+          case 'Rechazado': $claseEstado = 'estado-rechazado'; break;
+          default:          $claseEstado = 'estado-pendiente'; break;
+      }
+
+      $diasNums  = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
+                   ? array_map('intval', explode(',', $row['dias_semana'])) : [];
+      $diasTexto = implode(', ', array_map(fn($d) => $abrevDias[$d] ?? '?', $diasNums));
+  ?>
+    <tr height="22">
+      <td class="<?= $clase ?> td-num"><?= $fila ?></td>
+      <td class="<?= $clase ?> td-bold"><?= htmlspecialchars($row['nombre_ambiente']) ?></td>
+      <td class="<?= $clase ?>"><?= htmlspecialchars($row['nombre_instructor']) ?></td>
+      <td class="<?= $clase ?> td-ctr"><?= date('d/m/Y', strtotime($row['fecha_inicio'])) ?></td>
+      <td class="<?= $clase ?> td-ctr"><?= date('d/m/Y', strtotime($row['fecha_fin'])) ?></td>
+      <td class="<?= $clase ?> td-ctr"><?= date('H:i', strtotime($row['hora_inicio'])) ?></td>
+      <td class="<?= $clase ?> td-ctr"><?= date('H:i', strtotime($row['hora_final'])) ?></td>
+      <td class="<?= $clase ?> td-dias"><?= htmlspecialchars($diasTexto ?: '—') ?></td>
+      <td class="<?= $clase ?> td-ctr"><?= htmlspecialchars($row['numero_ficha'] ?: '—') ?></td>
+      <td class="<?= $clase ?>"><?= htmlspecialchars($row['programa'] ?: '—') ?></td>
+      <td class="<?= $claseEstado ?>"><?= htmlspecialchars($row['estado']) ?></td>
+      <td class="<?= $clase ?>"><?= htmlspecialchars($row['rol_autorizado']) ?></td>
+      <td class="<?= $clase ?>"><?= htmlspecialchars($row['novedades'] ?: '—') ?></td>
+    </tr>
+  <?php endwhile; ?>
+  </tbody>
+  <tfoot>
+    <tr height="24">
+      <td colspan="13" class="footer">&nbsp;&nbsp;Total de registros: <?= $total ?> &nbsp;&nbsp;</td>
+    </tr>
+  </tfoot>
+</table>
+
+</body>
+</html>
+<?php
     exit;
 }
+/* ══ FIN EXPORTAR ══ */
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -119,7 +260,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     <title>Historial de Autorizaciones</title>
     <link rel="stylesheet" href="../css/historial.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
 </head>
 <body>
 
@@ -133,9 +273,9 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     </div>
     <div class="header-user">
         <a href="index.php" class="btn-volver">
-        <i class="fa-solid fa-arrow-left"></i> Volver al Panel
-    </a>
-        <i class="fa-solid fa-user user-icon"></i> Subdirección
+            <i class="fa-solid fa-arrow-left"></i> Volver al Panel
+        </a>
+        <i class="fa-solid fa-user user-icon"></i> Subdirección 
     </div>
 </div>
 
@@ -144,9 +284,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
     <!-- ══ FILTROS ══ -->
     <div class="search-section">
         <h3><i class="fa-solid fa-filter"></i> Filtrar Autorizaciones</h3>
-
         <form method="GET" class="search-form">
-            <!-- Mes -->
             <select name="mes">
                 <?php for ($m = 1; $m <= 12; $m++):
                     $mes_num = str_pad($m, 2, '0', STR_PAD_LEFT); ?>
@@ -155,23 +293,19 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                 </option>
                 <?php endfor; ?>
             </select>
-            <!-- Año -->
             <select name="anio">
                 <?php for ($y = date('Y'); $y >= date('Y') - 3; $y--): ?>
                 <option value="<?= $y ?>" <?= $filtro_anio == $y ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endfor; ?>
             </select>
-            <!-- Preservar estado al filtrar con el botón -->
             <input type="hidden" name="estado" value="<?= htmlspecialchars($filtro_estado) ?>">
             <button type="submit"><i class="fa-solid fa-search"></i> Filtrar</button>
-            <!-- Excel con los mismos filtros activos -->
             <a href="?mes=<?= $filtro_mes ?>&anio=<?= $filtro_anio ?>&estado=<?= urlencode($filtro_estado) ?>&exportar=excel"
                class="btn-exportar-excel">
                 <i class="fa-solid fa-file-excel"></i> Exportar Excel
             </a>
         </form>
 
-        <!-- Chips de filtro por estado -->
         <div class="filtro-estado-row">
             <span class="filtro-estado-label"><i class="fa-solid fa-tags"></i> Estado:</span>
             <?php
@@ -215,6 +349,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                         <th>Fecha Fin</th>
                         <th>Horario</th>
                         <th>Días</th>
+                        <th>Ficha</th>
                         <th>Estado Actual</th>
                         <th>Autorizado Por</th>
                         <th>Novedades</th>
@@ -223,7 +358,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                 <tbody>
                     <?php while ($row = mysqli_fetch_assoc($resultado)):
 
-                        /* --- Estado visual --- */
                         $estadoActual = 'desocupado';
                         $textoEstado  = 'Desocupado';
                         $iconoEstado  = '<i class="fa-solid fa-circle"></i>';
@@ -250,7 +384,6 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                             $iconoEstado  = '<i class="fa-solid fa-ban"></i>';
                         }
 
-                        /* --- Días de la semana --- */
                         $diasNums = ($row['dias_semana'] !== null && $row['dias_semana'] !== '')
                                     ? explode(',', $row['dias_semana']) : [];
                         $diasHtml = '';
@@ -264,6 +397,21 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                             $diasHtml .= '</div>';
                         } else {
                             $diasHtml = '<span style="color:#999;">—</span>';
+                        }
+
+                        /* Ficha HTML */
+                        if ($row['numero_ficha']) {
+                            $fichaHtml = '<span style="font-weight:600;color:#0d6efd;">'
+                                       . '<i class="fa-solid fa-graduation-cap" style="margin-right:4px;"></i>'
+                                       . htmlspecialchars($row['numero_ficha'])
+                                       . '</span>';
+                            if ($row['programa']) {
+                                $fichaHtml .= '<br><small style="color:#555;">'
+                                            . htmlspecialchars($row['programa'])
+                                            . '</small>';
+                            }
+                        } else {
+                            $fichaHtml = '<span style="color:#999;">—</span>';
                         }
 
                         $instructor_js = htmlspecialchars($row['nombre_instructor'], ENT_QUOTES);
@@ -297,6 +445,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
                             </span>
                         </td>
                         <td><?= $diasHtml ?></td>
+                        <td><?= $fichaHtml ?></td>
                         <td>
                             <span class="estado-badge estado-<?= $estadoActual ?>">
                                 <?= $iconoEstado ?> <?= $textoEstado ?>
@@ -330,12 +479,10 @@ if (isset($_GET['exportar']) && $_GET['exportar'] == 'excel') {
         <?php endif; ?>
     </div>
 
-    
 </div>
 
-<!-- OVERLAY Y MODAL GLOBAL -->
+<!-- OVERLAY Y MODAL -->
 <div class="novedades-overlay" id="modalOverlay" onclick="cerrarModal()"></div>
-
 <div class="novedades-modal" id="modalNovedades">
     <div class="modal-header">
         <div class="modal-instructor-row">

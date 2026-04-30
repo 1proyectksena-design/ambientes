@@ -34,13 +34,14 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'administracion') {
         </div>
     </div>
     <div class="header-right">
-        <div class="header-user">
-            <i class="fa-solid fa-user"></i> Administración
-        </div>
         <a href="index.php" class="btn-volver">
             <i class="fa-solid fa-arrow-left"></i>
             <span>Volver al Panel</span>
         </a>
+        <div class="header-user">
+            <i class="fa-solid fa-user"></i> Administración
+        </div>
+        
     </div>
 </div>
 

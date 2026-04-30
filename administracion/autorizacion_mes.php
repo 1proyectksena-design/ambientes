@@ -32,6 +32,8 @@ $sql = "SELECT
             au.hora_inicio,
             au.hora_final,
             au.rol_autorizado,
+            f.numero_ficha,
+            f.programa,
             GROUP_CONCAT(
                 DISTINCT DAYOFWEEK(au.fecha_inicio)
                 ORDER BY DAYOFWEEK(au.fecha_inicio)
@@ -39,9 +41,10 @@ $sql = "SELECT
         FROM autorizaciones_ambientes au
         JOIN ambientes a    ON au.id_ambiente   = a.id
         JOIN instructores i ON au.id_instructor = i.id
+        LEFT JOIN fichas f  ON au.id_ficha      = f.id
         WHERE MONTH(au.fecha_inicio) = '$mes'
           AND YEAR(au.fecha_inicio)  = '$anio'
-        GROUP BY a.nombre_ambiente, i.nombre, au.hora_inicio, au.hora_final, au.rol_autorizado
+        GROUP BY a.nombre_ambiente, i.nombre, au.hora_inicio, au.hora_final, au.rol_autorizado, f.numero_ficha, f.programa
         ORDER BY MIN(au.fecha_inicio) DESC, au.hora_inicio DESC";
 
 $resultado = mysqli_query($conexion, $sql);
@@ -129,6 +132,7 @@ $dia_actual_mysql = (int)date('w') + 1;
                         <th>Fecha Fin</th>
                         <th>Horario</th>
                         <th>Días</th>
+                        <th>Ficha</th>
                         <th>Autorizado Por</th>
                     </tr>
                 </thead>
@@ -154,6 +158,21 @@ $dia_actual_mysql = (int)date('w') + 1;
                             $diasHtml .= '</div>';
                         } else {
                             $diasHtml = '<span style="color:#999;">—</span>';
+                        }
+
+                        /* ── Ficha ── */
+                        if ($row['numero_ficha']) {
+                            $fichaHtml = '<span style="font-weight:600;color:#0d6efd;">'
+                                       . '<i class="fa-solid fa-graduation-cap" style="margin-right:4px;"></i>'
+                                       . htmlspecialchars($row['numero_ficha'])
+                                       . '</span>';
+                            if ($row['programa']) {
+                                $fichaHtml .= '<br><small style="color:#555;">'
+                                            . htmlspecialchars($row['programa'])
+                                            . '</small>';
+                            }
+                        } else {
+                            $fichaHtml = '<span style="color:#999;">—</span>';
                         }
                     ?>
                     <tr>
@@ -183,6 +202,7 @@ $dia_actual_mysql = (int)date('w') + 1;
                             </span>
                         </td>
                         <td><?= $diasHtml ?></td>
+                        <td><?= $fichaHtml ?></td>
                         <td><?= htmlspecialchars($row['rol_autorizado']) ?></td>
                     </tr>
                     <?php endwhile; ?>
