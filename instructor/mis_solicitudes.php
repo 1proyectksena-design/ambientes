@@ -52,9 +52,12 @@ if ($instructor) {
             aa.observaciones,
             aa.novedades,
             aa.fecha_registro,
-            a.nombre_ambiente
+            a.nombre_ambiente,
+            f.numero_ficha,
+            f.programa AS programa_ficha
         FROM autorizaciones_ambientes aa
         JOIN ambientes a ON aa.id_ambiente = a.id
+        LEFT JOIN fichas f ON aa.id_ficha = f.id
         WHERE aa.id_instructor = ?
         ORDER BY aa.fecha_registro DESC, aa.fecha_inicio ASC
     ");
@@ -80,6 +83,8 @@ if ($instructor) {
                 'observaciones'  => $row['observaciones'],
                 'novedades'      => $row['novedades'],
                 'fecha_registro' => $row['fecha_registro'],
+                'numero_ficha'   => $row['numero_ficha'],
+                'programa_ficha' => $row['programa_ficha'],
                 'fechas'         => [],
                 'ids'            => [],
             ];
@@ -139,6 +144,9 @@ function getDiasLabel(array $fechas): array {
     --red:       #b03030;
     --red-lt:    #fdf0f0;
     --red-mid:   #f5b5b5;
+    --blue:      #1155aa;
+    --blue-lt:   #e8f4ff;
+    --blue-mid:  #b8d9ff;
     --text:      #1b2a4a;
     --muted:     #6b7c9e;
     --r:         14px;
@@ -307,6 +315,12 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 .info-lbl  { font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600; margin-bottom:3px; }
 .info-val  { font-size:13px; font-weight:700; color:var(--text); font-family:'DM Mono',monospace; }
 .info-val .ic { color:var(--green); font-size:10px; margin-right:4px; font-family:'DM Sans',sans-serif; }
+
+/* ══ CELDA FICHA ══ */
+.info-cell.ficha-cell { background:var(--blue-lt); border-color:var(--blue-mid); }
+.info-cell.ficha-cell .info-lbl { color:var(--blue); }
+.info-cell.ficha-cell .info-val { color:var(--blue); font-weight:700; }
+.ficha-prog { display:block; font-family:'DM Sans',sans-serif; font-size:11.5px; color:#4477bb; margin-top:3px; font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 
 /* ══ DÍAS CHIPS ══ */
 .dias-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:.9rem; }
@@ -561,6 +575,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
             $hFin       = substr($g['hora_final'],  0, 5);
             $fechaReg   = date('d/m/Y H:i', strtotime($g['fecha_registro']));
             $diasLabels = getDiasLabel($g['fechas']);
+            $tieneFicha = !empty($g['numero_ficha']);
 
             $stripeClass = match($estado) {
                 'Aprobado'  => 'apro',
@@ -625,6 +640,19 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
                         <div class="info-cell">
                             <div class="info-lbl">Sesiones</div>
                             <div class="info-val"><?= count($g['ids']) ?></div>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($tieneFicha): ?>
+                        <div class="info-cell ficha-cell">
+                            <div class="info-lbl"><i class="fa-solid fa-graduation-cap"></i> Ficha</div>
+                            <div class="info-val">
+                                <?= htmlspecialchars($g['numero_ficha']) ?>
+                                <?php if (!empty($g['programa_ficha'])): ?>
+                                <span class="ficha-prog" title="<?= htmlspecialchars($g['programa_ficha']) ?>">
+                                    <?= htmlspecialchars($g['programa_ficha']) ?>
+                                </span>
+                                <?php endif; ?>
+                            </div>
                         </div>
                         <?php endif; ?>
                     </div>

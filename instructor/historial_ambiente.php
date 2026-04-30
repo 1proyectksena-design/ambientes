@@ -37,6 +37,8 @@ if ($nombre_ambiente) {
                         au.rol_autorizado,
                         au.observaciones,
                         au.novedades,
+                        f.numero_ficha,
+                        f.programa,
                         GROUP_CONCAT(
                             DISTINCT DAYOFWEEK(au.fecha_inicio)
                             ORDER BY DAYOFWEEK(au.fecha_inicio)
@@ -44,9 +46,11 @@ if ($nombre_ambiente) {
                     FROM autorizaciones_ambientes au
                     JOIN instructores i ON au.id_instructor = i.id
                     JOIN ambientes a ON au.id_ambiente = a.id
+                    LEFT JOIN fichas f ON au.id_ficha = f.id
                     WHERE au.id_ambiente = '" . $ambiente_info['id'] . "'
                     GROUP BY au.id_instructor, au.hora_inicio, au.hora_final,
-                             au.estado, au.rol_autorizado, au.observaciones, au.novedades
+                             au.estado, au.rol_autorizado, au.observaciones, au.novedades,
+                             f.numero_ficha, f.programa
                     ORDER BY MIN(au.fecha_inicio) DESC
                     LIMIT 50";
         $historial = mysqli_query($conexion, $sqlHist);
@@ -144,6 +148,7 @@ $abrevDias = [
                             <th>Fecha Fin</th>
                             <th>Horario</th>
                             <th>Días</th>
+                            <th>Ficha</th>
                             <th>Estado</th>
                             <th>Autorizado Por</th>
                             <th>Observaciones</th>
@@ -216,6 +221,21 @@ $abrevDias = [
                                 $diasHtml = '<span style="color:#999;">—</span>';
                             }
 
+                            /* Ficha HTML */
+                            if ($row['numero_ficha']) {
+                                $fichaHtml = '<span style="font-weight:600;color:#0d6efd;">'
+                                           . '<i class="fa-solid fa-graduation-cap" style="margin-right:4px;"></i>'
+                                           . htmlspecialchars($row['numero_ficha'])
+                                           . '</span>';
+                                if ($row['programa']) {
+                                    $fichaHtml .= '<br><small style="color:#555;">'
+                                                . htmlspecialchars($row['programa'])
+                                                . '</small>';
+                                }
+                            } else {
+                                $fichaHtml = '<span style="color:#999;">—</span>';
+                            }
+
                             $instructor_js = htmlspecialchars($row['nombre_instructor'], ENT_QUOTES);
                             $novedad_js    = htmlspecialchars($row['novedades'],         ENT_QUOTES);
                             $inicial       = strtoupper(substr($row['nombre_instructor'], 0, 1));
@@ -246,6 +266,7 @@ $abrevDias = [
                                 </span>
                             </td>
                             <td><?= $diasHtml ?></td>
+                            <td><?= $fichaHtml ?></td>
                             <td>
                                 <span class="estado-badge estado-<?= $estadoActual ?>">
                                     <?= $iconoEstado ?> <?= $textoEstado ?>
