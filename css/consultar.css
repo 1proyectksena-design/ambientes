@@ -595,6 +595,7 @@ body {
 .btn-volver:hover {
     background: #172f63;
     color: white;
+    border-radius: 10px;
     border-color: #172f63;
     transform: translateX(-3px);
     box-shadow: 0 4px 14px rgba(23,47,99,0.3);
