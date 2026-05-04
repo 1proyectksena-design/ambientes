@@ -239,9 +239,13 @@ $solicitudes_pendientes = mysqli_fetch_row($resPendientes)[0];
 <script>
 setInterval(() => {
     fetch('api_pendientes.php')
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) throw new Error('Error en servidor');
+            return r.json();
+        })
         .then(data => {
             const badge = document.querySelector('.badge-bell');
+
             if (data.count > 0) {
                 if (!badge) {
                     const bell = document.querySelector('.notif-bell');
@@ -256,7 +260,7 @@ setInterval(() => {
                 badge.remove();
             }
         })
-        .catch(() => {});
+        .catch(err => console.error(err));
 }, 30000);
 </script>
 
