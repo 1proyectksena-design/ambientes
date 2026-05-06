@@ -80,7 +80,7 @@ if(isset($_GET['ajax'])){
 
         /* ===== HEADER ===== */
         .header {
-            background: linear-gradient(135deg, #172f63 0%, #355d91 100%);
+            background: #0b2449;
             padding: 20px 30px;
             display: flex;
             align-items: center;
@@ -347,14 +347,14 @@ if(isset($_GET['ajax'])){
         }
 
         .btn-volver:hover {
-            border-color: #667eea;
+            border-color: #6579b3;
             background: #416792;
             color: white;
         }
 
         .btn-volver.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: #667eea;
+            background: #aebec2;
+            border-color: #062349;
         }
 
         .btn-volver i {
