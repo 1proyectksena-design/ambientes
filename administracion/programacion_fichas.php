@@ -191,7 +191,7 @@ $export_url = 'exportar_fichas.php' . (
         }
 
         .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
-        .search-input-wrap i {
+        .search-input-wrap i.icon-hashtag {
             position: absolute; left: 14px; top: 50%;
             transform: translateY(-50%);
             color: var(--muted); font-size: .88rem; pointer-events: none;
@@ -212,6 +212,41 @@ $export_url = 'exportar_fichas.php' . (
             border-color: var(--primary-mid);
             box-shadow: 0 0 0 3px rgba(53,93,145,.12);
         }
+
+        /* ── Autocomplete dropdown ── */
+        .autocomplete-list {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: var(--surface);
+            border: 2px solid var(--primary-bd);
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+            z-index: 999;
+            max-height: 260px;
+            overflow-y: auto;
+            display: none;
+        }
+        .autocomplete-list.open { display: block; }
+        .autocomplete-item {
+            padding: 11px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background .15s;
+        }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover,
+        .autocomplete-item.active { background: var(--primary-lt); }
+        .autocomplete-item i { color: var(--primary-mid); font-size: .82rem; flex-shrink: 0; }
+        .autocomplete-item__num  { font-weight: 700; color: var(--primary); }
+        .autocomplete-item__prog { font-size: .8rem; color: var(--muted); white-space: nowrap;
+                                   overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+        .autocomplete-no-results { padding: 12px 16px; font-size: 13px; color: var(--muted); text-align: center; }
 
         .btn-buscar {
             padding: 14px 28px;
@@ -544,7 +579,6 @@ $export_url = 'exportar_fichas.php' . (
         <a href="index.php" class="btn-volver-header">
             <i class="fa-solid fa-arrow-left"></i> Volver
         </a>
-     
     </div>
 </div>
 
@@ -556,11 +590,12 @@ $export_url = 'exportar_fichas.php' . (
         <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar ficha por número</h3>
         <form method="GET" action="">
             <div class="search-row">
-                <div class="search-input-wrap">
-                    <i class="fa-solid fa-hashtag"></i>
-                    <input type="text" name="buscar" class="search-input"
+                <div class="search-input-wrap" id="autocomplete-wrap">
+                    <i class="fa-solid fa-hashtag icon-hashtag"></i>
+                    <input type="text" name="buscar" id="search-input" class="search-input"
                            placeholder="Ej: 2895621"
                            value="<?= htmlspecialchars($busqueda) ?>" autocomplete="off">
+                    <div class="autocomplete-list" id="autocomplete-list"></div>
                 </div>
                 <button type="submit" class="btn-buscar">
                     <i class="fa-solid fa-search"></i> Buscar
@@ -802,6 +837,86 @@ $export_url = 'exportar_fichas.php' . (
         </div>
     </div>
 </footer>
+
+<!-- ═══════════════════════ AUTOCOMPLETE JS ═══════════════════════ -->
+<script>
+(function () {
+    const fichas = <?= json_encode(array_map(fn($f) => [
+        'numero'   => $f['numero_ficha'],
+        'programa' => $f['programa'] ?? ''
+    ], $todas_fichas), JSON_UNESCAPED_UNICODE) ?>;
+
+    const input   = document.getElementById('search-input');
+    const list    = document.getElementById('autocomplete-list');
+    const wrap    = document.getElementById('autocomplete-wrap');
+    let activeIdx = -1;
+
+    function render(items) {
+        list.innerHTML = '';
+        activeIdx = -1;
+
+        if (!items.length) {
+            list.innerHTML = '<div class="autocomplete-no-results"><i class="fa-solid fa-circle-info"></i> Sin coincidencias</div>';
+            list.classList.add('open');
+            return;
+        }
+
+        items.slice(0, 8).forEach((f) => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.innerHTML = `
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>
+                    <span class="autocomplete-item__num">${f.numero}</span>
+                    ${f.programa ? `<br><span class="autocomplete-item__prog">${f.programa}</span>` : ''}
+                </span>`;
+            div.addEventListener('mousedown', () => {
+                input.value = f.numero;
+                close();
+                input.closest('form').submit();
+            });
+            list.appendChild(div);
+        });
+        list.classList.add('open');
+    }
+
+    function close() { list.classList.remove('open'); activeIdx = -1; }
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        if (!q) { close(); return; }
+        render(fichas.filter(f => f.numero.toLowerCase().includes(q)));
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = list.querySelectorAll('.autocomplete-item');
+        if (!items.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIdx = Math.min(activeIdx + 1, items.length - 1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIdx = Math.max(activeIdx - 1, 0);
+        } else if (e.key === 'Enter' && activeIdx >= 0) {
+            e.preventDefault();
+            items[activeIdx].dispatchEvent(new Event('mousedown'));
+            return;
+        } else if (e.key === 'Escape') {
+            close(); return;
+        }
+
+        items.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+        if (activeIdx >= 0) {
+            input.value = items[activeIdx].querySelector('.autocomplete-item__num').textContent;
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) close();
+    });
+})();
+</script>
 
 </body>
 </html>
