@@ -23,12 +23,15 @@ $resAmbiente = mysqli_query($conexion, "SELECT nombre_ambiente FROM ambientes WH
 $dataAmbiente = mysqli_fetch_assoc($resAmbiente);
 $nombre_ambiente = $dataAmbiente['nombre_ambiente'] ?? "Ambiente $id_ambiente";
 
-/* CONSULTA */
+/* CONSULTA — incluye ficha */
 $sql = "SELECT 
             au.*,
-            i.nombre AS nombre_instructor
+            i.nombre        AS nombre_instructor,
+            f.numero_ficha,
+            f.programa
         FROM autorizaciones_ambientes au
         INNER JOIN instructores i ON au.id_instructor = i.id
+        LEFT  JOIN fichas f       ON au.id_ficha = f.id
         WHERE au.id_ambiente = '$id_ambiente'
         AND au.fecha_inicio <= '$fecha_actual'
         AND au.fecha_fin >= '$fecha_actual'
@@ -50,6 +53,8 @@ if(isset($_GET['ajax'])){
             'rol'           => htmlspecialchars($f['rol_autorizado']),
             'observacion'   => htmlspecialchars($f['observaciones'] ?: '—'),
             'novedades'     => htmlspecialchars($f['novedades'] ?: ''),
+            'numero_ficha'  => htmlspecialchars($f['numero_ficha'] ?: ''),
+            'programa'      => htmlspecialchars($f['programa'] ?: ''),
             'activa'        => $activa,
         ];
     }
@@ -152,7 +157,7 @@ if(isset($_GET['ajax'])){
         .table-header h3 { color: #333; font-size: 16px; font-weight: 700; margin: 0; }
         .ultima-actualizacion { font-size: 11px; color: #999; }
 
-        /* SCROLL WRAPPER - CRÍTICO PARA RESPONSIVE */
+        /* SCROLL WRAPPER */
         .table-scroll-wrapper {
             width: 100%;
             overflow-x: auto;
@@ -161,7 +166,7 @@ if(isset($_GET['ajax'])){
 
         table { 
             width: 100%; 
-            min-width: 800px; /* Ancho mínimo para no romper columnas */
+            min-width: 900px;
             border-collapse: collapse; 
         }
         
@@ -182,6 +187,7 @@ if(isset($_GET['ajax'])){
             border-bottom: 1px solid #f0f0f0;
             color: #444; 
             font-size: 14px;
+            vertical-align: middle;
         }
         
         tbody tr { transition: background-color 0.2s ease; }
@@ -200,7 +206,7 @@ if(isset($_GET['ajax'])){
             white-space: nowrap;
         }
         .badge-administracion { background: #e3f2fd; color: #1565c0; }
-        .badge-subdireccion { background: #e8f5e9; color: #2e7d32; }
+        .badge-subdireccion   { background: #e8f5e9; color: #2e7d32; }
 
         .badge-activo {
             background: #43a047; 
@@ -214,6 +220,31 @@ if(isset($_GET['ajax'])){
             white-space: nowrap;
         }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* FICHA BADGE */
+        .ficha-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .ficha-programa {
+            display: block;
+            font-size: 11px;
+            color: #555;
+            margin-top: 3px;
+            font-weight: 400;
+            max-width: 160px;
+            white-space: normal;
+            line-height: 1.3;
+        }
 
         /* BOTÓN VER NOVEDADES */
         .btn-ver-nov {
@@ -243,14 +274,14 @@ if(isset($_GET['ajax'])){
         }
         .no-results p { font-size: 18px; font-weight: 600; }
         .no-results small { font-size: 13px; margin-top: 8px; display: block; }
-        /* ==================== FOOTER ==================== */
+
+        /* ===== FOOTER ===== */
         .footer {
             background: linear-gradient(135deg, #2c5282 0%, #2d3e63 100%);
             color: white;
             padding: 28px 30px;
             margin-top: auto;
         }
-
         .footer-content {
             max-width: 1400px;
             margin: 0 auto;
@@ -259,76 +290,19 @@ if(isset($_GET['ajax'])){
             align-items: center;
             gap: 16px;
         }
+        .footer-left { display: flex; align-items: center; gap: 14px; }
+        .footer-logo { width: 38px; height: 38px; object-fit: contain; filter: brightness(0) invert(1); opacity: 0.85; }
+        .footer-brand { display: flex; flex-direction: column; }
+        .footer-title { font-size: 15px; font-weight: 700; margin: 0; }
+        .footer-sub { font-size: 11px; color: rgba(255,255,255,0.7); margin: 3px 0 0 0; }
+        .footer-center { text-align: center; font-size: 13px; color: rgba(255,255,255,0.85); }
+        .footer-center p { margin: 3px 0; }
+        .footer-year { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 4px !important; }
+        .footer-right { text-align: right; font-size: 12px; color: rgba(255,255,255,0.75); }
+        .footer-right p { margin: 2px 0; }
+        .footer-right strong { color: white; font-weight: 700; }
 
-        .footer-left {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .footer-logo {
-            width: 38px;
-            height: 38px;
-            object-fit: contain;
-            filter: brightness(0) invert(1);
-            opacity: 0.85;
-        }
-
-        .footer-brand {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .footer-title {
-            font-size: 15px;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .footer-sub {
-            font-size: 11px;
-            color: rgba(255,255,255,0.7);
-            margin: 3px 0 0 0;
-        }
-
-        .footer-center {
-            text-align: center;
-            font-size: 13px;
-            color: rgba(255,255,255,0.85);
-        }
-
-        .footer-center p {
-            margin: 3px 0;
-        }
-
-        .footer-year {
-            font-size: 11px;
-            color: rgba(255,255,255,0.55);
-            margin-top: 4px !important;
-        }
-
-        .footer-right {
-            text-align: right;
-            font-size: 12px;
-            color: rgba(255,255,255,0.75);
-        }
-
-        .footer-right p {
-            margin: 2px 0;
-        }
-
-        .footer-right strong {
-            color: white;
-            font-weight: 700;
-        }
-        /*BOTONNNNN DE VOLVER*/
-        .btn-volver {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
+        /* ===== BOTÓN VOLVER ===== */
         .btn-volver {
             background: white;
             border: 2px solid #02050f;
@@ -339,59 +313,29 @@ if(isset($_GET['ajax'])){
             color: #666;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
             text-decoration: none;
+            margin-bottom: 25px;
         }
-
         .btn-volver:hover {
             border-color: #6579b3;
             background: #416792;
             color: white;
         }
+        .btn-volver i { font-size: 1.2rem; }
 
-        .btn-volver.active {
-            background: #aebec2;
-            border-color: #062349;
-        }
-
-        .btn-volver i {
-            font-size: 1.2rem;
-        }
-
-        @media (max-width: 480px) {
-            .toggle-forms {
-                grid-template-columns: 1fr;
-            }
-        }
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .container { padding: 0 15px; margin: 20px auto; }
             .ambiente-card { flex-direction: column; align-items: flex-start; }
-            
-            /* Compensar padding en móviles */
-            .table-scroll-wrapper {
-                margin: 0 -20px;
-                padding: 0 20px;
-            }
         }
-        
         @media (max-width: 480px) {
-            .header { 
-                padding: 15px; 
-                flex-direction: column; 
-                text-align: center; 
-            }
-            .header-left {
-                flex-direction: column;
-                gap: 10px;
-            }
-            th, td { 
-                padding: 12px 8px; 
-                font-size: 12px; 
-            }
+            .header { padding: 15px; flex-direction: column; text-align: center; }
+            .header-left { flex-direction: column; gap: 10px; }
+            th, td { padding: 12px 8px; font-size: 12px; }
         }
     </style>
 </head>
@@ -455,6 +399,7 @@ if(isset($_GET['ajax'])){
                             <th>Instructor</th>
                             <th>Hora Inicio</th>
                             <th>Hora Fin</th>
+                            <th>Ficha</th>
                             <th>Autorizado Por</th>
                             <th>Observación</th>
                             <th>Novedades</th>
@@ -483,7 +428,20 @@ if(isset($_GET['ajax'])){
                                 <?= date('h:i A', strtotime($fila['hora_final'])) ?>
                             </td>
                             <td>
-                                <span class="badge-rol badge-<?= $fila['rol_autorizado'] ?>">
+                                <?php if($fila['numero_ficha']): ?>
+                                    <span class="ficha-badge">
+                                        <i class="fa-solid fa-graduation-cap"></i>
+                                        <?= htmlspecialchars($fila['numero_ficha']) ?>
+                                    </span>
+                                    <?php if($fila['programa']): ?>
+                                        <span class="ficha-programa"><?= htmlspecialchars($fila['programa']) ?></span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span style="color:#999;">—</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <span class="badge-rol badge-<?= strtolower($fila['rol_autorizado']) ?>">
                                     <?= htmlspecialchars($fila['rol_autorizado']) ?>
                                 </span>
                             </td>
@@ -511,16 +469,15 @@ if(isset($_GET['ajax'])){
             <?php endif; ?>
         </div>
     </div>
-   <a href="index.php" class="btn-volver">
+
+    <a href="index.php" class="btn-volver">
         <i class="fa-solid fa-arrow-left"></i> Volver al Panel
     </a>
-
 
 </div>
 
 <script>
-    /* AUTO-ACTUALIZACIÓN CADA 30 SEGUNDOS 
-     */
+    /* AUTO-ACTUALIZACIÓN CADA 30 SEGUNDOS */
     let segundosRestantes = 30;
 
     function actualizarDatos() {
@@ -543,6 +500,7 @@ if(isset($_GET['ajax'])){
                             <th>Instructor</th>
                             <th>Hora Inicio</th>
                             <th>Hora Fin</th>
+                            <th>Ficha</th>
                             <th>Autorizado Por</th>
                             <th>Observación</th>
                             <th>Novedades</th>
@@ -552,6 +510,17 @@ if(isset($_GET['ajax'])){
                         const claseActiva = f.activa ? 'activa-ahora' : '';
                         const badgeActivo = f.activa
                             ? '<span class="badge-activo">EN CURSO</span>' : '';
+
+                        let fichaHtml = '<span style="color:#999;">—</span>';
+                        if(f.numero_ficha){
+                            fichaHtml = `<span class="ficha-badge">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                ${f.numero_ficha}
+                            </span>`;
+                            if(f.programa){
+                                fichaHtml += `<span class="ficha-programa">${f.programa}</span>`;
+                            }
+                        }
 
                         const btnNov = f.novedades 
                             ? `<button onclick="alert('${f.novedades.replace(/'/g, "\\'")}')" class="btn-ver-nov"><i class="fa-solid fa-eye"></i> Ver</button>`
@@ -570,8 +539,9 @@ if(isset($_GET['ajax'])){
                                 <i class="fa-regular fa-clock" style="margin-right:4px; color:#666;"></i>
                                 ${f.hora_fin}
                             </td>
+                            <td>${fichaHtml}</td>
                             <td>
-                                <span class="badge-rol badge-${f.rol}">
+                                <span class="badge-rol badge-${f.rol.toLowerCase()}">
                                     ${f.rol}
                                 </span>
                             </td>
